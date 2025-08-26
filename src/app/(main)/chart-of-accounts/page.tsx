@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -15,71 +16,61 @@ import { AccountDialog, AccountFormData } from '@/components/chart-of-accounts/a
 import { DeleteAccountDialog } from '@/components/chart-of-accounts/delete-account-dialog';
 
 const initialChartOfAccountsData: Account[] = [
-  {
-    id: '1',
-    code: '1',
-    name: 'الأصول',
-    type: 'مدين',
-    group: 'الأصول',
-    status: 'نشط',
-    closingType: 'الميزانية العمومية',
-    classifications: [],
-    children: [
-      {
-        id: '1-1',
-        code: '11',
-        name: 'الأصول المتداولة',
+    {
+        id: '1',
+        code: '1',
+        name: 'الأصول',
         type: 'مدين',
         group: 'الأصول',
         status: 'نشط',
         closingType: 'الميزانية العمومية',
         classifications: [],
         children: [
-          {
-            id: '1-1-1',
-            code: '111',
-            name: 'النقدية وما في حكمها',
-            type: 'مدين',
-            group: 'الأصول',
-            status: 'نشط',
-            closingType: 'الميزانية العمومية',
-            classifications: [],
-            children: [
-                { id: '1-1-1-1', code: '11101', name: 'صندوق المحل', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: ['صندوق'] },
-                { id: '1-1-1-2', code: '11102', name: 'بنك الراجحي', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: ['بنك'] }
-            ]
-          },
-          {
-            id: '1-1-2',
-            code: '112',
-            name: 'الذمم المدينة',
-            type: 'مدين',
-            group: 'الأصول',
-            status: 'نشط',
-            closingType: 'الميزانية العمومية',
-            classifications: [],
-            children: [
-                 { id: '1-1-2-1', code: '11201', name: 'العميل محمد', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: ['عملاء'] },
-            ]
-          },
+            {
+                id: '1-1',
+                code: '11',
+                name: 'الأصول المتداولة',
+                type: 'مدين',
+                group: 'الأصول',
+                status: 'نشط',
+                closingType: 'الميزانية العمومية',
+                classifications: [],
+                children: [
+                    {
+                        id: '1-1-1',
+                        code: '1101',
+                        name: 'النقدية وما في حكمها',
+                        type: 'مدين',
+                        group: 'الأصول',
+                        status: 'نشط',
+                        closingType: 'الميزانية العمومية',
+                        classifications: [],
+                        children: [
+                            { id: '1-1-1-1', code: '1101001', name: 'صندوق المحل', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: ['صندوق'] },
+                            { id: '1-1-1-2', code: '1101002', name: 'بنك الراجحي', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: ['بنك'] }
+                        ]
+                    },
+                    {
+                        id: '1-1-2',
+                        code: '1102',
+                        name: 'الذمم المدينة',
+                        type: 'مدين',
+                        group: 'الأصول',
+                        status: 'نشط',
+                        closingType: 'الميزانية العمومية',
+                        classifications: [],
+                        children: [
+                            { id: '1-1-2-1', code: '1102001', name: 'العميل محمد', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: ['عملاء'] },
+                        ]
+                    },
+                ],
+            },
         ],
-      },
-    ],
-  },
-  {
-    id: '2',
-    code: '2',
-    name: 'الخصوم',
-    type: 'دائن',
-    group: 'الخصوم',
-    status: 'نشط',
-    closingType: 'الميزانية العمومية',
-    classifications: [],
-    children: [
-      {
-        id: '2-1',
-        code: '21',
-        name: 'الخصوم المتداولة',
+    },
+    {
+        id: '2',
+        code: '2',
+        name: 'الخصوم',
         type: 'دائن',
         group: 'الخصوم',
         status: 'نشط',
@@ -87,36 +78,36 @@ const initialChartOfAccountsData: Account[] = [
         classifications: [],
         children: [
             {
-                id: '2-1-1',
-                code: '211',
-                name: 'الذمم الدائنة',
+                id: '2-1',
+                code: '21',
+                name: 'الخصوم المتداولة',
                 type: 'دائن',
                 group: 'الخصوم',
                 status: 'نشط',
                 closingType: 'الميزانية العمومية',
                 classifications: [],
                 children: [
-                    { id: '2-1-1-1', code: '21101', name: 'المورد شركة الورود', type: 'دائن', group: 'الخصوم', status: 'نشط', closingType: 'الميزانية العمومية', classifications: ['موردين'] }
-                ]
-            }
+                    {
+                        id: '2-1-1',
+                        code: '2101',
+                        name: 'الذمم الدائنة',
+                        type: 'دائن',
+                        group: 'الخصوم',
+                        status: 'نشط',
+                        closingType: 'الميزانية العمومية',
+                        classifications: [],
+                        children: [
+                            { id: '2-1-1-1', code: '2101001', name: 'المورد شركة الورود', type: 'دائن', group: 'الخصوم', status: 'نشط', closingType: 'الميزانية العمومية', classifications: ['موردين'] }
+                        ]
+                    }
+                ],
+            },
         ],
-      },
-    ],
-  },
-  {
-    id: '4',
-    code: '4',
-    name: 'الإيرادات',
-    type: 'دائن',
-    group: 'الإيرادات',
-    status: 'نشط',
-    closingType: 'قائمة الدخل',
-    classifications: [],
-     children: [
-      {
-        id: '4-1',
-        code: '41',
-        name: 'إيرادات النشاط الرئيسي',
+    },
+    {
+        id: '4',
+        code: '4',
+        name: 'الإيرادات',
         type: 'دائن',
         group: 'الإيرادات',
         status: 'نشط',
@@ -124,36 +115,36 @@ const initialChartOfAccountsData: Account[] = [
         classifications: [],
         children: [
             {
-                id: '4-1-1',
-                code: '411',
-                name: 'مبيعات المنتجات',
+                id: '4-1',
+                code: '41',
+                name: 'إيرادات النشاط الرئيسي',
                 type: 'دائن',
                 group: 'الإيرادات',
                 status: 'نشط',
                 closingType: 'قائمة الدخل',
                 classifications: [],
                 children: [
-                     { id: '4-1-1-1', code: '41101', name: 'مبيعات الزهور', type: 'دائن', group: 'الإيرادات', status: 'نشط', closingType: 'قائمة الدخل', classifications: ['ايرادات'] },
+                    {
+                        id: '4-1-1',
+                        code: '4101',
+                        name: 'مبيعات المنتجات',
+                        type: 'دائن',
+                        group: 'الإيرادات',
+                        status: 'نشط',
+                        closingType: 'قائمة الدخل',
+                        classifications: [],
+                        children: [
+                            { id: '4-1-1-1', code: '4101001', name: 'مبيعات الزهور', type: 'دائن', group: 'الإيرادات', status: 'نشط', closingType: 'قائمة الدخل', classifications: ['ايرادات'] },
+                        ]
+                    }
                 ]
-            }
+            },
         ]
-      },
-    ]
-  },
-  {
-    id: '5',
-    code: '5',
-    name: 'المصروفات',
-    type: 'مدين',
-    group: 'المصروفات',
-    status: 'نشط',
-    closingType: 'قائمة الدخل',
-    classifications: [],
-    children: [
-      {
-        id: '5-1',
-        code: '51',
-        name: 'مصروفات التشغيل',
+    },
+    {
+        id: '5',
+        code: '5',
+        name: 'المصروفات',
         type: 'مدين',
         group: 'المصروفات',
         status: 'نشط',
@@ -161,22 +152,32 @@ const initialChartOfAccountsData: Account[] = [
         classifications: [],
         children: [
             {
-                id: '5-1-1',
-                code: '511',
-                name: 'الرواتب',
+                id: '5-1',
+                code: '51',
+                name: 'مصروفات التشغيل',
                 type: 'مدين',
                 group: 'المصروفات',
                 status: 'نشط',
                 closingType: 'قائمة الدخل',
                 classifications: [],
                 children: [
-                    { id: '5-1-1-1', code: '51101', name: 'راتب الموظف أحمد', type: 'مدين', group: 'المصروفات', status: 'نشط', closingType: 'قائمة الدخل', classifications: ['مصروفات'] },
+                    {
+                        id: '5-1-1',
+                        code: '5101',
+                        name: 'الرواتب',
+                        type: 'مدين',
+                        group: 'المصروفات',
+                        status: 'نشط',
+                        closingType: 'قائمة الدخل',
+                        classifications: [],
+                        children: [
+                            { id: '5-1-1-1', code: '5101001', name: 'راتب الموظف أحمد', type: 'مدين', group: 'المصروفات', status: 'نشط', closingType: 'قائمة الدخل', classifications: ['مصروفات'] },
+                        ]
+                    }
                 ]
-            }
+            },
         ]
-       },
-    ]
-  },
+    },
 ];
 
 
@@ -356,3 +357,5 @@ export default function ChartOfAccountsPage() {
     </>
   );
 }
+
+    

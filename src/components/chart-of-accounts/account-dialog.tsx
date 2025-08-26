@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useEffect, useMemo } from 'react';
@@ -32,17 +33,40 @@ import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
 
 
-const createAccountSchema = (parentCode?: string) => z.object({
-    name: z.string().min(3, { message: "يجب أن يكون اسم الحساب 3 أحرف على الأقل." }),
-    code: z.string().min(parentCode ? parentCode.length + 1 : 4, { message: parentCode ? `يجب أن يكون الرمز أطول من رمز الأب (${parentCode.length} أرقام).` : "يجب أن يكون رمز الحساب 4 أرقام على الأقل." })
-    .regex(/^\d+$/, { message: "يجب أن يحتوي الرمز على أرقام فقط."})
-    .refine(code => parentCode ? code.startsWith(parentCode) : true, { message: `يجب أن يبدأ الرمز برمز الأب (${parentCode})`}),
-    type: z.enum(['مدين', 'دائن'], { required_error: 'نوع الحساب مطلوب' }),
-    group: z.enum(['الأصول', 'الخصوم', 'حقوق الملكية', 'الإيرادات', 'المصروفات'], { required_error: 'مجموعة الحساب مطلوبة' }),
-    status: z.enum(['نشط', 'غير نشط'], { required_error: 'حالة الحساب مطلوبة' }),
-    closingType: z.string({ required_error: 'نوع الحساب الختامي مطلوب' }),
-    classifications: z.array(z.string()).optional(),
-});
+const createAccountSchema = (parentCode?: string) => {
+    let level = 0;
+    if (parentCode) {
+        if (parentCode.length === 1) level = 1;
+        else if (parentCode.length === 2) level = 2;
+        else if (parentCode.length === 4) level = 3;
+    }
+    
+    const levelLengths = [1, 2, 4, 7];
+    const expectedLength = level < 4 ? levelLengths[level + 1] : -1;
+    const currentLength = levelLengths[level];
+
+    let codeSchema = z.string().regex(/^\d+$/, { message: "يجب أن يحتوي الرمز على أرقام فقط."});
+
+    if (parentCode) {
+        codeSchema = codeSchema.min(expectedLength, { message: `يجب أن يكون طول الرمز ${expectedLength} رقمًا.` })
+            .max(expectedLength, { message: `يجب أن يكون طول الرمز ${expectedLength} رقمًا.` })
+            .refine(code => code.startsWith(parentCode), { message: `يجب أن يبدأ الرمز برمز الأب (${parentCode})` });
+    } else {
+        // This is a root account (Level 1)
+        codeSchema = codeSchema.min(1, { message: "يجب أن يكون طول الرمز رقمًا واحدًا." })
+                               .max(1, { message: "يجب أن يكون طول الرمز رقمًا واحدًا." });
+    }
+
+    return z.object({
+        name: z.string().min(3, { message: "يجب أن يكون اسم الحساب 3 أحرف على الأقل." }),
+        code: codeSchema,
+        type: z.enum(['مدين', 'دائن'], { required_error: 'نوع الحساب مطلوب' }),
+        group: z.enum(['الأصول', 'الخصوم', 'حقوق الملكية', 'الإيرادات', 'المصروفات'], { required_error: 'مجموعة الحساب مطلوبة' }),
+        status: z.enum(['نشط', 'غير نشط'], { required_error: 'حالة الحساب مطلوبة' }),
+        closingType: z.string({ required_error: 'نوع الحساب الختامي مطلوب' }),
+        classifications: z.array(z.string()).optional(),
+    });
+};
 
 
 export type AccountFormData = z.infer<ReturnType<typeof createAccountSchema>>;
@@ -65,14 +89,9 @@ const titles = {
 export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount, mode }: AccountDialogProps) {
 
   const accountSchema = useMemo(() => {
-    if (mode === 'addSub' && parentAccount) {
-      return createAccountSchema(parentAccount.code);
-    }
-     if (mode === 'edit' && parentAccount) {
-      return createAccountSchema(parentAccount.code);
-    }
-    return createAccountSchema();
-  }, [mode, parentAccount]);
+    const code = mode === 'edit' ? parentAccount?.code : (mode === 'addSub' ? parentAccount?.code : undefined);
+    return createAccountSchema(code);
+  }, [mode, parentAccount, account]);
 
 
   const { register, handleSubmit, reset, control, formState: { errors }, watch } = useForm<AccountFormData>({
@@ -270,3 +289,5 @@ export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount,
     </Dialog>
   )
 }
+
+    
