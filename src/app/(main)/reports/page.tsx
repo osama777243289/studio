@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button"
@@ -18,8 +19,9 @@ import {
   TableFooter
 } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Download } from "lucide-react"
+import { Download, ArrowLeft } from "lucide-react"
 import Papa from 'papaparse';
+import Link from "next/link";
 
 const profitAndLossData = {
   title: 'بيان الأرباح والخسائر',
@@ -103,9 +105,10 @@ export default function ReportsPage() {
         </div>
 
       <Tabs defaultValue="p-l" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="p-l">الأرباح والخسائر</TabsTrigger>
           <TabsTrigger value="balance-sheet">الميزانية العمومية</TabsTrigger>
+          <TabsTrigger value="other-reports">تقارير أخرى</TabsTrigger>
         </TabsList>
         <TabsContent value="p-l">
           <Card>
@@ -164,6 +167,22 @@ export default function ReportsPage() {
               </Table>
             </CardContent>
           </Card>
+        </TabsContent>
+        <TabsContent value="other-reports">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline">تقارير أخرى</CardTitle>
+                    <CardDescription>تقارير إضافية وتفصيلية.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-2">
+                        <Link href="/reports/cashier-sales" className="flex items-center justify-between p-3 bg-muted/50 hover:bg-muted rounded-md transition-colors">
+                           <span>تقرير مبيعات الكاشير</span>
+                           <ArrowLeft className="h-5 w-5" />
+                        </Link>
+                    </div>
+                </CardContent>
+            </Card>
         </TabsContent>
       </Tabs>
     </div>
