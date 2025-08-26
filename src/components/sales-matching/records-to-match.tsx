@@ -1,3 +1,4 @@
+
 import {
   Card,
   CardContent,
@@ -13,27 +14,19 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { ListChecks } from 'lucide-react';
+import type { SalesRecord } from './matching-form';
+import { cn } from '@/lib/utils';
 
-const recordsToMatch = [
-  {
-    date: 'يونيو 10, 2025',
-    period: 'الصباحية',
-    cashier: 'يوسف خالد',
-    total: '3500.00 ريال',
-    status: 'بانتظار المطابقة',
-  },
-  {
-    date: 'يونيو 9, 2025',
-    period: 'المسائية',
-    cashier: 'أحمد منصور',
-    total: '4200.00 ريال',
-    status: 'بانتظار المطابقة',
-  },
-];
 
-export function RecordsToMatch() {
+interface RecordsToMatchProps {
+    records: SalesRecord[];
+    onSelectRecord: (record: SalesRecord) => void;
+    selectedRecord: SalesRecord | null;
+}
+
+
+export function RecordsToMatch({ records, onSelectRecord, selectedRecord }: RecordsToMatchProps) {
   return (
     <Card>
       <CardHeader>
@@ -56,12 +49,16 @@ export function RecordsToMatch() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {recordsToMatch.map((record, index) => (
-              <TableRow key={index} className="cursor-pointer hover:bg-muted/50">
+            {records.map((record, index) => (
+              <TableRow 
+                key={index} 
+                className={cn("cursor-pointer hover:bg-muted/50", selectedRecord?.date === record.date && selectedRecord?.period === record.period && 'bg-primary/10 hover:bg-primary/20')}
+                onClick={() => onSelectRecord(record)}
+              >
                 <TableCell>{record.date}</TableCell>
                 <TableCell>{record.period}</TableCell>
                 <TableCell>{record.cashier}</TableCell>
-                <TableCell>{record.total}</TableCell>
+                <TableCell>{record.total} ريال</TableCell>
               </TableRow>
             ))}
           </TableBody>

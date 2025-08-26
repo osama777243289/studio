@@ -1,14 +1,39 @@
-import { MatchingForm } from '@/components/sales-matching/matching-form';
+
+'use client';
+
+import { useState } from 'react';
+import { MatchingForm, type SalesRecord } from '@/components/sales-matching/matching-form';
 import { RecordsToMatch } from '@/components/sales-matching/records-to-match';
 
+const initialRecords: SalesRecord[] = [
+  {
+    date: 'يونيو 10, 2025',
+    period: 'الصباحية',
+    cashier: 'يوسف خالد',
+    total: '3500.00',
+    status: 'بانتظار المطابقة',
+  },
+  {
+    date: 'يونيو 9, 2025',
+    period: 'المسائية',
+    cashier: 'أحمد منصور',
+    total: '4200.00',
+    status: 'بانتظار المطابقة',
+  },
+];
+
+
 export default function SalesMatchingPage() {
+  const [records, setRecords] = useState<SalesRecord[]>(initialRecords);
+  const [selectedRecord, setSelectedRecord] = useState<SalesRecord | null>(records[0] || null);
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
       <div className="space-y-8">
-        <RecordsToMatch />
+        <RecordsToMatch records={records} onSelectRecord={setSelectedRecord} selectedRecord={selectedRecord}/>
       </div>
       <div className="space-y-8">
-        <MatchingForm />
+        <MatchingForm record={selectedRecord} />
       </div>
     </div>
   );
