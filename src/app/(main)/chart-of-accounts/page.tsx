@@ -22,6 +22,8 @@ const initialChartOfAccountsData: Account[] = [
     type: 'مدين',
     group: 'الأصول',
     status: 'نشط',
+    closingType: 'الميزانية العمومية',
+    classifications: ['اصول ثابتة'],
     children: [
       {
         id: '1-1',
@@ -30,9 +32,11 @@ const initialChartOfAccountsData: Account[] = [
         type: 'مدين',
         group: 'الأصول',
         status: 'نشط',
+        closingType: 'الميزانية العمومية',
+        classifications: [],
         children: [
-          { id: '1-1-1', code: '1110', name: 'النقدية وما في حكمها', type: 'مدين', group: 'الأصول', status: 'نشط' },
-          { id: '1-1-2', code: '1120', name: 'الذمم المدينة', type: 'مدين', group: 'الأصول', status: 'نشط' },
+          { id: '1-1-1', code: '1110', name: 'النقدية وما في حكمها', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: ['صندوق', 'بنك'] },
+          { id: '1-1-2', code: '1120', name: 'الذمم المدينة', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: ['عملاء'] },
         ],
       },
       {
@@ -42,8 +46,10 @@ const initialChartOfAccountsData: Account[] = [
         type: 'مدين',
         group: 'الأصول',
         status: 'نشط',
+        closingType: 'الميزانية العمومية',
+        classifications: [],
         children: [
-            { id: '1-2-1', code: '1210', name: 'العقارات والمعدات', type: 'مدين', group: 'الأصول', status: 'نشط' }
+            { id: '1-2-1', code: '1210', name: 'العقارات والمعدات', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: ['اصول ثابتة'] }
         ],
       },
     ],
@@ -55,6 +61,8 @@ const initialChartOfAccountsData: Account[] = [
     type: 'دائن',
     group: 'الخصوم',
     status: 'نشط',
+    closingType: 'الميزانية العمومية',
+    classifications: [],
     children: [
       {
         id: '2-1',
@@ -63,7 +71,9 @@ const initialChartOfAccountsData: Account[] = [
         type: 'دائن',
         group: 'الخصوم',
         status: 'نشط',
-        children: [{ id: '2-1-1', code: '2110', name: 'الذمم الدائنة', type: 'دائن', group: 'الخصوم', status: 'نشط' }],
+        closingType: 'الميزانية العمومية',
+        classifications: [],
+        children: [{ id: '2-1-1', code: '2110', name: 'الذمم الدائنة', type: 'دائن', group: 'الخصوم', status: 'نشط', closingType: 'الميزانية العمومية', classifications: ['موردين'] }],
       },
     ],
   },
@@ -74,9 +84,11 @@ const initialChartOfAccountsData: Account[] = [
     type: 'دائن',
     group: 'حقوق الملكية',
     status: 'نشط',
+    closingType: 'الميزانية العمومية',
+    classifications: [],
     children: [
-      { id: '3-1-1', code: '3100', name: 'رأس المال', type: 'دائن', group: 'حقوق الملكية', status: 'نشط' },
-      { id: '3-1-2', code: '3200', name: 'الأرباح المحتجزة', type: 'دائن', group: 'حقوق الملكية', status: 'نشط' },
+      { id: '3-1-1', code: '3100', name: 'رأس المال', type: 'دائن', group: 'حقوق الملكية', status: 'نشط', closingType: 'الميزانية العمومية', classifications: [] },
+      { id: '3-1-2', code: '3200', name: 'الأرباح المحتجزة', type: 'دائن', group: 'حقوق الملكية', status: 'نشط', closingType: 'الميزانية العمومية', classifications: [] },
     ]
   },
   {
@@ -86,8 +98,10 @@ const initialChartOfAccountsData: Account[] = [
     type: 'دائن',
     group: 'الإيرادات',
     status: 'نشط',
+    closingType: 'قائمة الدخل',
+    classifications: ['ايرادات'],
      children: [
-      { id: '4-1-1', code: '4100', name: 'إيرادات المبيعات', type: 'دائن', group: 'الإيرادات', status: 'نشط' },
+      { id: '4-1-1', code: '4100', name: 'إيرادات المبيعات', type: 'دائن', group: 'الإيرادات', status: 'نشط', closingType: 'قائمة الدخل', classifications: ['ايرادات'] },
     ]
   },
   {
@@ -97,15 +111,17 @@ const initialChartOfAccountsData: Account[] = [
     type: 'مدين',
     group: 'المصروفات',
     status: 'نشط',
+    closingType: 'قائمة الدخل',
+    classifications: ['مصروفات'],
     children: [
-      { id: '5-1-1', code: '5100', name: 'مصروفات التشغيل', type: 'مدين', group: 'المصروفات', status: 'نشط' },
-      { id: '5-1-2', code: '5200', name: 'مصروفات عمومية وإدارية', type: 'مدين', group: 'المصروفات', status: 'نشط' },
+      { id: '5-1-1', code: '5100', name: 'مصروفات التشغيل', type: 'مدين', group: 'المصروفات', status: 'نشط', closingType: 'قائمة الدخل', classifications: ['مصروفات'] },
+      { id: '5-1-2', code: '5200', name: 'مصروفات عمومية وإدارية', type: 'مدين', group: 'المصروفات', status: 'نشط', closingType: 'قائمة الدخل', classifications: ['مصروفات'] },
     ]
   },
 ];
 
 
-// Helper function to find and update an account in the tree
+// Helper function to find and manipulate an account in the tree
 const findAndManipulateAccount = (
   accounts: Account[],
   accountId: string,
