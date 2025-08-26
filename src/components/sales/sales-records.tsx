@@ -1,3 +1,4 @@
+
 import {
   Card,
   CardContent,
@@ -13,22 +14,27 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { History } from 'lucide-react';
+import { History, Printer } from 'lucide-react';
+import { Button } from '../ui/button';
+import Link from 'next/link';
 
 const salesRecords = [
   {
+    id: 'rec1',
     date: 'يونيو 10, 2025',
     period: 'الصباحية',
     total: '1000.00 ريال',
     status: 'بانتظار الرفع',
   },
   {
+    id: 'rec2',
     date: 'يونيو 9, 2025',
     period: 'المسائية',
     total: '6000.00 ريال',
     status: 'تمت مطابقته',
   },
     {
+    id: 'rec3',
     date: 'يونيو 9, 2025',
     period: 'الصباحية',
     total: '3500.00 ريال',
@@ -67,18 +73,32 @@ export function SalesRecords() {
               <TableHead>الفترة</TableHead>
               <TableHead>الإجمالي</TableHead>
               <TableHead>الحالة</TableHead>
+              <TableHead>الإجراءات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {salesRecords.map((record, index) => (
-              <TableRow key={index} className="cursor-pointer hover:bg-muted/50">
+            {salesRecords.map((record) => (
+              <TableRow key={record.id} className="cursor-pointer hover:bg-muted/50">
                 <TableCell>{record.date}</TableCell>
                 <TableCell>{record.period}</TableCell>
                 <TableCell>{record.total}</TableCell>
                 <TableCell>
-                  <Badge variant={getStatusVariant(record.status)}>
+                  <Badge variant={getStatusVariant(record.status)} className={
+                    record.status === 'تمت مطابقته' ? 'bg-green-100 text-green-800' : 
+                    record.status === 'بانتظار المطابقة' ? 'bg-yellow-100 text-yellow-800' : ''
+                  }>
                     {record.status}
                   </Badge>
+                </TableCell>
+                 <TableCell>
+                    {record.status !== 'بانتظار الرفع' && (
+                        <Button asChild variant="outline" size="sm">
+                            <Link href={`/reports/cashier-sales?id=${record.id}`}>
+                                <Printer className="ml-2 h-4 w-4"/>
+                                عرض وطباعة
+                            </Link>
+                        </Button>
+                    )}
                 </TableCell>
               </TableRow>
             ))}
