@@ -79,6 +79,13 @@ export function MatchingForm({ record }: MatchingFormProps) {
         setActuals(prev => ({...prev, [key]: value}));
     }
   }
+
+  const handleFocus = (key: string) => {
+    const value = actuals[key];
+    if (parseFloat(value as string) === 0) {
+      setActuals(prev => ({...prev, [key]: ''}));
+    }
+  }
   
   const getNumericValue = (key: string) => {
       const value = actuals[key];
@@ -112,8 +119,9 @@ export function MatchingForm({ record }: MatchingFormProps) {
              type="text" 
              inputMode="decimal"
              placeholder="0.00" 
-             value={actuals[actualKey] || ''}
+             value={actuals[actualKey] ?? '0'}
              onChange={e => handleActualChange(actualKey, e.target.value)}
+             onFocus={() => handleFocus(actualKey)}
              className="w-32"
             />
         </TableCell>
