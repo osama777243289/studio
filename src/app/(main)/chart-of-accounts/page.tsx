@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { PlusCircle, FileDown } from 'lucide-react';
 import { AccountTree, type Account } from '@/components/chart-of-accounts/account-tree';
-import { AccountDialog } from '@/components/chart-of-accounts/account-dialog';
+import { AccountDialog, AccountFormData } from '@/components/chart-of-accounts/account-dialog';
 import { DeleteAccountDialog } from '@/components/chart-of-accounts/delete-account-dialog';
 
 const initialChartOfAccountsData: Account[] = [
@@ -19,22 +19,31 @@ const initialChartOfAccountsData: Account[] = [
     id: '1',
     code: '1000',
     name: 'الأصول',
+    type: 'مدين',
+    group: 'الأصول',
+    status: 'نشط',
     children: [
       {
         id: '1-1',
         code: '1100',
         name: 'الأصول المتداولة',
+        type: 'مدين',
+        group: 'الأصول',
+        status: 'نشط',
         children: [
-          { id: '1-1-1', code: '1110', name: 'النقدية وما في حكمها' },
-          { id: '1-1-2', code: '1120', name: 'الذمم المدينة' },
+          { id: '1-1-1', code: '1110', name: 'النقدية وما في حكمها', type: 'مدين', group: 'الأصول', status: 'نشط' },
+          { id: '1-1-2', code: '1120', name: 'الذمم المدينة', type: 'مدين', group: 'الأصول', status: 'نشط' },
         ],
       },
       {
         id: '1-2',
         code: '1200',
         name: 'الأصول غير المتداولة',
+        type: 'مدين',
+        group: 'الأصول',
+        status: 'نشط',
         children: [
-            { id: '1-2-1', code: '1210', name: 'العقارات والمعدات' }
+            { id: '1-2-1', code: '1210', name: 'العقارات والمعدات', type: 'مدين', group: 'الأصول', status: 'نشط' }
         ],
       },
     ],
@@ -43,12 +52,18 @@ const initialChartOfAccountsData: Account[] = [
     id: '2',
     code: '2000',
     name: 'الخصوم',
+    type: 'دائن',
+    group: 'الخصوم',
+    status: 'نشط',
     children: [
       {
         id: '2-1',
         code: '2100',
         name: 'الخصوم المتداولة',
-        children: [{ id: '2-1-1', code: '2110', name: 'الذمم الدائنة' }],
+        type: 'دائن',
+        group: 'الخصوم',
+        status: 'نشط',
+        children: [{ id: '2-1-1', code: '2110', name: 'الذمم الدائنة', type: 'دائن', group: 'الخصوم', status: 'نشط' }],
       },
     ],
   },
@@ -56,26 +71,35 @@ const initialChartOfAccountsData: Account[] = [
     id: '3',
     code: '3000',
     name: 'حقوق الملكية',
+    type: 'دائن',
+    group: 'حقوق الملكية',
+    status: 'نشط',
     children: [
-      { id: '3-1-1', code: '3100', name: 'رأس المال' },
-      { id: '3-1-2', code: '3200', name: 'الأرباح المحتجزة' },
+      { id: '3-1-1', code: '3100', name: 'رأس المال', type: 'دائن', group: 'حقوق الملكية', status: 'نشط' },
+      { id: '3-1-2', code: '3200', name: 'الأرباح المحتجزة', type: 'دائن', group: 'حقوق الملكية', status: 'نشط' },
     ]
   },
   {
     id: '4',
     code: '4000',
     name: 'الإيرادات',
+    type: 'دائن',
+    group: 'الإيرادات',
+    status: 'نشط',
      children: [
-      { id: '4-1-1', code: '4100', name: 'إيرادات المبيعات' },
+      { id: '4-1-1', code: '4100', name: 'إيرادات المبيعات', type: 'دائن', group: 'الإيرادات', status: 'نشط' },
     ]
   },
   {
     id: '5',
     code: '5000',
     name: 'المصروفات',
+    type: 'مدين',
+    group: 'المصروفات',
+    status: 'نشط',
     children: [
-      { id: '5-1-1', code: '5100', name: 'مصروفات التشغيل' },
-      { id: '5-1-2', code: '5200', name: 'مصروفات عمومية وإدارية' },
+      { id: '5-1-1', code: '5100', name: 'مصروفات التشغيل', type: 'مدين', group: 'المصروفات', status: 'نشط' },
+      { id: '5-1-2', code: '5200', name: 'مصروفات عمومية وإدارية', type: 'مدين', group: 'المصروفات', status: 'نشط' },
     ]
   },
 ];
@@ -86,7 +110,7 @@ const findAndManipulateAccount = (
   accounts: Account[],
   accountId: string,
   action: 'add' | 'edit' | 'delete',
-  payload?: Account
+  payload?: Account | AccountFormData
 ): Account[] => {
   return accounts
     .map((acc) => {
@@ -95,10 +119,10 @@ const findAndManipulateAccount = (
           case 'add':
             return {
               ...acc,
-              children: [...(acc.children || []), payload!],
+              children: [...(acc.children || []), payload as Account],
             };
           case 'edit':
-            return { ...acc, ...payload };
+             return { ...acc, ...(payload as AccountFormData) };
           case 'delete':
             return null; // Will be filtered out
         }
@@ -120,18 +144,22 @@ export default function ChartOfAccountsPage() {
     const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
+    const [parentAccount, setParentAccount] = useState<Account | null>(null);
     const [dialogMode, setDialogMode] = useState<'add' | 'edit' | 'addSub'>('add');
     
     const handleAddAccount = (parentId: string | null = null) => {
         setDialogMode(parentId ? 'addSub' : 'add');
-        const parentAccount = parentId ? findAccountById(accounts, parentId) : null;
-        setSelectedAccount(parentAccount);
+        const pAccount = parentId ? findAccountById(accounts, parentId) : null;
+        setParentAccount(pAccount)
+        setSelectedAccount(pAccount); // In addSub mode, selected is the parent
         setIsAddEditDialogOpen(true);
     };
 
     const handleEditAccount = (account: Account) => {
         setDialogMode('edit');
         setSelectedAccount(account);
+        const pAccount = findParentOf(accounts, account.id);
+        setParentAccount(pAccount);
         setIsAddEditDialogOpen(true);
     };
 
@@ -140,8 +168,8 @@ export default function ChartOfAccountsPage() {
         setIsDeleteDialogOpen(true);
     };
 
-    const findAccountById = (accounts: Account[], id: string): Account | null => {
-        for (const account of accounts) {
+    const findAccountById = (searchAccounts: Account[], id: string): Account | null => {
+        for (const account of searchAccounts) {
             if (account.id === id) return account;
             if (account.children) {
                 const found = findAccountById(account.children, id);
@@ -151,18 +179,30 @@ export default function ChartOfAccountsPage() {
         return null;
     }
 
-    const confirmSave = (accountData: Omit<Account, 'id' | 'children'>) => {
+     const findParentOf = (searchAccounts: Account[], accountId: string, parent: Account | null = null): Account | null => {
+        for(const account of searchAccounts){
+            if(account.id === accountId) return parent;
+            if(account.children){
+                const found = findParentOf(account.children, accountId, account);
+                if(found) return found;
+            }
+        }
+        return null;
+    }
+
+    const confirmSave = (accountData: AccountFormData) => {
         if (dialogMode === 'add') {
              const newAccount: Account = { ...accountData, id: Date.now().toString(), children: [] };
              setAccounts(prev => [...prev, newAccount]);
         } else if (dialogMode === 'edit' && selectedAccount) {
-            setAccounts(prev => findAndManipulateAccount(prev, selectedAccount.id, 'edit', accountData as Account));
+            setAccounts(prev => findAndManipulateAccount(prev, selectedAccount.id, 'edit', accountData));
         } else if (dialogMode === 'addSub' && selectedAccount) {
             const newSubAccount: Account = { ...accountData, id: Date.now().toString(), children: [] };
             setAccounts(prev => findAndManipulateAccount(prev, selectedAccount.id, 'add', newSubAccount));
         }
         setIsAddEditDialogOpen(false);
         setSelectedAccount(null);
+        setParentAccount(null);
     };
 
     const confirmDelete = () => {
@@ -181,6 +221,7 @@ export default function ChartOfAccountsPage() {
         }
         setIsDeleteDialogOpen(false);
         setSelectedAccount(null);
+        setParentAccount(null);
     };
 
   return (
@@ -217,9 +258,14 @@ export default function ChartOfAccountsPage() {
       </Card>
       <AccountDialog
         isOpen={isAddEditDialogOpen}
-        onClose={() => setIsAddEditDialogOpen(false)}
+        onClose={() => {
+            setIsAddEditDialogOpen(false);
+            setSelectedAccount(null);
+            setParentAccount(null);
+        }}
         onSave={confirmSave}
         account={dialogMode === 'edit' ? selectedAccount : null}
+        parentAccount={parentAccount}
         mode={dialogMode}
       />
       <DeleteAccountDialog
