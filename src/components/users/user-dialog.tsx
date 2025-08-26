@@ -46,7 +46,7 @@ const permissionsSchema = z.object({
 }).optional();
 
 
-const createUserSchema = (isEditMode: boolean) => z.object({
+const createUserSchema = (isEditMode: boolean, accounts: Account[]) => z.object({
     name: z.string().min(3, { message: "يجب أن يكون اسم المستخدم 3 أحرف على الأقل." }),
     email: z.string().email({ message: "البريد الإلكتروني غير صالح." }),
     mobile: z.string().optional(),
@@ -65,6 +65,31 @@ const createUserSchema = (isEditMode: boolean) => z.object({
 }, {
     message: "كلمتا المرور غير متطابقتين",
     path: ["confirmPassword"],
+}).superRefine((data, ctx) => {
+    if (data.type === 'employee' && data.employeeAccountId) {
+        const findAccount = (searchAccounts: Account[], id: string): Account | null => {
+            for (const account of searchAccounts) {
+                if (account.id === id) return account;
+                if (account.children) {
+                    const found = findAccount(account.children, id);
+                    if (found) return found;
+                }
+            }
+            return null;
+        }
+        
+        const account = findAccount(accounts, data.employeeAccountId);
+        
+        // A simple check if the user name is included in the account name.
+        // E.g. "راتب الموظف أحمد" includes "أحمد"
+        if (account && !account.name.includes(data.name)) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: `يجب أن يتطابق اسم المستخدم مع اسم الموظف في الحساب المختار (الحساب الحالي: "${account.name}")`,
+                path: ["name"],
+            });
+        }
+    }
 });
 
 
@@ -141,7 +166,7 @@ const initialRoles: Role[] = [
 
 export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts }: UserDialogProps) {
   const [roles, setRoles] = useState<Role[]>(initialRoles); // In a real app, fetch roles
-  const userSchema = useMemo(() => createUserSchema(mode === 'edit'), [mode]);
+  const userSchema = useMemo(() => createUserSchema(mode === 'edit', accounts), [mode, accounts]);
   
   const { register, handleSubmit, reset, control, watch, formState: { errors } } = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
@@ -394,3 +419,5 @@ export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts }: Us
     </Dialog>
   )
 }
+
+    
