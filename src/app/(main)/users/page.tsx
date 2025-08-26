@@ -61,8 +61,8 @@ export type UserRole = string;
 export interface User {
     id: string;
     name: string;
-    email: string;
-    mobile?: string;
+    email?: string;
+    mobile: string;
     avatarUrl?: string;
     type: "regular" | "employee";
     role: UserRole[];
@@ -355,6 +355,7 @@ export default function UsersPage() {
                       </Avatar>
                       <div className="grid gap-1">
                         <p className="text-sm font-medium leading-none">{user.name}</p>
+                        <p className="text-sm text-muted-foreground ltr">{user.mobile}</p>
                         <p className="text-sm text-muted-foreground">{user.email}</p>
                       </div>
                     </div>
@@ -411,3 +412,5 @@ export default function UsersPage() {
     </>
   )
 }
+
+    

@@ -48,8 +48,8 @@ const permissionsSchema = z.object({
 
 const createUserSchema = (isEditMode: boolean, accounts: Account[]) => z.object({
     name: z.string().min(3, { message: "يجب أن يكون اسم المستخدم 3 أحرف على الأقل." }),
-    email: z.string().email({ message: "البريد الإلكتروني غير صالح." }),
-    mobile: z.string().optional(),
+    email: z.string().email({ message: "البريد الإلكتروني غير صالح." }).optional().or(z.literal('')),
+    mobile: z.string().min(10, { message: "رقم الجوال إلزامي ويجب أن يكون صالحًا." }),
     password: z.string().min(8, "يجب أن تكون كلمة المرور 8 أحرف على الأقل.").optional().or(z.literal('')),
     confirmPassword: z.string().min(8, "يجب أن تكون كلمة المرور 8 أحرف على الأقل.").optional().or(z.literal('')),
     type: z.enum(['regular', 'employee'], { required_error: 'نوع المستخدم مطلوب' }),
@@ -258,8 +258,8 @@ export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts }: Us
                 <div className="space-y-4">
                     <h3 className="font-semibold text-lg">بيانات المستخدم</h3>
                     {renderRow("الاسم", "name", <Input id="name" {...register("name")} className="w-full" />, errors.name)}
-                    {renderRow("البريد الإلكتروني", "email", <Input id="email" {...register("email")} className="w-full ltr" />, errors.email)}
-                    {renderRow("رقم الجوال", "mobile", <Input id="mobile" {...register("mobile")} className="w-full ltr" />, errors.mobile)}
+                    {renderRow("رقم الجوال (للدخول)", "mobile", <Input id="mobile" {...register("mobile")} className="w-full ltr" />, errors.mobile)}
+                    {renderRow("البريد الإلكتروني (اختياري)", "email", <Input id="email" {...register("email")} className="w-full ltr" />, errors.email)}
                     {renderRow("كلمة السر", "password", <Input id="password" type="password" {...register("password")} className="w-full ltr" placeholder={mode === 'edit' ? 'اتركه فارغاً لعدم التغيير' : ''} />, errors.password)}
                     {renderRow("تأكيد كلمة السر", "confirmPassword", <Input id="confirmPassword" type="password" {...register("confirmPassword")} className="w-full ltr" />, errors.confirmPassword)}
 
