@@ -56,6 +56,8 @@ export interface UserPermissions {
     accounts?: string[]; // Array of allowed account IDs
 }
 
+export const USER_ROLES = ["مدير", "محاسب", "كاشير", "مدخل بيانات"] as const;
+export type UserRole = (typeof USER_ROLES)[number];
 
 export interface User {
     id: string;
@@ -64,7 +66,7 @@ export interface User {
     mobile?: string;
     avatarUrl?: string;
     type: "regular" | "employee";
-    role: "مدير" | "محاسب" | "كاشير" | "مدخل بيانات";
+    role: UserRole[];
     status: "نشط" | "غير نشط";
     permissions: UserPermissions;
     employeeAccountId?: string;
@@ -171,7 +173,7 @@ const initialUsers: User[] = [
     mobile: "0501234567",
     avatarUrl: "https://picsum.photos/id/21/40/40",
     type: "regular",
-    role: "مدير",
+    role: ["مدير"],
     status: "نشط",
     permissions: {
         pages: {
@@ -194,7 +196,7 @@ const initialUsers: User[] = [
     mobile: "0502345678",
     avatarUrl: "https://picsum.photos/id/22/40/40",
     type: "regular",
-    role: "محاسب",
+    role: ["محاسب"],
     status: "نشط",
     permissions: {
         pages: {
@@ -217,7 +219,7 @@ const initialUsers: User[] = [
     mobile: "0503456789",
     avatarUrl: "https://picsum.photos/id/23/40/40",
     type: "regular",
-    role: "كاشير",
+    role: ["كاشير"],
     status: "غير نشط",
     permissions: {
         pages: {
@@ -233,7 +235,7 @@ const initialUsers: User[] = [
     mobile: "0504567890",
     avatarUrl: "https://picsum.photos/id/24/40/40",
     type: "regular",
-    role: "مدخل بيانات",
+    role: ["مدخل بيانات"],
     status: "نشط",
     permissions: {
         pages: {
@@ -250,7 +252,7 @@ const initialUsers: User[] = [
     mobile: "0505678901",
     avatarUrl: "https://picsum.photos/id/25/40/40",
     type: "employee",
-    role: "مدخل بيانات",
+    role: ["مدخل بيانات"],
     status: "نشط",
     permissions: {},
     employeeAccountId: '5-1-1-2'
@@ -283,9 +285,9 @@ export default function UsersPage() {
   };
 
   const confirmSave = (userData: UserFormData) => {
-    const dataToSave = { ...userData };
+    const dataToSave: Partial<UserFormData> = { ...userData };
     // Don't save password if it's not changed in edit mode
-    if (mode === 'edit' && !dataToSave.password) {
+    if (dialogMode === 'edit' && !dataToSave.password) {
         delete dataToSave.password;
     }
     delete dataToSave.confirmPassword;
@@ -295,11 +297,13 @@ export default function UsersPage() {
         ...dataToSave, 
         id: Date.now().toString(), 
         permissions: dataToSave.permissions || {},
+        role: dataToSave.role || [],
         avatarUrl: `https://picsum.photos/id/${25 + users.length}/40/40`
-      };
+      } as User;
       setUsers(prev => [...prev, newUser]);
     } else if (dialogMode === 'edit' && selectedUser) {
-      setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, ...dataToSave, permissions: dataToSave.permissions || u.permissions } : u));
+       const updatedUser = { ...selectedUser, ...dataToSave, permissions: dataToSave.permissions || selectedUser.permissions, role: dataToSave.role || selectedUser.role };
+       setUsers(prev => prev.map(u => u.id === selectedUser.id ? updatedUser : u));
     }
     setIsDialogOpen(false);
     setSelectedUser(null);
@@ -356,7 +360,11 @@ export default function UsersPage() {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>{user.role}</TableCell>
+                  <TableCell>
+                    <div className='flex flex-wrap gap-1'>
+                       {user.role.map(r => <Badge variant="secondary" key={r}>{r}</Badge>)}
+                    </div>
+                  </TableCell>
                   <TableCell>
                     <Badge variant={user.status === 'نشط' ? 'default' : 'secondary'}
                       className={user.status === 'نشط' ? 'bg-green-100 text-green-800' : ''}

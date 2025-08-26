@@ -23,7 +23,8 @@ import {
 import { useForm, SubmitHandler, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import type { User } from '@/app/(main)/users/page';
+import type { User, UserRole } from '@/app/(main)/users/page';
+import { USER_ROLES } from '@/app/(main)/users/page';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { Checkbox } from '../ui/checkbox';
 import { Account } from '../chart-of-accounts/account-tree';
@@ -52,7 +53,7 @@ const createUserSchema = (isEditMode: boolean) => z.object({
     password: z.string().min(8, "يجب أن تكون كلمة المرور 8 أحرف على الأقل.").optional().or(z.literal('')),
     confirmPassword: z.string().min(8, "يجب أن تكون كلمة المرور 8 أحرف على الأقل.").optional().or(z.literal('')),
     type: z.enum(['regular', 'employee'], { required_error: 'نوع المستخدم مطلوب' }),
-    role: z.enum(['مدير', 'محاسب', 'كاشير', 'مدخل بيانات'], { required_error: 'دور المستخدم مطلوب' }),
+    role: z.array(z.enum(USER_ROLES)).min(1, { message: "يجب تحديد دور واحد على الأقل" }),
     status: z.enum(['نشط', 'غير نشط'], { required_error: 'حالة المستخدم مطلوبة' }),
     permissions: permissionsSchema,
     employeeAccountId: z.string().optional(),
@@ -137,7 +138,8 @@ export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts }: Us
   const { register, handleSubmit, reset, control, watch, formState: { errors } } = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
     defaultValues: {
-        permissions: { pages: {}, accounts: [] }
+        permissions: { pages: {}, accounts: [] },
+        role: [],
     }
   });
 
@@ -182,7 +184,7 @@ export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts }: Us
             password: '',
             confirmPassword: '',
             type: 'regular',
-            role: 'كاشير', 
+            role: [], 
             status: 'نشط',
             permissions: { pages: {}, accounts: [] },
             employeeAccountId: undefined
@@ -277,15 +279,23 @@ export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts }: Us
                             name="role"
                             control={control}
                             render={({ field }) => (
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="مدير">مدير</SelectItem>
-                                        <SelectItem value="محاسب">محاسب</SelectItem>
-                                        <SelectItem value="كاشير">كاشير</SelectItem>
-                                        <SelectItem value="مدخل بيانات">مدخل بيانات</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                               <div className="flex flex-wrap gap-x-4 gap-y-2 rounded-md border p-2">
+                                  {USER_ROLES.map((role: UserRole) => (
+                                      <div key={role} className="flex items-center gap-2">
+                                          <Checkbox
+                                            id={`role-${role}`}
+                                            checked={field.value?.includes(role)}
+                                            onCheckedChange={(checked) => {
+                                                const newValue = checked
+                                                    ? [...(field.value || []), role]
+                                                    : (field.value || []).filter((value) => value !== role);
+                                                field.onChange(newValue);
+                                            }}
+                                          />
+                                          <Label htmlFor={`role-${role}`}>{role}</Label>
+                                      </div>
+                                  ))}
+                               </div>
                             )}
                         />
                     ), errors.role)}
