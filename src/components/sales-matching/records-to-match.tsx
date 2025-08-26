@@ -58,7 +58,7 @@ export function RecordsToMatch({ records, onSelectRecord, selectedRecord }: Reco
                 <TableCell>{record.date}</TableCell>
                 <TableCell>{record.period}</TableCell>
                 <TableCell>{record.cashier}</TableCell>
-                <TableCell>{record.total} ريال</TableCell>
+                <TableCell>{record.total.toFixed(2)} ريال</TableCell>
               </TableRow>
             ))}
           </TableBody>

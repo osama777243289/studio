@@ -13,34 +13,41 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { FileCheck, Coins, Receipt, Wallet, CreditCard, BookUser, MessageSquare, Ban, Save, Info } from 'lucide-react';
+import { FileCheck, Coins, Receipt, Wallet, CreditCard, BookUser, MessageSquare, Ban, Save, Info, MinusCircle, CheckCircle2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useEffect, useState } from 'react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
+
+export interface AccountDetail {
+    name: string;
+    amount: number;
+}
 
 export interface SalesRecord {
     date: string;
     period: 'الصباحية' | 'المسائية';
     cashier: string;
-    total: string;
+    total: number;
     status: string;
+    cash: AccountDetail;
+    cards: AccountDetail[];
+    credits: AccountDetail[];
 }
 
 interface MatchingFormProps {
     record: SalesRecord | null;
 }
 
-export function MatchingForm({ record }: MatchingFormProps) {
-  const [cashActual, setCashActual] = useState(0);
-  const [cardActual, setCardActual] = useState(0);
-  const [creditActual, setCreditActual] = useState(0);
+interface ActualAmounts {
+    [key: string]: number;
+}
 
-  const totalActual = cashActual + cardActual + creditActual;
+export function MatchingForm({ record }: MatchingFormProps) {
+  const [actuals, setActuals] = useState<ActualAmounts>({});
 
   useEffect(() => {
     // Reset values when record changes
-    setCashActual(0);
-    setCardActual(0);
-    setCreditActual(0);
+    setActuals({});
   }, [record]);
 
 
@@ -66,6 +73,45 @@ export function MatchingForm({ record }: MatchingFormProps) {
     )
   }
 
+  const handleActualChange = (key: string, value: number) => {
+    setActuals(prev => ({...prev, [key]: value}));
+  }
+
+  const registeredCash = record.cash?.amount || 0;
+  const registeredCards = record.cards.reduce((sum, acc) => sum + acc.amount, 0);
+  const registeredCredits = record.credits.reduce((sum, acc) => sum + acc.amount, 0);
+  const totalRegistered = registeredCash + registeredCards + registeredCredits;
+  
+  const actualCash = actuals['cash'] || 0;
+  const actualCards = record.cards.reduce((sum, acc, i) => sum + (actuals[`card-${i}`] || 0), 0);
+  const actualCredits = record.credits.reduce((sum, acc, i) => sum + (actuals[`credit-${i}`] || 0), 0);
+  const totalActual = actualCash + actualCards + actualCredits;
+
+  const totalDifference = totalActual - totalRegistered;
+  
+  const renderMatchingRow = (label: string, registeredAmount: number, actualKey: string) => {
+    const actualAmount = actuals[actualKey] || 0;
+    const difference = actualAmount - registeredAmount;
+    return (
+      <TableRow>
+        <TableCell className="font-medium">{label}</TableCell>
+        <TableCell>{registeredAmount.toFixed(2)}</TableCell>
+        <TableCell>
+           <Input 
+             type="number" 
+             placeholder="0.00" 
+             value={actualAmount}
+             onChange={e => handleActualChange(actualKey, parseFloat(e.target.value) || 0)}
+             className="w-32"
+            />
+        </TableCell>
+        <TableCell className={difference === 0 ? 'text-muted-foreground' : (difference > 0 ? 'text-green-600' : 'text-destructive')}>
+            {difference.toFixed(2)}
+        </TableCell>
+      </TableRow>
+    )
+  }
+
 
   return (
     <Card>
@@ -80,42 +126,35 @@ export function MatchingForm({ record }: MatchingFormProps) {
       </CardHeader>
       <CardContent className="space-y-6">
         
-        <Alert variant='destructive'>
-            <Coins className="h-4 w-4" />
-            <AlertTitle>الإجمالي المسجل: {parseFloat(record.total).toFixed(2)} ريال</AlertTitle>
-        </Alert>
-
-
         <div className="grid grid-cols-2 gap-4">
-             <div className="space-y-2">
-                <div className='flex items-center gap-2'>
-                    <Wallet className="h-5 w-5" />
-                    <Label htmlFor="cash-actual">النقد الفعلي</Label>
-                </div>
-                <Input id="cash-actual" placeholder="0.00" type="number" value={cashActual} onChange={e => setCashActual(parseFloat(e.target.value) || 0)} />
-            </div>
-             <div className="space-y-2">
-                <div className='flex items-center gap-2'>
-                    <CreditCard className="h-5 w-5" />
-                    <Label htmlFor="card-actual">الشبكة الفعلية</Label>
-                </div>
-                <Input id="card-actual" placeholder="0.00" type="number" value={cardActual} onChange={e => setCardActual(parseFloat(e.target.value) || 0)} />
-            </div>
-             <div className="space-y-2">
-                <div className='flex items-center gap-2'>
-                    <BookUser className="h-5 w-5" />
-                    <Label htmlFor="credit-actual">الأجل الفعلي</Label>
-                </div>
-                <Input id="credit-actual" placeholder="0.00" type="number" value={creditActual} onChange={e => setCreditActual(parseFloat(e.target.value) || 0)} />
-            </div>
-             <div className="space-y-2">
-                <div className='flex items-center gap-2'>
-                    <Receipt className="h-5 w-5 text-green-600" />
-                    <Label htmlFor="total-actual" className='text-green-600'>الإجمالي الفعلي</Label>
-                </div>
-                <Input id="total-actual" value={totalActual.toFixed(2)} type="number" readOnly className="border-green-600 focus-visible:ring-green-500 font-bold" />
-            </div>
+             <Alert variant={totalDifference === 0 ? 'default' : 'destructive'}>
+                <Coins className="h-4 w-4" />
+                <AlertTitle>الإجمالي المسجل: {totalRegistered.toFixed(2)} ريال</AlertTitle>
+            </Alert>
+            <Alert variant={totalDifference === 0 ? 'default' : (totalDifference > 0 ? 'default' : 'destructive')} className={`${totalDifference > 0 && 'border-green-500 text-green-700'}`}>
+                {totalDifference === 0 ? <CheckCircle2 className="h-4 w-4" /> : <Receipt className="h-4 w-4" />}
+                <AlertTitle>الإجمالي الفعلي: {totalActual.toFixed(2)} ريال</AlertTitle>
+                <AlertDescription>
+                    الفرق: {totalDifference.toFixed(2)} ريال
+                </AlertDescription>
+            </Alert>
         </div>
+        
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead>الحساب</TableHead>
+                    <TableHead>المسجل</TableHead>
+                    <TableHead>الفعلي</TableHead>
+                    <TableHead>الفرق</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {record.cash && renderMatchingRow(record.cash.name, record.cash.amount, 'cash')}
+                {record.cards.map((card, i) => renderMatchingRow(card.name, card.amount, `card-${i}`))}
+                {record.credits.map((credit, i) => renderMatchingRow(credit.name, credit.amount, `credit-${i}`))}
+            </TableBody>
+        </Table>
 
         <div className="space-y-2">
             <div className='flex items-center gap-2'>

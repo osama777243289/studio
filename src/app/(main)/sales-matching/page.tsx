@@ -10,15 +10,28 @@ const initialRecords: SalesRecord[] = [
     date: 'يونيو 10, 2025',
     period: 'الصباحية',
     cashier: 'يوسف خالد',
-    total: '3500.00',
+    total: 3500.00,
     status: 'بانتظار المطابقة',
+    cash: { name: 'صندوق المحل', amount: 1500 },
+    cards: [
+        { name: 'شبكة الراجحي', amount: 1000 },
+        { name: 'شبكة الأهلي', amount: 500 },
+    ],
+    credits: [
+        { name: 'العميل محمد', amount: 500 },
+    ]
   },
   {
     date: 'يونيو 9, 2025',
     period: 'المسائية',
     cashier: 'أحمد منصور',
-    total: '4200.00',
+    total: 4200.00,
     status: 'بانتظار المطابقة',
+    cash: { name: 'صندوق المحل', amount: 2200 },
+    cards: [
+        { name: 'شبكة الراجحي', amount: 2000 },
+    ],
+    credits: []
   },
 ];
 
