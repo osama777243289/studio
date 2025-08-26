@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -31,9 +31,12 @@ import { CheckIcon, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
 
-const accountSchema = z.object({
+
+const createAccountSchema = (parentCode?: string) => z.object({
     name: z.string().min(3, { message: "يجب أن يكون اسم الحساب 3 أحرف على الأقل." }),
-    code: z.string().min(4, { message: "يجب أن يكون رمز الحساب 4 أرقام على الأقل." }).regex(/^\d+$/, { message: "يجب أن يحتوي الرمز على أرقام فقط."}),
+    code: z.string().min(parentCode ? parentCode.length + 1 : 4, { message: parentCode ? `يجب أن يكون الرمز أطول من رمز الأب (${parentCode.length} أرقام).` : "يجب أن يكون رمز الحساب 4 أرقام على الأقل." })
+    .regex(/^\d+$/, { message: "يجب أن يحتوي الرمز على أرقام فقط."})
+    .refine(code => parentCode ? code.startsWith(parentCode) : true, { message: `يجب أن يبدأ الرمز برمز الأب (${parentCode})`}),
     type: z.enum(['مدين', 'دائن'], { required_error: 'نوع الحساب مطلوب' }),
     group: z.enum(['الأصول', 'الخصوم', 'حقوق الملكية', 'الإيرادات', 'المصروفات'], { required_error: 'مجموعة الحساب مطلوبة' }),
     status: z.enum(['نشط', 'غير نشط'], { required_error: 'حالة الحساب مطلوبة' }),
@@ -41,7 +44,8 @@ const accountSchema = z.object({
     classifications: z.array(z.string()).optional(),
 });
 
-export type AccountFormData = z.infer<typeof accountSchema>;
+
+export type AccountFormData = z.infer<ReturnType<typeof createAccountSchema>>;
 
 interface AccountDialogProps {
   isOpen: boolean;
@@ -59,6 +63,15 @@ const titles = {
 }
 
 export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount, mode }: AccountDialogProps) {
+
+  const accountSchema = useMemo(() => {
+    if (mode === 'addSub' && parentAccount) {
+      return createAccountSchema(parentAccount.code);
+    }
+    return createAccountSchema();
+  }, [mode, parentAccount]);
+
+
   const { register, handleSubmit, reset, control, formState: { errors }, watch } = useForm<AccountFormData>({
     resolver: zodResolver(accountSchema),
     defaultValues: {
@@ -70,7 +83,7 @@ export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount,
 
   useEffect(() => {
     if (isOpen) {
-      if (account && mode === 'edit') {
+      if (mode === 'edit' && account) {
         reset({ 
             name: account.name, 
             code: account.code, 
@@ -80,7 +93,18 @@ export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount,
             closingType: account.closingType,
             classifications: account.classifications || []
         });
-      } else {
+      } else if (mode === 'addSub' && parentAccount) {
+         reset({ 
+            name: '', 
+            code: parentAccount.code, 
+            type: parentAccount.type, 
+            group: parentAccount.group, 
+            status: 'نشط',
+            closingType: parentAccount.closingType,
+            classifications: parentAccount.classifications
+        });
+      }
+      else {
         reset({ 
             name: '', 
             code: '', 
@@ -92,7 +116,7 @@ export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount,
         });
       }
     }
-  }, [account, mode, reset, isOpen]);
+  }, [account, parentAccount, mode, reset, isOpen]);
 
   const onSubmit: SubmitHandler<AccountFormData> = (data) => {
     onSave(data);
@@ -120,7 +144,7 @@ export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount,
             </DialogHeader>
             <div className="grid gap-4 py-4">
                 {parentAccount && renderRow("حساب الأب", "parent", <Input id="parent" value={`${parentAccount.name} (${parentAccount.code})`} readOnly disabled />) }
-                {renderRow("الرمز", "code", <Input id="code" {...register("code")} className="w-full" />, errors.code)}
+                {renderRow("الرمز", "code", <Input id="code" {...register("code")} className="w-full ltr" />, errors.code)}
                 {renderRow("الاسم", "name", <Input id="name" {...register("name")} className="w-full" />, errors.name)}
                 
                 {renderRow("نوع الحساب", "type", (
