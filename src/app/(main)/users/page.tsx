@@ -30,6 +30,31 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { UserDialog, type UserFormData } from '@/components/users/user-dialog';
 import { DeleteUserDialog } from '@/components/users/delete-user-dialog';
+import { Account } from '@/components/chart-of-accounts/account-tree';
+
+
+export interface PagePermissions {
+    view?: boolean;
+    create?: boolean;
+    edit?: boolean;
+    delete?: boolean;
+    export?: boolean;
+    managePermissions?: boolean;
+}
+
+export interface UserPermissions {
+    pages?: {
+        dashboard?: PagePermissions;
+        income?: PagePermissions;
+        expenses?: PagePermissions;
+        sales?: PagePermissions;
+        chartOfAccounts?: PagePermissions;
+        cashFlow?: PagePermissions;
+        reports?: PagePermissions;
+        users?: PagePermissions;
+    };
+    accounts?: string[]; // Array of allowed account IDs
+}
 
 
 export interface User {
@@ -38,8 +63,63 @@ export interface User {
     email: string;
     role: "مدير" | "محاسب" | "كاشير" | "مدخل بيانات";
     status: "نشط" | "غير نشط";
+    permissions: UserPermissions;
 }
 
+const initialChartOfAccountsData: Account[] = [
+    {
+        id: '1',
+        code: '1',
+        name: 'الأصول',
+        type: 'مدين',
+        group: 'الأصول',
+        status: 'نشط',
+        closingType: 'الميزانية العمومية',
+        classifications: [],
+        children: [
+            {
+                id: '1-1',
+                code: '11',
+                name: 'الأصول المتداولة',
+                type: 'مدين',
+                group: 'الأصول',
+                status: 'نشط',
+                closingType: 'الميزانية العمومية',
+                classifications: [],
+                children: [
+                    {
+                        id: '1-1-1',
+                        code: '1101',
+                        name: 'النقدية وما في حكمها',
+                        type: 'مدين',
+                        group: 'الأصول',
+                        status: 'نشط',
+                        closingType: 'الميزانية العمومية',
+                        classifications: [],
+                        children: [
+                            { id: '1-1-1-1', code: '1101001', name: 'صندوق المحل', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: ['صندوق'] },
+                            { id: '1-1-1-2', code: '1101002', name: 'بنك الراجحي', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: ['بنك'] },
+                            { id: '1-1-1-3', code: '1101003', name: 'صندوق الخزنة', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: ['صندوق'] },
+                        ]
+                    },
+                    {
+                        id: '1-1-2',
+                        code: '1102',
+                        name: 'الذمم المدينة',
+                        type: 'مدين',
+                        group: 'الأصول',
+                        status: 'نشط',
+                        closingType: 'الميزانية العمومية',
+                        classifications: [],
+                        children: [
+                            { id: '1-1-2-1', code: '1102001', name: 'العميل محمد', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: ['عملاء'] },
+                        ]
+                    },
+                ],
+            },
+        ],
+    },
+];
 
 const initialUsers: User[] = [
   {
@@ -48,6 +128,19 @@ const initialUsers: User[] = [
     email: "youssef.k@example.com",
     role: "مدير",
     status: "نشط",
+    permissions: {
+        pages: {
+            dashboard: { view: true },
+            income: { view: true, create: true, edit: true, delete: true },
+            expenses: { view: true, create: true, edit: true, delete: true },
+            sales: { view: true, create: true, edit: true, delete: true },
+            chartOfAccounts: { view: true, create: true, edit: true, delete: true },
+            cashFlow: { view: true, create: true },
+            reports: { view: true, export: true },
+            users: { view: true, create: true, edit: true, delete: true, managePermissions: true },
+        },
+        accounts: ['*'] // All accounts
+    }
   },
   {
     id: "2",
@@ -55,6 +148,19 @@ const initialUsers: User[] = [
     email: "fatima.ali@example.com",
     role: "محاسب",
     status: "نشط",
+    permissions: {
+        pages: {
+            dashboard: { view: true },
+            income: { view: true, create: true, edit: true },
+            expenses: { view: true, create: true, edit: true },
+            sales: { view: true, create: true, edit: true },
+            chartOfAccounts: { view: true, create: true, edit: true },
+            cashFlow: { view: true },
+            reports: { view: true, export: true },
+            users: { view: true },
+        },
+        accounts: ['1', '2', '4', '5'] // Specific accounts
+    }
   },
   {
     id: "3",
@@ -62,6 +168,12 @@ const initialUsers: User[] = [
     email: "ahmed.m@example.com",
     role: "كاشير",
     status: "غير نشط",
+    permissions: {
+        pages: {
+            sales: { view: true, create: true },
+        },
+        accounts: ['1-1-1-1', '1-1-1-2']
+    }
   },
   {
     id: "4",
@@ -69,11 +181,19 @@ const initialUsers: User[] = [
     email: "sara.i@example.com",
     role: "مدخل بيانات",
     status: "نشط",
+    permissions: {
+        pages: {
+            income: { view: true, create: true },
+            expenses: { view: true, create: true },
+        },
+        accounts: []
+    }
   },
 ];
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>(initialUsers);
+  const [accounts] = useState<Account[]>(initialChartOfAccountsData);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -98,10 +218,10 @@ export default function UsersPage() {
 
   const confirmSave = (userData: UserFormData) => {
     if (dialogMode === 'add') {
-      const newUser: User = { ...userData, id: Date.now().toString() };
+      const newUser: User = { ...userData, id: Date.now().toString(), permissions: userData.permissions || {} };
       setUsers(prev => [...prev, newUser]);
     } else if (dialogMode === 'edit' && selectedUser) {
-      setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, ...userData } : u));
+      setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, ...userData, permissions: userData.permissions || u.permissions } : u));
     }
     setIsDialogOpen(false);
     setSelectedUser(null);
@@ -194,6 +314,7 @@ export default function UsersPage() {
         onSave={confirmSave}
         user={selectedUser}
         mode={dialogMode}
+        accounts={accounts}
       />
 
       <DeleteUserDialog
