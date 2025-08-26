@@ -7,7 +7,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import { Button } from "@/components/ui/button"
-import { ChevronsUpDown, Plus, Trash2, Pencil } from "lucide-react"
+import { ChevronsUpDown, Plus, Trash2, Pencil, FileText } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Badge } from "../ui/badge"
 
@@ -32,7 +32,7 @@ export interface Account {
 interface AccountTreeProps {
   accounts: Account[];
   level?: number;
-  onAddSubAccount: (parentId: string) => void;
+  onAddSubAccount: (parentId: string, level: number) => void;
   onEditAccount: (account: Account) => void;
   onDeleteAccount: (account: Account) => void;
 }
@@ -40,7 +40,7 @@ interface AccountTreeProps {
 interface AccountItemProps {
   account: Account;
   level: number;
-  onAddSubAccount: (parentId: string) => void;
+  onAddSubAccount: (parentId: string, level: number) => void;
   onEditAccount: (account: Account) => void;
   onDeleteAccount: (account: Account) => void;
 }
@@ -63,8 +63,9 @@ export function AccountTree({ accounts, level = 0, onAddSubAccount, onEditAccoun
 }
 
 function AccountItem({ account, level, onAddSubAccount, onEditAccount, onDeleteAccount }: AccountItemProps) {
-  const [isOpen, setIsOpen] = React.useState(level < 1);
+  const [isOpen, setIsOpen] = React.useState(level < 2);
   const hasChildren = account.children && account.children.length > 0;
+  const isTransactional = level === 3;
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -81,7 +82,10 @@ function AccountItem({ account, level, onAddSubAccount, onEditAccount, onDeleteA
                 )}
                 </div>
                 <span className="font-mono text-sm text-muted-foreground w-24">{account.code}</span>
-                <span className="flex-1 font-medium">{account.name}</span>
+                <span className="flex-1 font-medium flex items-center gap-2">
+                  {account.name}
+                  {isTransactional && <FileText className="h-4 w-4 text-blue-500" title="حساب تحليلي" />}
+                </span>
                 <div className="flex items-center gap-2">
                     <Badge variant="outline">{account.group}</Badge>
                     <Badge variant={account.status === 'نشط' ? 'default' : 'destructive'} className={account.status === 'نشط' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>{account.status}</Badge>
@@ -91,10 +95,12 @@ function AccountItem({ account, level, onAddSubAccount, onEditAccount, onDeleteA
                         <Pencil className="h-4 w-4 text-blue-500"/>
                         <span className="sr-only">Edit</span>
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onAddSubAccount(account.id)}>
-                        <Plus className="h-4 w-4 text-green-500"/>
-                        <span className="sr-only">Add Sub-account</span>
-                    </Button>
+                     {!isTransactional && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onAddSubAccount(account.id, level + 1)}>
+                            <Plus className="h-4 w-4 text-green-500"/>
+                            <span className="sr-only">Add Sub-account</span>
+                        </Button>
+                    )}
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDeleteAccount(account)}>
                         <Trash2 className="h-4 w-4 text-red-500"/>
                         <span className="sr-only">Delete</span>
