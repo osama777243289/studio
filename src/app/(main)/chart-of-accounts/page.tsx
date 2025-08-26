@@ -10,11 +10,11 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, FileDown, Loader2 } from 'lucide-react';
+import { PlusCircle, FileDown, Loader2, RefreshCw } from 'lucide-react';
 import { AccountTree, type Account } from '@/components/chart-of-accounts/account-tree';
 import { AccountDialog, AccountFormData } from '@/components/chart-of-accounts/account-dialog';
 import { DeleteAccountDialog } from '@/components/chart-of-accounts/delete-account-dialog';
-import { addAccount, deleteAccount, getAccounts, updateAccount } from '@/lib/firebase/firestore/accounts';
+import { addAccount, deleteAccount, getAccounts, updateAccount, seedInitialData } from '@/lib/firebase/firestore/accounts';
 
 
 // Helper function to find an account in the tree
@@ -51,13 +51,19 @@ export default function ChartOfAccountsPage() {
     const [parentAccount, setParentAccount] = useState<Account | null>(null);
     const [dialogMode, setDialogMode] = useState<'add' | 'edit' | 'addSub'>('add');
     
+    const fetchAccounts = async () => {
+        setLoading(true);
+        let fetchedAccounts = await getAccounts();
+        // If no accounts, seed the data
+        if (fetchedAccounts.length === 0) {
+            await seedInitialData();
+            fetchedAccounts = await getAccounts();
+        }
+        setAccounts(fetchedAccounts);
+        setLoading(false);
+    };
+
     useEffect(() => {
-        const fetchAccounts = async () => {
-            setLoading(true);
-            const fetchedAccounts = await getAccounts();
-            setAccounts(fetchedAccounts);
-            setLoading(false);
-        };
         fetchAccounts();
     }, []);
 
@@ -135,9 +141,9 @@ export default function ChartOfAccountsPage() {
                   <CardDescription>تصفح وقم بإدارة شجرة الحسابات المحاسبية الخاصة بك من Firestore.</CardDescription>
               </div>
               <div className='flex gap-2'>
-                  <Button variant="outline">
-                      <FileDown className="ml-2 h-4 w-4" />
-                      تصدير
+                  <Button variant="outline" onClick={refreshAccounts} disabled={loading}>
+                      <RefreshCw className="ml-2 h-4 w-4" />
+                      تحديث
                   </Button>
                   <Button onClick={() => handleAddAccount()}>
                       <PlusCircle className="ml-2 h-4 w-4" />
