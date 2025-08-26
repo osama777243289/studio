@@ -1,6 +1,7 @@
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -13,51 +14,36 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { History } from 'lucide-react';
+import { ListChecks } from 'lucide-react';
 
-const salesRecords = [
+const recordsToMatch = [
   {
     date: 'يونيو 10, 2025',
     period: 'الصباحية',
-    total: '1000.00 ريال',
-    status: 'بانتظار الرفع',
+    cashier: 'يوسف خالد',
+    total: '3500.00 ريال',
+    status: 'بانتظار المطابقة',
   },
   {
     date: 'يونيو 9, 2025',
     period: 'المسائية',
-    total: '6000.00 ريال',
-    status: 'تمت مطابقته',
-  },
-    {
-    date: 'يونيو 9, 2025',
-    period: 'الصباحية',
-    total: '3500.00 ريال',
+    cashier: 'أحمد منصور',
+    total: '4200.00 ريال',
     status: 'بانتظار المطابقة',
   },
 ];
 
-const getStatusVariant = (status: string) => {
-    switch (status) {
-        case 'بانتظار الرفع':
-            return 'secondary'
-        case 'بانتظار المطابقة':
-            return 'destructive'
-        case 'تمت مطابقته':
-            return 'default'
-        default:
-            return 'outline'
-    }
-}
-
-
-export function SalesRecords() {
+export function RecordsToMatch() {
   return (
     <Card>
       <CardHeader>
-         <div className="flex items-center gap-2">
-            <History className="h-5 w-5" />
-            <CardTitle>سجلات المبيعات</CardTitle>
+        <div className="flex items-center gap-2">
+          <ListChecks className="h-6 w-6" />
+          <CardTitle>السجلات بانتظار المطابقة</CardTitle>
         </div>
+        <CardDescription>
+          اختر سجلاً من القائمة أدناه لبدء عملية المطابقة.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
@@ -65,21 +51,17 @@ export function SalesRecords() {
             <TableRow>
               <TableHead>التاريخ</TableHead>
               <TableHead>الفترة</TableHead>
+              <TableHead>الكاشير</TableHead>
               <TableHead>الإجمالي</TableHead>
-              <TableHead>الحالة</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {salesRecords.map((record, index) => (
+            {recordsToMatch.map((record, index) => (
               <TableRow key={index} className="cursor-pointer hover:bg-muted/50">
                 <TableCell>{record.date}</TableCell>
                 <TableCell>{record.period}</TableCell>
+                <TableCell>{record.cashier}</TableCell>
                 <TableCell>{record.total}</TableCell>
-                <TableCell>
-                  <Badge variant={getStatusVariant(record.status)}>
-                    {record.status}
-                  </Badge>
-                </TableCell>
               </TableRow>
             ))}
           </TableBody>

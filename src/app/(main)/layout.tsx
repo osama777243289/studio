@@ -22,6 +22,7 @@ const navLinks: NavLink[] = [
   { title: 'الدخل', href: '/income', icon: 'ArrowUpCircle' },
   { title: 'المصروفات', href: '/expenses', icon: 'ArrowDownCircle' },
   { title: 'المبيعات اليومية', href: '/sales', icon: 'ShoppingCart' },
+  { title: 'مطابقة المبيعات', href: '/sales-matching', icon: 'CheckSquare' },
   { title: 'دليل الحسابات', href: '/chart-of-accounts', icon: 'Network' },
   { title: 'التدفق النقدي', href: '/cash-flow', icon: 'TrendingUp' },
   { title: 'التقارير', href: '/reports', icon: 'FileText' },

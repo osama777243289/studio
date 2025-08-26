@@ -1,5 +1,4 @@
 import { SalesForm } from '@/components/sales/sales-form';
-import { SalesData } from '@/components/sales/sales-data';
 import { SalesRecords } from '@/components/sales/sales-records';
 
 export default function SalesPage() {
@@ -9,7 +8,6 @@ export default function SalesPage() {
         <SalesForm />
       </div>
       <div className="space-y-8">
-        <SalesData />
         <SalesRecords />
       </div>
     </div>
