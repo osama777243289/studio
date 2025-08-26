@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -40,13 +41,41 @@ import {
   Pencil,
 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import type { Account } from '../chart-of-accounts/account-tree';
 
-export function SalesForm() {
-  const [cardAccounts, setCardAccounts] = useState([{ id: 1, name: '', amount: '' }]);
-  const [creditAccounts, setCreditAccounts] = useState([{ id: 1, name: '', amount: '' }]);
+
+interface SalesFormProps {
+    accounts: Account[];
+}
+
+// Helper to flatten the account tree and filter by classification
+const getAccountsByClassification = (accounts: Account[], classifications: string[]): Account[] => {
+    const flattened: Account[] = [];
+    const traverse = (accs: Account[]) => {
+        for (const acc of accs) {
+            if (acc.classifications.some(c => classifications.includes(c))) {
+                flattened.push(acc);
+            }
+            if (acc.children) {
+                traverse(acc.children);
+            }
+        }
+    };
+    traverse(accounts);
+    return flattened;
+};
+
+
+export function SalesForm({ accounts }: SalesFormProps) {
+  const [cardAccounts, setCardAccounts] = useState([{ id: 1, accountId: '', amount: '' }]);
+  const [creditAccounts, setCreditAccounts] = useState([{ id: 1, accountId: '', amount: '' }]);
+  
+  const cashAccounts = useMemo(() => getAccountsByClassification(accounts, ['صندوق', 'بنك']), [accounts]);
+  const networkAccounts = useMemo(() => getAccountsByClassification(accounts, ['شبكات']), [accounts]);
+  const customerAccounts = useMemo(() => getAccountsByClassification(accounts, ['عملاء']), [accounts]);
 
   const addCardAccount = () => {
-    setCardAccounts([...cardAccounts, { id: Date.now(), name: '', amount: '' }]);
+    setCardAccounts([...cardAccounts, { id: Date.now(), accountId: '', amount: '' }]);
   };
 
   const removeCardAccount = (id: number) => {
@@ -54,7 +83,7 @@ export function SalesForm() {
   };
   
   const addCreditAccount = () => {
-    setCreditAccounts([...creditAccounts, { id: Date.now(), name: '', amount: '' }]);
+    setCreditAccounts([...creditAccounts, { id: Date.now(), accountId: '', amount: '' }]);
   };
 
   const removeCreditAccount = (id: number) => {
@@ -135,20 +164,19 @@ export function SalesForm() {
             </CardHeader>
             <CardContent className="p-2 space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="cash-amount">المبلغ</Label>
-                <Input id="cash-amount" placeholder="0" type="number" />
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="cash-account">الحساب</Label>
                 <Select>
                   <SelectTrigger id="cash-account">
-                    <SelectValue placeholder="الخزنة الرئيسية" />
+                    <SelectValue placeholder="اختر حساب النقدية" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="main-safe">الخزنة الرئيسية</SelectItem>
-                    <SelectItem value="secondary-safe">الخزنة الفرعية</SelectItem>
+                    {cashAccounts.map(acc => <SelectItem key={acc.id} value={acc.id}>{acc.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cash-amount">المبلغ</Label>
+                <Input id="cash-amount" placeholder="0.00" type="number" />
               </div>
             </CardContent>
           </Card>
@@ -165,17 +193,26 @@ export function SalesForm() {
                 <div key={account.id} className="p-3 border rounded-md space-y-3">
                   <div className="flex justify-between items-center">
                     <Label>بطاقة {index + 1}</Label>
-                    <Button variant="ghost" size="icon" onClick={() => removeCardAccount(account.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    {cardAccounts.length > 1 &&
+                      <Button variant="ghost" size="icon" onClick={() => removeCardAccount(account.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    }
+                  </div>
+                   <div className="space-y-2">
+                    <Label htmlFor={`card-name-${account.id}`}>حساب البطاقة</Label>
+                     <Select>
+                        <SelectTrigger id={`card-name-${account.id}`}>
+                            <SelectValue placeholder="اختر حساب الشبكة" />
+                        </SelectTrigger>
+                        <SelectContent>
+                           {networkAccounts.map(acc => <SelectItem key={acc.id} value={acc.id}>{acc.name}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor={`card-name-${account.id}`}>اسم حساب البطاقة {index + 1}</Label>
-                    <Input id={`card-name-${account.id}`} placeholder="شبكة زهرة جنائن" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`card-amount-${account.id}`}>مبلغ حساب البطاقة {index + 1}</Label>
-                    <Input id={`card-amount-${account.id}`} placeholder="0" type="number" />
+                    <Label htmlFor={`card-amount-${account.id}`}>المبلغ</Label>
+                    <Input id={`card-amount-${account.id}`} placeholder="0.00" type="number" />
                   </div>
                 </div>
               ))}
@@ -198,17 +235,26 @@ export function SalesForm() {
                 <div key={account.id} className="p-3 border rounded-md space-y-3">
                   <div className="flex justify-between items-center">
                     <Label>أجل {index + 1}</Label>
-                    <Button variant="ghost" size="icon" onClick={() => removeCreditAccount(account.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                     {creditAccounts.length > 1 &&
+                        <Button variant="ghost" size="icon" onClick={() => removeCreditAccount(account.id)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                     }
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor={`credit-name-${account.id}`}>اسم حساب الاجل {index + 1}</Label>
-                    <Input id={`credit-name-${account.id}`} placeholder="التوصيل اسامة" />
+                    <Label htmlFor={`credit-name-${account.id}`}>حساب العميل</Label>
+                    <Select>
+                        <SelectTrigger id={`credit-name-${account.id}`}>
+                            <SelectValue placeholder="اختر حساب العميل" />
+                        </SelectTrigger>
+                        <SelectContent>
+                           {customerAccounts.map(acc => <SelectItem key={acc.id} value={acc.id}>{acc.name}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor={`credit-amount-${account.id}`}>مبلغ حساب الاجل {index + 1}</Label>
-                    <Input id={`credit-amount-${account.id}`} placeholder="0" type="number" />
+                    <Label htmlFor={`credit-amount-${account.id}`}>المبلغ</Label>
+                    <Input id={`credit-amount-${account.id}`} placeholder="0.00" type="number" />
                   </div>
                 </div>
               ))}
