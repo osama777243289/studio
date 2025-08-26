@@ -21,6 +21,7 @@ const navLinks: NavLink[] = [
   { title: 'لوحة التحكم', href: '/dashboard', icon: 'LayoutDashboard' },
   { title: 'الدخل', href: '/income', icon: 'ArrowUpCircle' },
   { title: 'المصروفات', href: '/expenses', icon: 'ArrowDownCircle' },
+  { title: 'مبيعات اليومية', href: '/sales', icon: 'ShoppingCart' },
   { title: 'التدفق النقدي', href: '/cash-flow', icon: 'TrendingUp' },
   { title: 'التقارير', href: '/reports', icon: 'FileText' },
 ];
