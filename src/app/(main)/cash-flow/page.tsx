@@ -27,7 +27,7 @@ const initialState: FormState = {
   message: '',
 };
 
-const sampleData = `Date,Income,Expenses
+const sampleData = `التاريخ,الدخل,المصروفات
 2023-01-01,5000,3000
 2023-02-01,6000,4000
 2023-03-01,5500,3500
@@ -42,13 +42,13 @@ function SubmitButton() {
     <Button type="submit" className="w-full" disabled={pending}>
       {pending ? (
         <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Predicting...
+          <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+          جاري التوقع...
         </>
       ) : (
         <>
-         <Sparkles className="mr-2 h-4 w-4" />
-          Predict Cash Flow
+         <Sparkles className="ml-2 h-4 w-4" />
+          توقع التدفق النقدي
         </>
       )}
     </Button>
@@ -62,19 +62,19 @@ export default function CashFlowPage() {
     <div className="grid gap-8 md:grid-cols-2">
       <Card>
         <CardHeader>
-          <CardTitle className="font-headline">Cash Flow Prediction</CardTitle>
+          <CardTitle className="font-headline">توقع التدفق النقدي</CardTitle>
           <CardDescription>
-            Use AI to predict future cash flow based on historical data.
+            استخدم الذكاء الاصطناعي لتوقع التدفقات النقدية المستقبلية بناءً على البيانات التاريخية.
           </CardDescription>
         </CardHeader>
         <form action={formAction}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="historicalData">Historical Data</Label>
+              <Label htmlFor="historicalData">البيانات التاريخية</Label>
               <Textarea
                 id="historicalData"
                 name="historicalData"
-                placeholder="Enter historical data (e.g., Date,Income,Expenses...)"
+                placeholder="أدخل البيانات التاريخية (مثال: التاريخ,الدخل,المصروفات...)"
                 rows={10}
                 defaultValue={sampleData}
               />
@@ -83,16 +83,16 @@ export default function CashFlowPage() {
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="predictionHorizon">Prediction Horizon</Label>
+              <Label htmlFor="predictionHorizon">أفق التوقع</Label>
               <Select name="predictionHorizon" defaultValue="3 months">
                 <SelectTrigger id="predictionHorizon">
-                  <SelectValue placeholder="Select horizon" />
+                  <SelectValue placeholder="اختر الأفق" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1 month">1 Month</SelectItem>
-                  <SelectItem value="3 months">3 Months</SelectItem>
-                  <SelectItem value="6 months">6 Months</SelectItem>
-                  <SelectItem value="1 year">1 Year</SelectItem>
+                  <SelectItem value="1 month">شهر واحد</SelectItem>
+                  <SelectItem value="3 months">3 أشهر</SelectItem>
+                  <SelectItem value="6 months">6 أشهر</SelectItem>
+                  <SelectItem value="1 year">سنة واحدة</SelectItem>
                 </SelectContent>
               </Select>
                {state.errors?.predictionHorizon && (
@@ -110,32 +110,32 @@ export default function CashFlowPage() {
          <Card className="flex-1 flex flex-col">
             <CardHeader className="flex flex-row items-center gap-2">
                 <Bot className="h-6 w-6 text-primary"/>
-                <CardTitle className="font-headline">AI Analysis</CardTitle>
+                <CardTitle className="font-headline">تحليل الذكاء الاصطناعي</CardTitle>
             </CardHeader>
             <CardContent className="flex-1 flex items-center justify-center">
                 {state.message === 'success' && state.data ? (
                     <div className="space-y-4 text-sm w-full">
                         <Alert>
-                           <AlertTitle className="font-semibold">Predicted Cash Flow</AlertTitle>
+                           <AlertTitle className="font-semibold">التدفق النقدي المتوقع</AlertTitle>
                            <AlertDescription>{state.data.predictedCashFlow}</AlertDescription>
                         </Alert>
                          <Alert>
-                           <AlertTitle className="font-semibold">Confidence Level</AlertTitle>
+                           <AlertTitle className="font-semibold">مستوى الثقة</AlertTitle>
                            <AlertDescription>{state.data.confidenceLevel}</AlertDescription>
                         </Alert>
                          <Alert>
-                           <AlertTitle className="font-semibold">Rationale</AlertTitle>
+                           <AlertTitle className="font-semibold">الأساس المنطقي</AlertTitle>
                            <AlertDescription>{state.data.rationale}</AlertDescription>
                         </Alert>
                     </div>
                 ) : state.message && state.message !== 'success' ? (
                      <Alert variant="destructive">
                         <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Error</AlertTitle>
+                        <AlertTitle>خطأ</AlertTitle>
                         <AlertDescription>{state.message}</AlertDescription>
                     </Alert>
                 ) : (
-                    <p className="text-muted-foreground">Prediction results will appear here.</p>
+                    <p className="text-muted-foreground">ستظهر نتائج التوقع هنا.</p>
                 )}
             </CardContent>
          </Card>

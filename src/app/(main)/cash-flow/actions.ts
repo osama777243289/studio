@@ -4,8 +4,8 @@ import { predictCashFlow as predictCashFlowAI, type PredictCashFlowInput, type P
 import { z } from 'zod';
 
 const formSchema = z.object({
-  historicalData: z.string().min(20, { message: 'Please provide more detailed historical data.' }),
-  predictionHorizon: z.string().min(1, { message: 'Prediction horizon is required.' }),
+  historicalData: z.string().min(20, { message: 'يرجى تقديم بيانات تاريخية أكثر تفصيلاً.' }),
+  predictionHorizon: z.string().min(1, { message: 'أفق التوقع مطلوب.' }),
 });
 
 export type FormState = {
@@ -28,7 +28,7 @@ export async function getCashFlowPrediction(
 
   if (!validatedFields.success) {
     return {
-      message: 'Invalid form data.',
+      message: 'بيانات النموذج غير صالحة.',
       errors: validatedFields.error.flatten().fieldErrors,
     };
   }
@@ -38,6 +38,6 @@ export async function getCashFlowPrediction(
     return { message: 'success', data: result };
   } catch (error) {
     console.error(error);
-    return { message: 'Prediction failed. Please try again later.' };
+    return { message: 'فشل التوقع. يرجى المحاولة مرة أخرى لاحقاً.' };
   }
 }

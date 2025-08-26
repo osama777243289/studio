@@ -4,11 +4,11 @@ import { TransactionForm } from '@/components/transaction-form';
 import { Card, CardContent } from '@/components/ui/card';
 
 const incomeCategories = [
-  { value: 'salary', label: 'Salary' },
-  { value: 'sales', label: 'Sales' },
-  { value: 'freelance', label: 'Freelance' },
-  { value: 'investment', label: 'Investment' },
-  { value: 'other', label: 'Other' },
+  { value: 'salary', label: 'راتب' },
+  { value: 'sales', label: 'مبيعات' },
+  { value: 'freelance', label: 'عمل حر' },
+  { value: 'investment', label: 'استثمار' },
+  { value: 'other', label: 'أخرى' },
 ];
 
 export default function IncomePage() {
@@ -17,8 +17,8 @@ export default function IncomePage() {
       <Card className="w-full max-w-lg">
         <CardContent className="pt-6">
           <TransactionForm
-            formTitle="Record New Income"
-            formButtonText="Add Income"
+            formTitle="تسجيل دخل جديد"
+            formButtonText="إضافة دخل"
             categories={incomeCategories}
             transactionType="Income"
           />

@@ -35,8 +35,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
-  amount: z.coerce.number().positive('Amount must be positive'),
-  category: z.string().min(1, 'Category is required'),
+  amount: z.coerce.number().positive('يجب أن يكون المبلغ إيجابيًا'),
+  category: z.string().min(1, 'الفئة مطلوبة'),
   date: z.date(),
   description: z.string().optional(),
 });
@@ -67,8 +67,8 @@ export function TransactionForm({
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     toast({
-      title: `${transactionType} Recorded`,
-      description: `Successfully recorded ${transactionType.toLowerCase()} of $${values.amount}.`,
+      title: `تم تسجيل ${transactionType === 'Income' ? 'الدخل' : 'المصروف'}`,
+      description: `تم تسجيل ${transactionType === 'Income' ? 'دخل' : 'مصروف'} بقيمة ${values.amount} بنجاح.`,
     });
     console.log(values);
     form.reset();
@@ -83,7 +83,7 @@ export function TransactionForm({
           name="amount"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Amount</FormLabel>
+              <FormLabel>المبلغ</FormLabel>
               <FormControl>
                 <Input type="number" placeholder="0.00" {...field} />
               </FormControl>
@@ -96,11 +96,11 @@ export function TransactionForm({
           name="category"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Category</FormLabel>
+              <FormLabel>الفئة</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a category" />
+                    <SelectValue placeholder="اختر فئة" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -120,7 +120,7 @@ export function TransactionForm({
           name="date"
           render={({ field }) => (
             <FormItem className="flex flex-col">
-              <FormLabel>Date</FormLabel>
+              <FormLabel>التاريخ</FormLabel>
               <Popover>
                 <PopoverTrigger asChild>
                   <FormControl>
@@ -134,9 +134,9 @@ export function TransactionForm({
                       {field.value ? (
                         format(field.value, 'PPP')
                       ) : (
-                        <span>Pick a date</span>
+                        <span>اختر تاريخًا</span>
                       )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      <CalendarIcon className="mr-auto h-4 w-4 opacity-50" />
                     </Button>
                   </FormControl>
                 </PopoverTrigger>
@@ -161,9 +161,9 @@ export function TransactionForm({
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Description (Optional)</FormLabel>
+              <FormLabel>الوصف (اختياري)</FormLabel>
               <FormControl>
-                <Textarea placeholder="Add a short note..." {...field} />
+                <Textarea placeholder="أضف ملاحظة قصيرة..." {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

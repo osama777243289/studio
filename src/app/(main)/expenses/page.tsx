@@ -4,12 +4,12 @@ import { TransactionForm } from '@/components/transaction-form';
 import { Card, CardContent } from '@/components/ui/card';
 
 const expenseCategories = [
-  { value: 'rent', label: 'Rent' },
-  { value: 'utilities', label: 'Utilities' },
-  { value: 'groceries', label: 'Groceries' },
-  { value: 'transportation', label: 'Transportation' },
-  { value: 'supplies', label: 'Supplies' },
-  { value: 'other', label: 'Other' },
+  { value: 'rent', label: 'إيجار' },
+  { value: 'utilities', label: 'خدمات' },
+  { value: 'groceries', label: 'بقالة' },
+  { value: 'transportation', label: 'مواصلات' },
+  { value: 'supplies', label: 'لوازم' },
+  { value: 'other', label: 'أخرى' },
 ];
 
 export default function ExpensesPage() {
@@ -18,8 +18,8 @@ export default function ExpensesPage() {
       <Card className="w-full max-w-lg">
         <CardContent className="pt-6">
           <TransactionForm
-            formTitle="Record New Expense"
-            formButtonText="Add Expense"
+            formTitle="تسجيل مصروف جديد"
+            formButtonText="إضافة مصروف"
             categories={expenseCategories}
             transactionType="Expense"
           />

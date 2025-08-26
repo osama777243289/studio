@@ -23,76 +23,76 @@ export default function ReportsPage() {
     <div className="flex flex-col gap-6">
        <div className="flex items-center justify-between">
             <div>
-                <h1 className="text-3xl font-bold font-headline">Financial Reports</h1>
-                <p className="text-muted-foreground">View and export your financial statements.</p>
+                <h1 className="text-3xl font-bold font-headline">التقارير المالية</h1>
+                <p className="text-muted-foreground">عرض وتصدير بياناتك المالية.</p>
             </div>
             <Button>
-                <Download className="mr-2 h-4 w-4" />
-                Export All
+                <Download className="ml-2 h-4 w-4" />
+                تصدير الكل
             </Button>
         </div>
 
       <Tabs defaultValue="p-l" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="p-l">Profit & Loss</TabsTrigger>
-          <TabsTrigger value="balance-sheet">Balance Sheet</TabsTrigger>
+          <TabsTrigger value="p-l">الأرباح والخسائر</TabsTrigger>
+          <TabsTrigger value="balance-sheet">الميزانية العمومية</TabsTrigger>
         </TabsList>
         <TabsContent value="p-l">
           <Card>
             <CardHeader>
-              <CardTitle className="font-headline">Profit & Loss Statement</CardTitle>
-              <CardDescription>For the period ending June 30, 2024</CardDescription>
+              <CardTitle className="font-headline">بيان الأرباح والخسائر</CardTitle>
+              <CardDescription>للفترة المنتهية في 30 يونيو 2024</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>الوصف</TableHead>
+                    <TableHead className="text-left">المبلغ</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   <TableRow className="font-medium">
-                    <TableCell>Revenue</TableCell>
+                    <TableCell>الإيرادات</TableCell>
                     <TableCell></TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="pl-8">Sales</TableCell>
-                    <TableCell className="text-right">$120,000.00</TableCell>
+                    <TableCell className="pr-8">المبيعات</TableCell>
+                    <TableCell className="text-left">$120,000.00</TableCell>
                   </TableRow>
                    <TableRow>
-                    <TableCell className="pl-8">Services</TableCell>
-                    <TableCell className="text-right">$35,000.00</TableCell>
+                    <TableCell className="pr-8">الخدمات</TableCell>
+                    <TableCell className="text-left">$35,000.00</TableCell>
                   </TableRow>
                   <TableRow className="font-medium">
-                    <TableCell>Total Revenue</TableCell>
-                    <TableCell className="text-right">$155,000.00</TableCell>
+                    <TableCell>إجمالي الإيرادات</TableCell>
+                    <TableCell className="text-left">$155,000.00</TableCell>
                   </TableRow>
                   <TableRow className="font-medium">
-                    <TableCell>Expenses</TableCell>
+                    <TableCell>المصروفات</TableCell>
                     <TableCell></TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="pl-8">Salaries & Wages</TableCell>
-                    <TableCell className="text-right">$60,000.00</TableCell>
+                    <TableCell className="pr-8">الرواتب والأجور</TableCell>
+                    <TableCell className="text-left">$60,000.00</TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="pl-8">Rent</TableCell>
-                    <TableCell className="text-right">$12,000.00</TableCell>
+                    <TableCell className="pr-8">الإيجار</TableCell>
+                    <TableCell className="text-left">$12,000.00</TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="pl-8">Marketing</TableCell>
-                    <TableCell className="text-right">$8,500.00</TableCell>
+                    <TableCell className="pr-8">التسويق</TableCell>
+                    <TableCell className="text-left">$8,500.00</TableCell>
                   </TableRow>
                    <TableRow>
-                    <TableCell className="pl-8">Utilities</TableCell>
-                    <TableCell className="text-right">$4,200.00</TableCell>
+                    <TableCell className="pr-8">الخدمات</TableCell>
+                    <TableCell className="text-left">$4,200.00</TableCell>
                   </TableRow>
                 </TableBody>
                 <TableFooter>
                   <TableRow className="text-lg font-bold bg-muted/50">
-                    <TableCell>Net Profit</TableCell>
-                    <TableCell className="text-right text-green-600">$70,300.00</TableCell>
+                    <TableCell>صافي الربح</TableCell>
+                    <TableCell className="text-left text-green-600">$70,300.00</TableCell>
                   </TableRow>
                 </TableFooter>
               </Table>
@@ -102,54 +102,54 @@ export default function ReportsPage() {
         <TabsContent value="balance-sheet">
           <Card>
             <CardHeader>
-              <CardTitle className="font-headline">Balance Sheet</CardTitle>
-              <CardDescription>As of June 30, 2024</CardDescription>
+              <CardTitle className="font-headline">الميزانية العمومية</CardTitle>
+              <CardDescription>كما في 30 يونيو 2024</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>الوصف</TableHead>
+                    <TableHead className="text-left">المبلغ</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   <TableRow className="font-medium text-base">
-                    <TableCell>Assets</TableCell>
+                    <TableCell>الأصول</TableCell>
                     <TableCell></TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="pl-8">Cash</TableCell>
-                    <TableCell className="text-right">$80,500.00</TableCell>
+                    <TableCell className="pr-8">النقد</TableCell>
+                    <TableCell className="text-left">$80,500.00</TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="pl-8">Accounts Receivable</TableCell>
-                    <TableCell className="text-right">$15,200.00</TableCell>
+                    <TableCell className="pr-8">الذمم المدينة</TableCell>
+                    <TableCell className="text-left">$15,200.00</TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="pl-8">Inventory</TableCell>
-                    <TableCell className="text-right">$25,000.00</TableCell>
+                    <TableCell className="pr-8">المخزون</TableCell>
+                    <TableCell className="text-left">$25,000.00</TableCell>
                   </TableRow>
                   <TableRow className="font-medium bg-muted/20">
-                    <TableCell>Total Assets</TableCell>
-                    <TableCell className="text-right">$120,700.00</TableCell>
+                    <TableCell>إجمالي الأصول</TableCell>
+                    <TableCell className="text-left">$120,700.00</TableCell>
                   </TableRow>
 
                    <TableRow className="font-medium text-base">
-                    <TableCell>Liabilities & Equity</TableCell>
+                    <TableCell>الخصوم وحقوق الملكية</TableCell>
                     <TableCell></TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell className="pl-8">Accounts Payable</TableCell>
-                    <TableCell className="text-right">$10,400.00</TableCell>
+                    <TableCell className="pr-8">الذمم الدائنة</TableCell>
+                    <TableCell className="text-left">$10,400.00</TableCell>
                   </TableRow>
                    <TableRow>
-                    <TableCell className="pl-8">Owner's Equity</TableCell>
-                    <TableCell className="text-right">$110,300.00</TableCell>
+                    <TableCell className="pr-8">حقوق الملكية</TableCell>
+                    <TableCell className="text-left">$110,300.00</TableCell>
                   </TableRow>
                   <TableRow className="font-medium bg-muted/20">
-                    <TableCell>Total Liabilities & Equity</TableCell>
-                    <TableCell className="text-right">$120,700.00</TableCell>
+                    <TableCell>إجمالي الخصوم وحقوق الملكية</TableCell>
+                    <TableCell className="text-left">$120,700.00</TableCell>
                   </TableRow>
                 </TableBody>
               </Table>

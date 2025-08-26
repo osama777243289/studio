@@ -57,6 +57,8 @@ Prediction Horizon: {{predictionHorizon}}
 Consider trends, seasonality, and any other relevant factors to provide an accurate prediction.
 
 Respond in a professional and informative tone, explaining the rationale behind your prediction and the confidence level.
+
+VERY IMPORTANT: Your entire response must be in Arabic.
 `,
 });
 
