@@ -21,7 +21,7 @@ export default function CashierSalesReportPage() {
                 </Button>
             </div>
             {/* The ref is no longer needed but we can keep the div for structure */}
-            <div>
+            <div className="printable-area">
                 <CashierReport />
             </div>
         </div>
