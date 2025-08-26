@@ -1,3 +1,5 @@
+'use client';
+
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -17,8 +19,76 @@ import {
 } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Download } from "lucide-react"
+import Papa from 'papaparse';
+
+const profitAndLossData = {
+  title: 'بيان الأرباح والخسائر',
+  period: 'للفترة المنتهية في 30 يونيو 2024',
+  rows: [
+    { description: 'الإيرادات', amount: null, isHeader: true },
+    { description: 'المبيعات', amount: 120000.00, isHeader: false, indent: true },
+    { description: 'الخدمات', amount: 35000.00, isHeader: false, indent: true },
+    { description: 'إجمالي الإيرادات', amount: 155000.00, isHeader: true },
+    { description: 'المصروفات', amount: null, isHeader: true },
+    { description: 'الرواتب والأجور', amount: 60000.00, isHeader: false, indent: true },
+    { description: 'الإيجار', amount: 12000.00, isHeader: false, indent: true },
+    { description: 'التسويق', amount: 8500.00, isHeader: false, indent: true },
+    { description: 'الخدمات', amount: 4200.00, isHeader: false, indent: true },
+  ],
+  footer: { description: 'صافي الربح', amount: 70300.00 },
+};
+
+const balanceSheetData = {
+    title: 'الميزانية العمومية',
+    period: 'كما في 30 يونيو 2024',
+    rows: [
+        { description: 'الأصول', amount: null, isHeader: true },
+        { description: 'النقد', amount: 80500.00, isHeader: false, indent: true },
+        { description: 'الذمم المدينة', amount: 15200.00, isHeader: false, indent: true },
+        { description: 'المخزون', amount: 25000.00, isHeader: false, indent: true },
+        { description: 'إجمالي الأصول', amount: 120700.00, isHeader: true, isTotal: true },
+        { description: 'الخصوم وحقوق الملكية', amount: null, isHeader: true },
+        { description: 'الذمم الدائنة', amount: 10400.00, isHeader: false, indent: true },
+        { description: 'حقوق الملكية', amount: 110300.00, isHeader: false, indent: true },
+        { description: 'إجمالي الخصوم وحقوق الملكية', amount: 120700.00, isHeader: true, isTotal: true },
+    ],
+    footer: null
+}
+
 
 export default function ReportsPage() {
+
+    const formatAmount = (amount: number | null) => {
+        if (amount === null) return '';
+        return `$${amount.toFixed(2)}`;
+    }
+
+    const handleExport = () => {
+        const pnlCsv = Papa.unparse({
+            fields: ['الوصف', 'المبلغ'],
+            data: [
+                ...profitAndLossData.rows.map(row => [row.description, row.amount ? formatAmount(row.amount) : '']),
+                [profitAndLossData.footer.description, formatAmount(profitAndLossData.footer.amount)]
+            ]
+        });
+
+        const balanceSheetCsv = Papa.unparse({
+            fields: ['الوصف', 'المبلغ'],
+            data: balanceSheetData.rows.map(row => [row.description, row.amount ? formatAmount(row.amount) : ''])
+        });
+
+        const combinedCsv = `${profitAndLossData.title}\n${profitAndLossData.period}\n${pnlCsv}\n\n${balanceSheetData.title}\n${balanceSheetData.period}\n${balanceSheetCsv}`;
+        
+        const blob = new Blob([`\uFEFF${combinedCsv}`], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'financial_reports.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
   return (
     <div className="flex flex-col gap-6">
        <div className="flex items-center justify-between">
@@ -26,7 +96,7 @@ export default function ReportsPage() {
                 <h1 className="text-3xl font-bold font-headline">التقارير المالية</h1>
                 <p className="text-muted-foreground">عرض وتصدير بياناتك المالية.</p>
             </div>
-            <Button>
+            <Button onClick={handleExport}>
                 <Download className="ml-2 h-4 w-4" />
                 تصدير الكل
             </Button>
@@ -40,8 +110,8 @@ export default function ReportsPage() {
         <TabsContent value="p-l">
           <Card>
             <CardHeader>
-              <CardTitle className="font-headline">بيان الأرباح والخسائر</CardTitle>
-              <CardDescription>للفترة المنتهية في 30 يونيو 2024</CardDescription>
+              <CardTitle className="font-headline">{profitAndLossData.title}</CardTitle>
+              <CardDescription>{profitAndLossData.period}</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
@@ -52,47 +122,17 @@ export default function ReportsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <TableRow className="font-medium">
-                    <TableCell>الإيرادات</TableCell>
-                    <TableCell></TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="pr-8">المبيعات</TableCell>
-                    <TableCell className="text-left">$120,000.00</TableCell>
-                  </TableRow>
-                   <TableRow>
-                    <TableCell className="pr-8">الخدمات</TableCell>
-                    <TableCell className="text-left">$35,000.00</TableCell>
-                  </TableRow>
-                  <TableRow className="font-medium">
-                    <TableCell>إجمالي الإيرادات</TableCell>
-                    <TableCell className="text-left">$155,000.00</TableCell>
-                  </TableRow>
-                  <TableRow className="font-medium">
-                    <TableCell>المصروفات</TableCell>
-                    <TableCell></TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="pr-8">الرواتب والأجور</TableCell>
-                    <TableCell className="text-left">$60,000.00</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="pr-8">الإيجار</TableCell>
-                    <TableCell className="text-left">$12,000.00</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="pr-8">التسويق</TableCell>
-                    <TableCell className="text-left">$8,500.00</TableCell>
-                  </TableRow>
-                   <TableRow>
-                    <TableCell className="pr-8">الخدمات</TableCell>
-                    <TableCell className="text-left">$4,200.00</TableCell>
-                  </TableRow>
+                  {profitAndLossData.rows.map((row, index) => (
+                      <TableRow key={index} className={row.isHeader ? "font-medium" : ""}>
+                          <TableCell className={row.indent ? "pr-8" : ""}>{row.description}</TableCell>
+                          <TableCell className="text-left">{row.amount !== null ? formatAmount(row.amount) : ''}</TableCell>
+                      </TableRow>
+                  ))}
                 </TableBody>
                 <TableFooter>
                   <TableRow className="text-lg font-bold bg-muted/50">
-                    <TableCell>صافي الربح</TableCell>
-                    <TableCell className="text-left text-green-600">$70,300.00</TableCell>
+                    <TableCell>{profitAndLossData.footer.description}</TableCell>
+                    <TableCell className="text-left text-green-600">{formatAmount(profitAndLossData.footer.amount)}</TableCell>
                   </TableRow>
                 </TableFooter>
               </Table>
@@ -102,8 +142,8 @@ export default function ReportsPage() {
         <TabsContent value="balance-sheet">
           <Card>
             <CardHeader>
-              <CardTitle className="font-headline">الميزانية العمومية</CardTitle>
-              <CardDescription>كما في 30 يونيو 2024</CardDescription>
+              <CardTitle className="font-headline">{balanceSheetData.title}</CardTitle>
+              <CardDescription>{balanceSheetData.period}</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
@@ -114,43 +154,12 @@ export default function ReportsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <TableRow className="font-medium text-base">
-                    <TableCell>الأصول</TableCell>
-                    <TableCell></TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="pr-8">النقد</TableCell>
-                    <TableCell className="text-left">$80,500.00</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="pr-8">الذمم المدينة</TableCell>
-                    <TableCell className="text-left">$15,200.00</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="pr-8">المخزون</TableCell>
-                    <TableCell className="text-left">$25,000.00</TableCell>
-                  </TableRow>
-                  <TableRow className="font-medium bg-muted/20">
-                    <TableCell>إجمالي الأصول</TableCell>
-                    <TableCell className="text-left">$120,700.00</TableCell>
-                  </TableRow>
-
-                   <TableRow className="font-medium text-base">
-                    <TableCell>الخصوم وحقوق الملكية</TableCell>
-                    <TableCell></TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="pr-8">الذمم الدائنة</TableCell>
-                    <TableCell className="text-left">$10,400.00</TableCell>
-                  </TableRow>
-                   <TableRow>
-                    <TableCell className="pr-8">حقوق الملكية</TableCell>
-                    <TableCell className="text-left">$110,300.00</TableCell>
-                  </TableRow>
-                  <TableRow className="font-medium bg-muted/20">
-                    <TableCell>إجمالي الخصوم وحقوق الملكية</TableCell>
-                    <TableCell className="text-left">$120,700.00</TableCell>
-                  </TableRow>
+                    {balanceSheetData.rows.map((row, index) => (
+                         <TableRow key={index} className={`${row.isHeader ? "font-medium" : ""} ${row.isTotal ? "bg-muted/20" : ""}`}>
+                            <TableCell className={row.indent ? "pr-8" : ""}>{row.description}</TableCell>
+                            <TableCell className="text-left">{row.amount !== null ? formatAmount(row.amount) : ''}</TableCell>
+                        </TableRow>
+                    ))}
                 </TableBody>
               </Table>
             </CardContent>
