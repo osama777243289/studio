@@ -23,7 +23,7 @@ import {
 import { useForm, SubmitHandler, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import type { User, UserPermissions } from '@/app/(main)/users/page';
+import type { User } from '@/app/(main)/users/page';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { Checkbox } from '../ui/checkbox';
 import { Account } from '../chart-of-accounts/account-tree';
@@ -45,17 +45,29 @@ const permissionsSchema = z.object({
 }).optional();
 
 
-const userSchema = z.object({
+const createUserSchema = (isEditMode: boolean) => z.object({
     name: z.string().min(3, { message: "يجب أن يكون اسم المستخدم 3 أحرف على الأقل." }),
     email: z.string().email({ message: "البريد الإلكتروني غير صالح." }),
+    mobile: z.string().optional(),
+    password: z.string().min(8, "يجب أن تكون كلمة المرور 8 أحرف على الأقل.").optional().or(z.literal('')),
+    confirmPassword: z.string().min(8, "يجب أن تكون كلمة المرور 8 أحرف على الأقل.").optional().or(z.literal('')),
     type: z.enum(['regular', 'employee'], { required_error: 'نوع المستخدم مطلوب' }),
     role: z.enum(['مدير', 'محاسب', 'كاشير', 'مدخل بيانات'], { required_error: 'دور المستخدم مطلوب' }),
     status: z.enum(['نشط', 'غير نشط'], { required_error: 'حالة المستخدم مطلوبة' }),
     permissions: permissionsSchema,
     employeeAccountId: z.string().optional(),
+}).refine(data => {
+    if (isEditMode && !data.password) {
+        return true; // Password is not being changed
+    }
+    return data.password === data.confirmPassword
+}, {
+    message: "كلمتا المرور غير متطابقتين",
+    path: ["confirmPassword"],
 });
 
-export type UserFormData = z.infer<typeof userSchema>;
+
+export type UserFormData = z.infer<ReturnType<typeof createUserSchema>>;
 
 interface UserDialogProps {
   isOpen: boolean;
@@ -120,6 +132,8 @@ function AccountPermissionsTree({ accounts, control, name }: { accounts: Account
 
 
 export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts }: UserDialogProps) {
+  const userSchema = useMemo(() => createUserSchema(mode === 'edit'), [mode]);
+  
   const { register, handleSubmit, reset, control, watch, formState: { errors } } = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
     defaultValues: {
@@ -151,6 +165,9 @@ export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts }: Us
         reset({ 
             name: user.name, 
             email: user.email,
+            mobile: user.mobile,
+            password: '',
+            confirmPassword: '',
             type: user.type,
             role: user.role, 
             status: user.status,
@@ -161,6 +178,9 @@ export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts }: Us
         reset({ 
             name: '', 
             email: '',
+            mobile: '',
+            password: '',
+            confirmPassword: '',
             type: 'regular',
             role: 'كاشير', 
             status: 'نشط',
@@ -204,7 +224,10 @@ export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts }: Us
                     <h3 className="font-semibold text-lg">بيانات المستخدم</h3>
                     {renderRow("الاسم", "name", <Input id="name" {...register("name")} className="w-full" />, errors.name)}
                     {renderRow("البريد الإلكتروني", "email", <Input id="email" {...register("email")} className="w-full ltr" />, errors.email)}
-                    
+                    {renderRow("رقم الجوال", "mobile", <Input id="mobile" {...register("mobile")} className="w-full ltr" />, errors.mobile)}
+                    {renderRow("كلمة السر", "password", <Input id="password" type="password" {...register("password")} className="w-full ltr" placeholder={mode === 'edit' ? 'اتركه فارغاً لعدم التغيير' : ''} />, errors.password)}
+                    {renderRow("تأكيد كلمة السر", "confirmPassword", <Input id="confirmPassword" type="password" {...register("confirmPassword")} className="w-full ltr" />, errors.confirmPassword)}
+
                     {renderRow("نوع المستخدم", "type", (
                         <Controller
                             name="type"

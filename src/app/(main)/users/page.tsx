@@ -61,6 +61,8 @@ export interface User {
     id: string;
     name: string;
     email: string;
+    mobile?: string;
+    avatarUrl?: string;
     type: "regular" | "employee";
     role: "مدير" | "محاسب" | "كاشير" | "مدخل بيانات";
     status: "نشط" | "غير نشط";
@@ -166,6 +168,8 @@ const initialUsers: User[] = [
     id: "1",
     name: "يوسف خالد",
     email: "youssef.k@example.com",
+    mobile: "0501234567",
+    avatarUrl: "https://picsum.photos/id/21/40/40",
     type: "regular",
     role: "مدير",
     status: "نشط",
@@ -187,6 +191,8 @@ const initialUsers: User[] = [
     id: "2",
     name: "فاطمة علي",
     email: "fatima.ali@example.com",
+    mobile: "0502345678",
+    avatarUrl: "https://picsum.photos/id/22/40/40",
     type: "regular",
     role: "محاسب",
     status: "نشط",
@@ -208,6 +214,8 @@ const initialUsers: User[] = [
     id: "3",
     name: "أحمد منصور",
     email: "ahmed.m@example.com",
+    mobile: "0503456789",
+    avatarUrl: "https://picsum.photos/id/23/40/40",
     type: "regular",
     role: "كاشير",
     status: "غير نشط",
@@ -222,6 +230,8 @@ const initialUsers: User[] = [
     id: "4",
     name: "سارة إبراهيم",
     email: "sara.i@example.com",
+    mobile: "0504567890",
+    avatarUrl: "https://picsum.photos/id/24/40/40",
     type: "regular",
     role: "مدخل بيانات",
     status: "نشط",
@@ -237,6 +247,8 @@ const initialUsers: User[] = [
     id: "5",
     name: "علي عبدالله",
     email: "ali.a@example.com",
+    mobile: "0505678901",
+    avatarUrl: "https://picsum.photos/id/25/40/40",
     type: "employee",
     role: "مدخل بيانات",
     status: "نشط",
@@ -271,11 +283,23 @@ export default function UsersPage() {
   };
 
   const confirmSave = (userData: UserFormData) => {
+    const dataToSave = { ...userData };
+    // Don't save password if it's not changed in edit mode
+    if (mode === 'edit' && !dataToSave.password) {
+        delete dataToSave.password;
+    }
+    delete dataToSave.confirmPassword;
+
     if (dialogMode === 'add') {
-      const newUser: User = { ...userData, id: Date.now().toString(), permissions: userData.permissions || {} };
+      const newUser: User = { 
+        ...dataToSave, 
+        id: Date.now().toString(), 
+        permissions: dataToSave.permissions || {},
+        avatarUrl: `https://picsum.photos/id/${25 + users.length}/40/40`
+      };
       setUsers(prev => [...prev, newUser]);
     } else if (dialogMode === 'edit' && selectedUser) {
-      setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, ...userData, permissions: userData.permissions || u.permissions } : u));
+      setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, ...dataToSave, permissions: dataToSave.permissions || u.permissions } : u));
     }
     setIsDialogOpen(false);
     setSelectedUser(null);
@@ -318,12 +342,12 @@ export default function UsersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user, index) => (
+              {users.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>
                     <div className="flex items-center gap-4">
                       <Avatar className="h-9 w-9">
-                        <AvatarImage data-ai-hint="person avatar" src={`https://picsum.photos/id/${20 + index}/40/40`} alt="Avatar" />
+                        <AvatarImage data-ai-hint="person avatar" src={user.avatarUrl} alt="Avatar" />
                         <AvatarFallback>{user.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                       </Avatar>
                       <div className="grid gap-1">
