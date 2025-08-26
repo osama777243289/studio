@@ -15,8 +15,8 @@ const PredictCashFlowInputSchema = z.object({
   historicalData: z
     .string()
     .describe(
-      'Historical financial data, including income and expenses. Should be formatted as a string.
-      Example: Date,Income,Expenses\n2023-01-01,5000,3000\n2023-02-01,6000,4000'
+      `Historical financial data, including income and expenses. Should be formatted as a string.
+      Example: Date,Income,Expenses\n2023-01-01,5000,3000\n2023-02-01,6000,4000`
     ),
   predictionHorizon: z
     .string()
