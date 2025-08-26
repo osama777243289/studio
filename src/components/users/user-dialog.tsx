@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -47,9 +47,10 @@ const permissionsSchema = z.object({
 const userSchema = z.object({
     name: z.string().min(3, { message: "يجب أن يكون اسم المستخدم 3 أحرف على الأقل." }),
     email: z.string().email({ message: "البريد الإلكتروني غير صالح." }),
-    role: z.enum(['مدير', 'محاسب', 'كاشير', 'مدخل بيانات'], { required_error: 'دور المستخدم مطلوب' }),
+    role: z.enum(['مدير', 'محاسب', 'كاشير', 'مدخل بيانات', 'موظف'], { required_error: 'دور المستخدم مطلوب' }),
     status: z.enum(['نشط', 'غير نشط'], { required_error: 'حالة المستخدم مطلوبة' }),
     permissions: permissionsSchema,
+    employeeAccountId: z.string().optional(),
 });
 
 export type UserFormData = z.infer<typeof userSchema>;
@@ -117,12 +118,30 @@ function AccountPermissionsTree({ accounts, control, name }: { accounts: Account
 
 
 export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts }: UserDialogProps) {
-  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<UserFormData>({
+  const { register, handleSubmit, reset, control, watch, formState: { errors } } = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
     defaultValues: {
         permissions: { pages: {}, accounts: [] }
     }
   });
+
+  const selectedRole = watch('role');
+
+  const employeeAccounts = useMemo(() => {
+    const findEmployeeAccounts = (accs: Account[]): Account[] => {
+      let results: Account[] = [];
+      for (const acc of accs) {
+        if (acc.classifications?.includes('موظف')) {
+          results.push(acc);
+        }
+        if (acc.children) {
+          results = [...results, ...findEmployeeAccounts(acc.children)];
+        }
+      }
+      return results;
+    };
+    return findEmployeeAccounts(accounts);
+  }, [accounts]);
 
   useEffect(() => {
     if (isOpen) {
@@ -133,6 +152,7 @@ export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts }: Us
             role: user.role, 
             status: user.status,
             permissions: user.permissions,
+            employeeAccountId: user.employeeAccountId,
         });
       } else {
         reset({ 
@@ -140,19 +160,23 @@ export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts }: Us
             email: '',
             role: 'كاشير', 
             status: 'نشط',
-            permissions: { pages: {}, accounts: [] }
+            permissions: { pages: {}, accounts: [] },
+            employeeAccountId: undefined
         });
       }
     }
   }, [user, mode, reset, isOpen]);
 
   const onSubmit: SubmitHandler<UserFormData> = (data) => {
+    if (data.role !== 'موظف') {
+        data.employeeAccountId = undefined;
+    }
     onSave(data);
     onClose();
   };
   
   const renderRow = (label: string, id: string, children: React.ReactNode, error?: {message?: string} ) => (
-      <div className="grid grid-cols-4 items-center gap-4">
+      <div className="grid grid-cols-4 items-start gap-4">
         <Label htmlFor={id} className="text-right pt-2">
             {label}
         </Label>
@@ -189,11 +213,34 @@ export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts }: Us
                                         <SelectItem value="محاسب">محاسب</SelectItem>
                                         <SelectItem value="كاشير">كاشير</SelectItem>
                                         <SelectItem value="مدخل بيانات">مدخل بيانات</SelectItem>
+                                        <SelectItem value="موظف">موظف</SelectItem>
                                     </SelectContent>
                                 </Select>
                             )}
                         />
                     ), errors.role)}
+
+                    {selectedRole === 'موظف' && renderRow("حساب الموظف", "employeeAccountId", (
+                        <Controller
+                            name="employeeAccountId"
+                            control={control}
+                            render={({ field }) => (
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="اختر حساب الموظف..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {employeeAccounts.map(acc => (
+                                            <SelectItem key={acc.id} value={acc.id}>
+                                                {acc.name} ({acc.code})
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            )}
+                        />
+                    ))}
+
 
                      {renderRow("الحالة", "status", (
                          <Controller

@@ -61,9 +61,10 @@ export interface User {
     id: string;
     name: string;
     email: string;
-    role: "مدير" | "محاسب" | "كاشير" | "مدخل بيانات";
+    role: "مدير" | "محاسب" | "كاشير" | "مدخل بيانات" | "موظف";
     status: "نشط" | "غير نشط";
     permissions: UserPermissions;
+    employeeAccountId?: string;
 }
 
 const initialChartOfAccountsData: Account[] = [
@@ -118,6 +119,44 @@ const initialChartOfAccountsData: Account[] = [
                 ],
             },
         ],
+    },
+     {
+        id: '5',
+        code: '5',
+        name: 'المصروفات',
+        type: 'مدين',
+        group: 'المصروفات',
+        status: 'نشط',
+        closingType: 'قائمة الدخل',
+        classifications: [],
+        children: [
+            {
+                id: '5-1',
+                code: '51',
+                name: 'مصروفات التشغيل',
+                type: 'مدين',
+                group: 'المصروفات',
+                status: 'نشط',
+                closingType: 'قائمة الدخل',
+                classifications: [],
+                children: [
+                    {
+                        id: '5-1-1',
+                        code: '5101',
+                        name: 'الرواتب',
+                        type: 'مدين',
+                        group: 'المصروفات',
+                        status: 'نشط',
+                        closingType: 'قائمة الدخل',
+                        classifications: [],
+                        children: [
+                            { id: '5-1-1-1', code: '5101001', name: 'راتب الموظف أحمد', type: 'مدين', group: 'المصروفات', status: 'نشط', closingType: 'قائمة الدخل', classifications: ['مصروفات', 'موظف'] },
+                            { id: '5-1-1-2', code: '5101002', name: 'راتب الموظف علي', type: 'مدين', group: 'المصروفات', status: 'نشط', closingType: 'قائمة الدخل', classifications: ['مصروفات', 'موظف'] },
+                        ]
+                    }
+                ]
+            },
+        ]
     },
 ];
 
@@ -189,6 +228,15 @@ const initialUsers: User[] = [
         accounts: []
     }
   },
+    {
+    id: "5",
+    name: "علي عبدالله",
+    email: "ali.a@example.com",
+    role: "موظف",
+    status: "نشط",
+    permissions: {},
+    employeeAccountId: '5-1-1-2'
+  }
 ];
 
 export default function UsersPage() {
