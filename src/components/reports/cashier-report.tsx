@@ -54,7 +54,7 @@ export function CashierReport() {
     const totalActual = reportData.sales.reduce((sum, item) => sum + item.actual, 0);
     
   return (
-    <div className="bg-background rounded-lg border p-4 sm:p-6 md:p-8 space-y-6">
+    <div className="bg-background rounded-lg border p-4 sm:p-6 md:p-8 space-y-6 printable-area">
         <div className="text-center">
             <h1 className="text-2xl font-bold font-headline">تقرير مبيعات الكاشير للفترة: {reportData.period} ليوم: {reportData.date}</h1>
         </div>

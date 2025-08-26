@@ -4,29 +4,12 @@
 import { CashierReport } from "@/components/reports/cashier-report";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
-import { useRef } from "react";
-import { useReactToPrint } from "react-to-print";
-
 
 export default function CashierSalesReportPage() {
-    const reportRef = useRef(null);
 
-    const handlePrint = useReactToPrint({
-        content: () => reportRef.current,
-        documentTitle: 'تقرير-مبيعات-الكاشير',
-         pageStyle: `
-            @media print {
-                @page {
-                    size: A4;
-                    margin: 0.5in;
-                }
-                body {
-                    -webkit-print-color-adjust: exact;
-                }
-            }
-        `
-    });
-
+    const handlePrint = () => {
+        window.print();
+    };
 
     return (
         <div className="space-y-4">
@@ -37,7 +20,8 @@ export default function CashierSalesReportPage() {
                     طباعة التقرير
                 </Button>
             </div>
-            <div ref={reportRef}>
+            {/* The ref is no longer needed but we can keep the div for structure */}
+            <div>
                 <CashierReport />
             </div>
         </div>
