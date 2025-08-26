@@ -1,0 +1,74 @@
+diff --git a/node_modules/react-to-print/lib/index.js b/node_modules/react-to-print/lib/index.js
+index 47e3a6e..6703c6b 100644
+--- a/node_modules/react-to-print/lib/index.js
++++ b/node_modules/react-to-print/lib/index.js
+@@ -10,7 +10,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
+     return (mod && mod.__esModule) ? mod : { "default": mod };
+ };
+ Object.defineProperty(exports, "__esModule", { value: true });
+-exports.useReactToPrint = exports.print = void 0;
++exports.useReactToPrint = void 0;
+ const React = __importStar(require("react"));
+ const Print_1 = __importDefault(require("./Print"));
+ const component_to_print_1 = __importDefault(require("./component_to_print"));
+@@ -48,7 +48,6 @@ const useReactToPrint = (props) => {
+     return handlePrint;
+ };
+ exports.useReactToPrint = useReactToPrint;
+-exports.default = Print_1.default;
+ //# sourceMappingURL=index.js.map
+\ No newline at end of file
+diff --git a/node_modules/react-to-print/lib/index.d.ts b/node_modules/react-to-print/lib/index.d.ts
+index c6b96e0..587569b 100644
+--- a/node_modules/react-to-print/lib/index.d.ts
++++ b/node_modules/react-to-print/lib/index.d.ts
+@@ -1,5 +1,4 @@
+-import * as React from "react";
+-import { ReactToPrintProps } from "./Print";
++import type { ReactToPrintProps } from "./Print";
+ /**
+  * Render a component and print it.
+  *
+@@ -18,5 +17,4 @@
+  * @param props
+  * @returns `handlePrint` a function that will trigger printing
+  */
+-export declare const useReactToPrint: (props: ReactToPrintProps) => () => void;
+-export default class ReactToPrint extends React.Component<ReactToPrintProps> {
+-}
++export declare const useReactToPrint: (props: ReactToPrintProps) => (() => void);
+diff --git a/node_modules/react-to-print/lib/Print.d.ts b/node_modules/react-to-print/lib/Print.d.ts
+index eac1c2a..e1e7939 100644
+--- a/node_modules/react-to-print/lib/Print.d.ts
++++ b/node_modules/react-to-print/lib/Print.d"s
+@@ -1,4 +1,4 @@
+-import * as React from "react";
++import type * as React from "react";
+ export interface ReactToPrintProps {
+     /**
+      * A function that returns the component to print.
+diff --git a/node_modules/react-to-print/lib/component_to_print.d.ts b/node_modules/react-to-print/lib/component_to_print.d.ts
+index 708c903..7340d34 100644
+--- a/node_modules/react-to-print/lib/component_to_print.d.ts
++++ b/node_modules/react-to-print/lib/component_to_print.d.ts
+@@ -1,4 +1,4 @@
+-import * as React from "react";
++import type * as React from "react";
+ import { ReactToPrintProps } from "./Print";
+ interface ComponentToPrintProps extends ReactToPrintProps {
+     close: (cb?: () => void) => void;
+diff --git a/node_modules/react-to-print/package.json b/node_modules/react-to-print/package.json
+index 3a5165c..e918544 100644
+--- a/node_modules/react-to-print/package.json
++++ b/node_modules/react-to-print/package.json
+@@ -51,7 +51,8 @@
+     "build": "rimraf lib && tsc",
+     "test": "jest",
+     "test:ci": "jest --ci --coverage",
+-    "lint": "eslint --ext .js,.ts,.tsx src"
++    "lint": "eslint --ext .js,.ts,.tsx src",
++    "postinstall": "npx patch-package"
+   },
+   "keywords": [
+     "react",
+
