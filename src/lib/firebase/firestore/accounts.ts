@@ -68,18 +68,14 @@ export const getAccounts = async (): Promise<Account[]> => {
 // Add a new account
 export const addAccount = async (accountData: AccountFormData, parentId: string | null): Promise<string> => {
   const accountsCol = collection(db, 'accounts');
-  const newAccountRef = doc(accountsCol); // Create a reference to get the ID
   
-  const newAccountData: Omit<Account, 'id' | 'children'> & {parentId?: string | null} = {
+  const newAccountData: any = { // Use any to include parentId
     ...accountData,
     parentId: parentId || null,
   };
 
-  await runTransaction(db, async (transaction) => {
-     transaction.set(newAccountRef, newAccountData);
-  });
-
-  return newAccountRef.id;
+  const newDocRef = await addDoc(accountsCol, newAccountData);
+  return newDocRef.id;
 };
 
 // Update an existing account
@@ -93,14 +89,8 @@ export const deleteAccount = async (accountId: string): Promise<void> => {
     await runTransaction(db, async (transaction) => {
         const accountsCol = collection(db, "accounts");
         const accountToDeleteRef = doc(accountsCol, accountId);
-        const accountToDeleteSnap = await transaction.get(accountToDeleteRef);
-
-        if (!accountToDeleteSnap.exists()) {
-            throw new Error("Account does not exist!");
-        }
-
-        // Firestore queries are not supported inside transactions. This is a limitation.
-        // We will perform the check outside the transaction. A better solution would involve a Cloud Function.
+        
+        // This query must be performed outside the transaction.
         const childrenQuery = query(accountsCol, where("parentId", "==", accountId));
         const childrenSnapshot = await getDocs(childrenQuery);
 
@@ -162,54 +152,44 @@ const initialChartOfAccountsData: Omit<Account, 'id' | 'children'>[] = [
     { code: '5101002', name: 'راتب الموظف علي', type: 'مدين', group: 'المصروفات', status: 'نشط', closingType: 'قائمة الدخل', classifications: ['مصروفات', 'موظف'] },
 ];
 
+const getParentCode = (code: string): string | null => {
+    if (code.length === 1) return null;
+    if (code.length === 2) return code.substring(0, 1);
+    if (code.length === 4) return code.substring(0, 2);
+    if (code.length === 7) return code.substring(0, 4);
+    return null;
+};
+
+
 export const seedInitialData = async (): Promise<void> => {
     try {
         const accountsCol = collection(db, 'accounts');
         const batch = writeBatch(db);
         const codeToIdMap = new Map<string, string>();
 
-        // First pass: Add all accounts and map their codes to their new Firestore IDs
-        for (const accountData of initialChartOfAccountsData) {
+        // Create docs and map codes to IDs first
+        initialChartOfAccountsData.forEach(accountData => {
             const newDocRef = doc(accountsCol);
-            const parentCode = accountData.code.length === 1 ? null : (accountData.code.length === 2 ? accountData.code.substring(0, 1) : (accountData.code.length === 4 ? accountData.code.substring(0, 2) : accountData.code.substring(0, 4)));
-
-            const dataToSet = {
-                ...accountData,
-                parentId: parentCode // Will be replaced by ID later, but helps identify hierarchy
-            };
-            batch.set(newDocRef, dataToSet);
             codeToIdMap.set(accountData.code, newDocRef.id);
-        }
-
-        // Commit the first batch to create all documents
-        await batch.commit();
-
-        // Second pass: Update documents with parentId
-        const updateBatch = writeBatch(db);
-        const snapshot = await getDocs(accountsCol);
-
-        snapshot.docs.forEach(document => {
-            const data = document.data();
-            const code = data.code as string;
-            let parentId = null;
-
-            if (code.length > 1) {
-                let parentCode = '';
-                if (code.length === 2) parentCode = code.substring(0, 1);
-                else if (code.length === 4) parentCode = code.substring(0, 2);
-                else if (code.length === 7) parentCode = code.substring(0, 4);
-
-                if (parentCode && codeToIdMap.has(parentCode)) {
-                    parentId = codeToIdMap.get(parentCode);
-                }
-            }
-            
-            updateBatch.update(document.ref, { parentId: parentId });
         });
         
-        await updateBatch.commit();
+        // Now set the data with the correct parentId
+        initialChartOfAccountsData.forEach(accountData => {
+            const docId = codeToIdMap.get(accountData.code)!;
+            const parentCode = getParentCode(accountData.code);
+            const parentId = parentCode ? codeToIdMap.get(parentCode) : null;
+            
+            const docRef = doc(accountsCol, docId);
+            const dataToSet = {
+                ...accountData,
+                parentId: parentId
+            };
+            batch.set(docRef, dataToSet);
+        });
 
+        await batch.commit();
         console.log("Initial data seeded successfully!");
+
     } catch (error) {
         console.error("Error seeding data: ", error);
         throw error;
