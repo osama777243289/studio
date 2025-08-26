@@ -1,3 +1,4 @@
+
 import { db } from '@/lib/firebase/client';
 import { AccountFormData } from '@/components/chart-of-accounts/account-dialog';
 import { Account } from '@/components/chart-of-accounts/account-tree';
@@ -170,7 +171,13 @@ export const seedInitialData = async (): Promise<void> => {
         // First pass: Add all accounts and map their codes to their new Firestore IDs
         for (const accountData of initialChartOfAccountsData) {
             const newDocRef = doc(accountsCol);
-            batch.set(newDocRef, accountData);
+            const parentCode = accountData.code.length === 1 ? null : (accountData.code.length === 2 ? accountData.code.substring(0, 1) : (accountData.code.length === 4 ? accountData.code.substring(0, 2) : accountData.code.substring(0, 4)));
+
+            const dataToSet = {
+                ...accountData,
+                parentId: parentCode // Will be replaced by ID later, but helps identify hierarchy
+            };
+            batch.set(newDocRef, dataToSet);
             codeToIdMap.set(accountData.code, newDocRef.id);
         }
 
@@ -197,9 +204,7 @@ export const seedInitialData = async (): Promise<void> => {
                 }
             }
             
-            if (parentId) {
-                updateBatch.update(document.ref, { parentId: parentId });
-            }
+            updateBatch.update(document.ref, { parentId: parentId });
         });
         
         await updateBatch.commit();
