@@ -68,6 +68,9 @@ export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount,
     if (mode === 'addSub' && parentAccount) {
       return createAccountSchema(parentAccount.code);
     }
+     if (mode === 'edit' && parentAccount) {
+      return createAccountSchema(parentAccount.code);
+    }
     return createAccountSchema();
   }, [mode, parentAccount]);
 
@@ -143,7 +146,7 @@ export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount,
             <DialogTitle>{titles[mode]}</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-                {parentAccount && renderRow("حساب الأب", "parent", <Input id="parent" value={`${parentAccount.name} (${parentAccount.code})`} readOnly disabled />) }
+                {parentAccount && renderRow("حساب الأب", "parent", <Input id="parent" value={`${parentAccount.name} (${parentAccount.code})`} readOnly disabled className="bg-muted/50" />) }
                 {renderRow("الرمز", "code", <Input id="code" {...register("code")} className="w-full ltr" />, errors.code)}
                 {renderRow("الاسم", "name", <Input id="name" {...register("name")} className="w-full" />, errors.name)}
                 
