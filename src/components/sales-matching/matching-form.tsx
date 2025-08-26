@@ -39,7 +39,7 @@ interface MatchingFormProps {
 }
 
 interface ActualAmounts {
-    [key: string]: number;
+    [key: string]: number | string;
 }
 
 export function MatchingForm({ record }: MatchingFormProps) {
@@ -73,8 +73,19 @@ export function MatchingForm({ record }: MatchingFormProps) {
     )
   }
 
-  const handleActualChange = (key: string, value: number) => {
-    setActuals(prev => ({...prev, [key]: value}));
+  const handleActualChange = (key: string, value: string) => {
+    // Allow only numbers and a single decimal point
+    if (/^\d*\.?\d*$/.test(value)) {
+        setActuals(prev => ({...prev, [key]: value}));
+    }
+  }
+  
+  const getNumericValue = (key: string) => {
+      const value = actuals[key];
+      if (typeof value === 'string' && value.endsWith('.')) {
+        return parseFloat(value.slice(0, -1)) || 0;
+      }
+      return parseFloat(value as string) || 0;
   }
 
   const registeredCash = record.cash?.amount || 0;
@@ -82,15 +93,15 @@ export function MatchingForm({ record }: MatchingFormProps) {
   const registeredCredits = record.credits.reduce((sum, acc) => sum + acc.amount, 0);
   const totalRegistered = registeredCash + registeredCards + registeredCredits;
   
-  const actualCash = actuals['cash'] || 0;
-  const actualCards = record.cards.reduce((sum, acc, i) => sum + (actuals[`card-${i}`] || 0), 0);
-  const actualCredits = record.credits.reduce((sum, acc, i) => sum + (actuals[`credit-${i}`] || 0), 0);
+  const actualCash = getNumericValue('cash');
+  const actualCards = record.cards.reduce((sum, acc, i) => sum + getNumericValue(`card-${i}`), 0);
+  const actualCredits = record.credits.reduce((sum, acc, i) => sum + getNumericValue(`credit-${i}`), 0);
   const totalActual = actualCash + actualCards + actualCredits;
 
   const totalDifference = totalActual - totalRegistered;
   
   const renderMatchingRow = (label: string, registeredAmount: number, actualKey: string) => {
-    const actualAmount = actuals[actualKey] || 0;
+    const actualAmount = getNumericValue(actualKey);
     const difference = actualAmount - registeredAmount;
     return (
       <TableRow>
@@ -98,10 +109,11 @@ export function MatchingForm({ record }: MatchingFormProps) {
         <TableCell>{registeredAmount.toFixed(2)}</TableCell>
         <TableCell>
            <Input 
-             type="number" 
+             type="text" 
+             inputMode="decimal"
              placeholder="0.00" 
-             value={actualAmount}
-             onChange={e => handleActualChange(actualKey, parseFloat(e.target.value) || 0)}
+             value={actuals[actualKey] || ''}
+             onChange={e => handleActualChange(actualKey, e.target.value)}
              className="w-32"
             />
         </TableCell>
