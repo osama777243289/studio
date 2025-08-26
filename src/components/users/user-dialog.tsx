@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -24,12 +24,12 @@ import { useForm, SubmitHandler, Controller, useFieldArray } from 'react-hook-fo
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { User, UserRole } from '@/app/(main)/users/page';
-import { USER_ROLES } from '@/app/(main)/users/page';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { Checkbox } from '../ui/checkbox';
 import { Account } from '../chart-of-accounts/account-tree';
 import { ScrollArea } from '../ui/scroll-area';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import type { Role } from '@/app/(main)/roles/page';
 
 const permissionsSchema = z.object({
     pages: z.object({
@@ -53,7 +53,7 @@ const createUserSchema = (isEditMode: boolean) => z.object({
     password: z.string().min(8, "يجب أن تكون كلمة المرور 8 أحرف على الأقل.").optional().or(z.literal('')),
     confirmPassword: z.string().min(8, "يجب أن تكون كلمة المرور 8 أحرف على الأقل.").optional().or(z.literal('')),
     type: z.enum(['regular', 'employee'], { required_error: 'نوع المستخدم مطلوب' }),
-    role: z.array(z.enum(USER_ROLES)).min(1, { message: "يجب تحديد دور واحد على الأقل" }),
+    role: z.array(z.string()).min(1, { message: "يجب تحديد دور واحد على الأقل" }),
     status: z.enum(['نشط', 'غير نشط'], { required_error: 'حالة المستخدم مطلوبة' }),
     permissions: permissionsSchema,
     employeeAccountId: z.string().optional(),
@@ -131,8 +131,16 @@ function AccountPermissionsTree({ accounts, control, name }: { accounts: Account
     return <ScrollArea className="h-72 w-full rounded-md border p-4">{renderTree(accounts)}</ScrollArea>;
 }
 
+// Dummy roles data, this would typically come from an API or a shared state management
+const initialRoles: Role[] = [
+    { id: '1', name: 'مدير' },
+    { id: '2', name: 'محاسب' },
+    { id: '3', name: 'كاشير' },
+    { id: '4', name: 'مدخل بيانات' }
+];
 
 export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts }: UserDialogProps) {
+  const [roles, setRoles] = useState<Role[]>(initialRoles); // In a real app, fetch roles
   const userSchema = useMemo(() => createUserSchema(mode === 'edit'), [mode]);
   
   const { register, handleSubmit, reset, control, watch, formState: { errors } } = useForm<UserFormData>({
@@ -280,19 +288,19 @@ export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts }: Us
                             control={control}
                             render={({ field }) => (
                                <div className="flex flex-wrap gap-x-4 gap-y-2 rounded-md border p-2">
-                                  {USER_ROLES.map((role: UserRole) => (
-                                      <div key={role} className="flex items-center gap-2">
+                                  {roles.map((role: Role) => (
+                                      <div key={role.id} className="flex items-center gap-2">
                                           <Checkbox
-                                            id={`role-${role}`}
-                                            checked={field.value?.includes(role)}
+                                            id={`role-${role.id}`}
+                                            checked={field.value?.includes(role.name)}
                                             onCheckedChange={(checked) => {
                                                 const newValue = checked
-                                                    ? [...(field.value || []), role]
-                                                    : (field.value || []).filter((value) => value !== role);
+                                                    ? [...(field.value || []), role.name]
+                                                    : (field.value || []).filter((value) => value !== role.name);
                                                 field.onChange(newValue);
                                             }}
                                           />
-                                          <Label htmlFor={`role-${role}`}>{role}</Label>
+                                          <Label htmlFor={`role-${role.id}`}>{role.name}</Label>
                                       </div>
                                   ))}
                                </div>

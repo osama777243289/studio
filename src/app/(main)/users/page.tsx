@@ -56,8 +56,7 @@ export interface UserPermissions {
     accounts?: string[]; // Array of allowed account IDs
 }
 
-export const USER_ROLES = ["مدير", "محاسب", "كاشير", "مدخل بيانات"] as const;
-export type UserRole = (typeof USER_ROLES)[number];
+export type UserRole = string;
 
 export interface User {
     id: string;

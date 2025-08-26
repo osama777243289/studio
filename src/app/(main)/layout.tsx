@@ -26,6 +26,7 @@ const navLinks: NavLink[] = [
   { title: 'التدفق النقدي', href: '/cash-flow', icon: 'TrendingUp' },
   { title: 'التقارير', href: '/reports', icon: 'FileText' },
   { title: 'دليل المستخدمين', href: '/users', icon: 'Users' },
+  { title: 'إدارة الأدوار', href: '/roles', icon: 'ShieldCheck' },
 ];
 
 export default function MainLayout({
