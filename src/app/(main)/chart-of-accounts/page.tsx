@@ -47,7 +47,8 @@ const initialChartOfAccountsData: Account[] = [
                         classifications: [],
                         children: [
                             { id: '1-1-1-1', code: '1101001', name: 'صندوق المحل', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: ['صندوق'] },
-                            { id: '1-1-1-2', code: '1101002', name: 'بنك الراجحي', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: ['بنك'] }
+                            { id: '1-1-1-2', code: '1101002', name: 'بنك الراجحي', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: ['بنك'] },
+                            { id: '1-1-1-3', code: '1101003', name: 'صندوق الخزنة', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: ['صندوق'] },
                         ]
                     },
                     {
@@ -357,5 +358,7 @@ export default function ChartOfAccountsPage() {
     </>
   );
 }
+
+    
 
     
