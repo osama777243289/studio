@@ -61,7 +61,8 @@ export interface User {
     id: string;
     name: string;
     email: string;
-    role: "مدير" | "محاسب" | "كاشير" | "مدخل بيانات" | "موظف";
+    type: "regular" | "employee";
+    role: "مدير" | "محاسب" | "كاشير" | "مدخل بيانات";
     status: "نشط" | "غير نشط";
     permissions: UserPermissions;
     employeeAccountId?: string;
@@ -165,6 +166,7 @@ const initialUsers: User[] = [
     id: "1",
     name: "يوسف خالد",
     email: "youssef.k@example.com",
+    type: "regular",
     role: "مدير",
     status: "نشط",
     permissions: {
@@ -185,6 +187,7 @@ const initialUsers: User[] = [
     id: "2",
     name: "فاطمة علي",
     email: "fatima.ali@example.com",
+    type: "regular",
     role: "محاسب",
     status: "نشط",
     permissions: {
@@ -205,6 +208,7 @@ const initialUsers: User[] = [
     id: "3",
     name: "أحمد منصور",
     email: "ahmed.m@example.com",
+    type: "regular",
     role: "كاشير",
     status: "غير نشط",
     permissions: {
@@ -218,6 +222,7 @@ const initialUsers: User[] = [
     id: "4",
     name: "سارة إبراهيم",
     email: "sara.i@example.com",
+    type: "regular",
     role: "مدخل بيانات",
     status: "نشط",
     permissions: {
@@ -232,7 +237,8 @@ const initialUsers: User[] = [
     id: "5",
     name: "علي عبدالله",
     email: "ali.a@example.com",
-    role: "موظف",
+    type: "employee",
+    role: "مدخل بيانات",
     status: "نشط",
     permissions: {},
     employeeAccountId: '5-1-1-2'

@@ -28,6 +28,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '..
 import { Checkbox } from '../ui/checkbox';
 import { Account } from '../chart-of-accounts/account-tree';
 import { ScrollArea } from '../ui/scroll-area';
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 
 const permissionsSchema = z.object({
     pages: z.object({
@@ -47,7 +48,8 @@ const permissionsSchema = z.object({
 const userSchema = z.object({
     name: z.string().min(3, { message: "يجب أن يكون اسم المستخدم 3 أحرف على الأقل." }),
     email: z.string().email({ message: "البريد الإلكتروني غير صالح." }),
-    role: z.enum(['مدير', 'محاسب', 'كاشير', 'مدخل بيانات', 'موظف'], { required_error: 'دور المستخدم مطلوب' }),
+    type: z.enum(['regular', 'employee'], { required_error: 'نوع المستخدم مطلوب' }),
+    role: z.enum(['مدير', 'محاسب', 'كاشير', 'مدخل بيانات'], { required_error: 'دور المستخدم مطلوب' }),
     status: z.enum(['نشط', 'غير نشط'], { required_error: 'حالة المستخدم مطلوبة' }),
     permissions: permissionsSchema,
     employeeAccountId: z.string().optional(),
@@ -125,7 +127,7 @@ export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts }: Us
     }
   });
 
-  const selectedRole = watch('role');
+  const userType = watch('type');
 
   const employeeAccounts = useMemo(() => {
     const findEmployeeAccounts = (accs: Account[]): Account[] => {
@@ -149,6 +151,7 @@ export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts }: Us
         reset({ 
             name: user.name, 
             email: user.email,
+            type: user.type,
             role: user.role, 
             status: user.status,
             permissions: user.permissions,
@@ -158,6 +161,7 @@ export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts }: Us
         reset({ 
             name: '', 
             email: '',
+            type: 'regular',
             role: 'كاشير', 
             status: 'نشط',
             permissions: { pages: {}, accounts: [] },
@@ -168,7 +172,7 @@ export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts }: Us
   }, [user, mode, reset, isOpen]);
 
   const onSubmit: SubmitHandler<UserFormData> = (data) => {
-    if (data.role !== 'موظف') {
+    if (data.type !== 'employee') {
         data.employeeAccountId = undefined;
     }
     onSave(data);
@@ -176,7 +180,7 @@ export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts }: Us
   };
   
   const renderRow = (label: string, id: string, children: React.ReactNode, error?: {message?: string} ) => (
-      <div className="grid grid-cols-4 items-start gap-4">
+      <div className="grid grid-cols-4 items-center gap-4">
         <Label htmlFor={id} className="text-right pt-2">
             {label}
         </Label>
@@ -201,26 +205,30 @@ export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts }: Us
                     {renderRow("الاسم", "name", <Input id="name" {...register("name")} className="w-full" />, errors.name)}
                     {renderRow("البريد الإلكتروني", "email", <Input id="email" {...register("email")} className="w-full ltr" />, errors.email)}
                     
-                    {renderRow("الدور", "role", (
+                    {renderRow("نوع المستخدم", "type", (
                         <Controller
-                            name="role"
+                            name="type"
                             control={control}
                             render={({ field }) => (
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="مدير">مدير</SelectItem>
-                                        <SelectItem value="محاسب">محاسب</SelectItem>
-                                        <SelectItem value="كاشير">كاشير</SelectItem>
-                                        <SelectItem value="مدخل بيانات">مدخل بيانات</SelectItem>
-                                        <SelectItem value="موظف">موظف</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <RadioGroup
+                                    onValueChange={field.onChange}
+                                    value={field.value}
+                                    className="flex gap-4"
+                                >
+                                    <div className="flex items-center space-x-2 space-x-reverse">
+                                        <RadioGroupItem value="regular" id="regular" />
+                                        <Label htmlFor="regular">مستخدم عادي</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2 space-x-reverse">
+                                        <RadioGroupItem value="employee" id="employee" />
+                                        <Label htmlFor="employee">موظف</Label>
+                                    </div>
+                                </RadioGroup>
                             )}
                         />
-                    ), errors.role)}
+                    ), errors.type)}
 
-                    {selectedRole === 'موظف' && renderRow("حساب الموظف", "employeeAccountId", (
+                    {userType === 'employee' && renderRow("حساب الموظف", "employeeAccountId", (
                         <Controller
                             name="employeeAccountId"
                             control={control}
@@ -240,7 +248,24 @@ export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts }: Us
                             )}
                         />
                     ))}
-
+                    
+                    {renderRow("الدور", "role", (
+                        <Controller
+                            name="role"
+                            control={control}
+                            render={({ field }) => (
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="مدير">مدير</SelectItem>
+                                        <SelectItem value="محاسب">محاسب</SelectItem>
+                                        <SelectItem value="كاشير">كاشير</SelectItem>
+                                        <SelectItem value="مدخل بيانات">مدخل بيانات</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            )}
+                        />
+                    ), errors.role)}
 
                      {renderRow("الحالة", "status", (
                          <Controller
