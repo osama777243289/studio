@@ -7,12 +7,12 @@ import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "your-api-key",
-  authDomain: "your-auth-domain",
-  projectId: "your-project-id",
-  storageBucket: "your-storage-bucket",
-  messagingSenderId: "your-messaging-sender-id",
-  appId: "your-app-id"
+  apiKey: "AIzaSyCILuq1iVL_FNbmzvVzmtwEja0oKUePeEA",
+  authDomain: "osama-2020.firebaseapp.com",
+  projectId: "osama-2020",
+  storageBucket: "osama-2020.appspot.com",
+  messagingSenderId: "390287828886",
+  appId: "1:390287828886:web:a12a3240c4974128f731e6"
 };
 
 // Initialize Firebase
