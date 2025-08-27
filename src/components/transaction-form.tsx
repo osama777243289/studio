@@ -63,7 +63,6 @@ export function TransactionForm({
 
   async function onSubmit(values: z.infer<typeof transactionSchema>) {
     try {
-      // This will now throw an error in demo mode
       await addTransaction(values);
       toast({
         title: 'Success',
@@ -79,8 +78,8 @@ export function TransactionForm({
     } catch (error: any) {
        console.error(`Failed to save ${transactionType.toLowerCase()}:`, error);
        toast({
-        title: 'Demo Mode Active',
-        description: `Cannot save transactions. Please configure your Firebase connection.`,
+        title: 'Error Saving Transaction',
+        description: `Failed to save the ${transactionType.toLowerCase()}. Please try again.`,
         variant: 'destructive',
       });
     }

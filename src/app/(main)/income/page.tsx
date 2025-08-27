@@ -8,18 +8,43 @@ import { useEffect, useState, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Info, AlertCircle } from 'lucide-react';
-// Temporarily disable direct DB calls from this page
-// import { getAccounts } from '@/lib/firebase/firestore/accounts';
-
-const sampleAccounts: Account[] = [
-    { id: '1', code: '401', name: 'Sales Revenue', type: 'Credit', group: 'Revenues', status: 'Active', closingType: 'Income Statement', classifications: ['Revenues'] },
-    { id: '2', code: '402', name: 'Service Revenue', type: 'Credit', group: 'Revenues', status: 'Active', closingType: 'Income Statement', classifications: ['Revenues'] },
-];
+import { getAccounts } from '@/lib/firebase/firestore/accounts';
 
 export default function IncomePage() {
-    const [accounts, setAccounts] = useState<Account[]>(sampleAccounts);
-    const [loading, setLoading] = useState(false); // Set to false for demo mode
-    const [error, setError] = useState<string | null>("This page is in demo mode. Your entries will not be saved. Please set up the Firestore connection in your Firebase project.");
+    const [accounts, setAccounts] = useState<Account[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchRevenueAccounts = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const allAccounts = await getAccounts();
+                // Flatten the account tree and filter for revenue accounts
+                const revenueAccounts: Account[] = [];
+                const traverse = (accs: Account[]) => {
+                    for (const acc of accs) {
+                        if (acc.group === 'Revenues' && (!acc.children || acc.children.length === 0)) {
+                            revenueAccounts.push(acc);
+                        }
+                        if (acc.children) {
+                            traverse(acc.children);
+                        }
+                    }
+                };
+                traverse(allAccounts);
+                setAccounts(revenueAccounts);
+            } catch (e: any) {
+                console.error("Failed to fetch accounts:", e);
+                setError("Failed to load accounts from Firestore. Please ensure the connection is set up and you have permissions to read the 'accounts' collection.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchRevenueAccounts();
+    }, []);
 
     return (
         <div className="flex justify-center items-start pt-8">
@@ -28,7 +53,7 @@ export default function IncomePage() {
                      {error && (
                          <Alert variant="destructive" className="mb-6">
                             <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Demo Mode</AlertTitle>
+                            <AlertTitle>Connection Error</AlertTitle>
                             <AlertDescription>
                                {error}
                             </AlertDescription>

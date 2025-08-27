@@ -4,41 +4,9 @@
 import { useState, useEffect } from 'react';
 import { MatchingForm } from '@/components/sales-matching/matching-form';
 import { RecordsToMatch } from '@/components/sales-matching/records-to-match';
-// import { getSalesRecordsByStatus, SalesRecord } from '@/lib/firebase/firestore/sales';
+import { getSalesRecordsByStatus, SalesRecord } from '@/lib/firebase/firestore/sales';
 import { Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { SalesRecord } from '@/lib/firebase/firestore/sales';
-import { Timestamp } from 'firebase/firestore';
-
-
-// --- Demo Data ---
-const sampleRecords: SalesRecord[] = [
-    { 
-        id: '1', 
-        date: Timestamp.now(), 
-        period: 'Morning', 
-        cashier: 'أحمد', 
-        total: 5500, 
-        status: 'Pending Matching',
-        cash: { accountId: 'c1', accountName: 'الصندوق الرئيسي', amount: 3000 },
-        cards: [{ accountId: 'n1', accountName: 'شبكة مدى', amount: 2000 }],
-        credits: [{ accountId: 'cl1', accountName: 'العميل خالد', amount: 500 }],
-        createdAt: Timestamp.now(),
-    },
-    { 
-        id: '2', 
-        date: Timestamp.now(), 
-        period: 'Evening', 
-        cashier: 'فاطمة', 
-        total: 7200, 
-        status: 'Pending Matching',
-        cash: { accountId: 'c1', accountName: 'الصندوق الرئيسي', amount: 4000 },
-        cards: [{ accountId: 'n1', accountName: 'شبكة مدى', amount: 3200 }],
-        credits: [],
-        createdAt: Timestamp.now(),
-    }
-];
-// ---
 
 export default function SalesMatchingPage() {
   const [records, setRecords] = useState<SalesRecord[]>([]);
@@ -48,12 +16,18 @@ export default function SalesMatchingPage() {
   useEffect(() => {
     const fetchRecords = async () => {
       setLoading(true);
-      // using sample data
-      setRecords(sampleRecords);
-      if (sampleRecords.length > 0) {
-          setSelectedRecord(sampleRecords[0]);
+      try {
+        const fetchedRecords = await getSalesRecordsByStatus('Pending Matching');
+        setRecords(fetchedRecords);
+        if (fetchedRecords.length > 0) {
+            setSelectedRecord(fetchedRecords[0]);
+        }
+      } catch (error) {
+          console.error("Failed to fetch records for matching:", error);
+          setRecords([]);
+      } finally {
+          setLoading(false);
       }
-      setLoading(false);
     };
     fetchRecords();
   }, []);

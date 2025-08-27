@@ -28,19 +28,10 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { RoleDialog, type RoleFormData } from '@/components/roles/role-dialog';
 import { DeleteRoleDialog } from '@/components/roles/delete-role-dialog';
-import { type Role } from '@/lib/firebase/firestore/roles';
-// import { getRoles, addRole, updateRole, deleteRole } from '@/lib/firebase/firestore/roles';
+import { type Role, getRoles, addRole, updateRole, deleteRole } from '@/lib/firebase/firestore/roles';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-// --- Demo Data ---
-const sampleRoles: Role[] = [
-    { id: '1', name: 'المدير العام' },
-    { id: '2', name: 'محاسب' },
-    { id: '3', name: 'كاشير' },
-    { id: '4', name: 'مدير فرع' },
-];
-// ---
 
 export default function RolesPage() {
     const [roles, setRoles] = useState<Role[]>([]);
@@ -54,12 +45,16 @@ export default function RolesPage() {
 
     const fetchRoles = async () => {
         setLoading(true);
-        setError("Failed to connect to Firestore. The app is currently running in offline demo mode. Your entries will not be saved.");
-        setTimeout(() => {
-            setRoles(sampleRoles);
+        setError(null);
+        try {
+            const fetchedRoles = await getRoles();
+            setRoles(fetchedRoles);
+        } catch (e: any) {
+            console.error("Failed to fetch roles:", e);
+            setError("Failed to connect to Firestore. Please check your connection and permissions.");
+        } finally {
             setLoading(false);
-            toast({ title: "Demo Mode Active", description: "Displaying sample role data." });
-        }, 500);
+        }
     };
 
     useEffect(() => {
@@ -67,25 +62,56 @@ export default function RolesPage() {
     }, []);
 
     const handleAddRole = () => {
-        toast({ title: "Demo Mode Active", description: "Cannot add roles in demo mode.", variant: "destructive"});
+        setDialogMode('add');
+        setSelectedRole(null);
+        setIsDialogOpen(true);
     };
 
     const handleEditRole = (role: Role) => {
-        toast({ title: "Demo Mode Active", description: "Cannot edit roles in demo mode.", variant: "destructive"});
+        setDialogMode('edit');
+        setSelectedRole(role);
+        setIsDialogOpen(true);
     };
 
     const handleDeleteRole = (role: Role) => {
-        toast({ title: "Demo Mode Active", description: "Cannot delete roles in demo mode.", variant: "destructive"});
+        setSelectedRole(role);
+        setIsDeleteDialogOpen(true);
     };
 
     const confirmSave = async (roleData: RoleFormData) => {
-        toast({ title: "Demo Mode Active", description: "Cannot save roles in demo mode.", variant: "destructive"});
-        setIsDialogOpen(false);
+        setLoading(true);
+        try {
+            if (dialogMode === 'edit' && selectedRole) {
+                await updateRole(selectedRole.id, roleData);
+                toast({ title: "Success", description: "Role updated successfully." });
+            } else {
+                await addRole(roleData);
+                toast({ title: "Success", description: "Role added successfully." });
+            }
+            setIsDialogOpen(false);
+            await fetchRoles();
+        } catch (e: any) {
+            console.error("Failed to save role:", e);
+            toast({ title: "Error", description: e.message, variant: "destructive" });
+        } finally {
+            setLoading(false);
+        }
     };
 
     const confirmDelete = async () => {
-        toast({ title: "Demo Mode Active", description: "Cannot delete roles in demo mode.", variant: "destructive"});
-        setIsDeleteDialogOpen(false);
+        if (!selectedRole) return;
+        setLoading(true);
+        try {
+            await deleteRole(selectedRole.id);
+            toast({ title: "Success", description: `Role "${selectedRole.name}" has been deleted.` });
+            setIsDeleteDialogOpen(false);
+            await fetchRoles();
+        } catch (e: any) {
+            console.error("Failed to delete role:", e);
+            toast({ title: "Error", description: e.message, variant: "destructive" });
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -99,7 +125,7 @@ export default function RolesPage() {
                         </div>
                          <div className="flex gap-2">
                              <Button variant="outline" onClick={fetchRoles} disabled={loading}>
-                                <RefreshCw className="ml-2 h-4 w-4" />
+                                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
                                 تحديث
                             </Button>
                             <Button onClick={handleAddRole}>
@@ -113,7 +139,7 @@ export default function RolesPage() {
                     {error && (
                         <Alert variant="destructive" className="mb-4">
                             <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Connection Error - Demo Mode</AlertTitle>
+                            <AlertTitle>Connection Error</AlertTitle>
                             <AlertDescription>{error}</AlertDescription>
                         </Alert>
                     )}

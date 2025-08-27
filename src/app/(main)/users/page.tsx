@@ -32,9 +32,9 @@ import { UserDialog, type UserFormData } from '@/components/users/user-dialog';
 import { DeleteUserDialog } from '@/components/users/delete-user-dialog';
 import { Account } from '@/components/chart-of-accounts/account-tree';
 import { Role } from '@/lib/firebase/firestore/roles';
-// import { getUsers, addUser, updateUser, deleteUser } from '@/lib/firebase/firestore/users';
-// import { getAccounts } from '@/lib/firebase/firestore/accounts';
-// import { getRoles } from '@/lib/firebase/firestore/roles';
+import { getUsers, addUser, updateUser, deleteUser } from '@/lib/firebase/firestore/users';
+import { getAccounts } from '@/lib/firebase/firestore/accounts';
+import { getRoles } from '@/lib/firebase/firestore/roles';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -76,20 +76,6 @@ export interface User {
     employeeAccountId?: string;
 }
 
-// --- Start of Demo Data ---
-const sampleUsers: User[] = [
-    { id: '1', name: 'مدير النظام', mobile: '0500000001', email: 'admin@example.com', type: 'regular', role: ['المدير العام'], status: 'نشط', permissions: { pages: {}, accounts: ['*'] } },
-    { id: '2', name: 'المحاسب', mobile: '0500000002', email: 'accountant@example.com', type: 'regular', role: ['محاسب'], status: 'نشط', permissions: { pages: {}, accounts: ['*'] } },
-    { id: '3', name: 'يوسف خالد', mobile: '0500000003', type: 'employee', role: ['كاشير'], status: 'نشط', permissions: { pages: {}, accounts: [] } }
-];
-const sampleRoles: Role[] = [
-    { id: '1', name: 'المدير العام' },
-    { id: '2', name: 'محاسب' },
-    { id: '3', name: 'كاشير' },
-];
-const sampleAccounts: Account[] = [];
-// --- End of Demo Data ---
-
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -105,14 +91,22 @@ export default function UsersPage() {
   
   const fetchData = async () => {
     setLoading(true);
-    setError("Failed to connect to Firestore. The app is currently running in offline demo mode. Your entries will not be saved.");
-    setTimeout(() => {
-        setUsers(sampleUsers);
-        setAccounts(sampleAccounts);
-        setRoles(sampleRoles);
+    setError(null);
+    try {
+        const [fetchedUsers, fetchedAccounts, fetchedRoles] = await Promise.all([
+            getUsers(),
+            getAccounts(),
+            getRoles()
+        ]);
+        setUsers(fetchedUsers);
+        setAccounts(fetchedAccounts);
+        setRoles(fetchedRoles);
+    } catch (e: any) {
+        console.error("Failed to fetch data:", e);
+        setError("Failed to load user data from Firestore. Please check your connection and permissions.");
+    } finally {
         setLoading(false);
-        toast({ title: "Demo Mode Active", description: "Displaying sample user data." });
-    }, 500);
+    }
   };
 
   useEffect(() => {
@@ -120,25 +114,56 @@ export default function UsersPage() {
   }, []);
 
   const handleAddUser = () => {
-    toast({ title: "Demo Mode Active", description: "Cannot add users in demo mode.", variant: "destructive"});
+    setDialogMode('add');
+    setSelectedUser(null);
+    setIsDialogOpen(true);
   };
 
   const handleEditUser = (user: User) => {
-    toast({ title: "Demo Mode Active", description: "Cannot edit users in demo mode.", variant: "destructive"});
+    setDialogMode('edit');
+    setSelectedUser(user);
+    setIsDialogOpen(true);
   };
 
   const handleDeleteUser = (user: User) => {
-     toast({ title: "Demo Mode Active", description: "Cannot delete users in demo mode.", variant: "destructive"});
+     setSelectedUser(user);
+     setIsDeleteDialogOpen(true);
   };
 
   const confirmSave = async (userData: UserFormData) => {
-    toast({ title: "Demo Mode Active", description: "Cannot save users in demo mode.", variant: "destructive"});
-    setIsDialogOpen(false);
+    setLoading(true);
+    try {
+        if (mode === 'edit' && selectedUser) {
+            await updateUser(selectedUser.id, userData);
+            toast({ title: "Success", description: "User updated successfully." });
+        } else {
+            await addUser(userData);
+            toast({ title: "Success", description: "User added successfully." });
+        }
+        setIsDialogOpen(false);
+        await fetchData();
+    } catch (e: any) {
+        console.error("Failed to save user:", e);
+        toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+        setLoading(false);
+    }
   };
 
   const confirmDelete = async () => {
-    toast({ title: "Demo Mode Active", description: "Cannot delete users in demo mode.", variant: "destructive"});
-    setIsDeleteDialogOpen(false);
+    if (!selectedUser) return;
+    setLoading(true);
+    try {
+        await deleteUser(selectedUser.id);
+        toast({ title: "Success", description: `User "${selectedUser.name}" has been deleted.` });
+        setIsDeleteDialogOpen(false);
+        await fetchData();
+    } catch (e: any) {
+        console.error("Failed to delete user:", e);
+        toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+        setLoading(false);
+    }
   };
 
 
@@ -153,11 +178,11 @@ export default function UsersPage() {
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={fetchData} disabled={loading}>
-                    <RefreshCw className="ml-2 h-4 w-4" />
+                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
                     Refresh
                 </Button>
                 <Button onClick={handleAddUser}>
-                    <PlusCircle className="ml-2 h-4 w-4" />
+                    <PlusCircle className="mr-2 h-4 w-4" />
                     Add New User
                 </Button>
               </div>
@@ -167,7 +192,7 @@ export default function UsersPage() {
             {error && (
              <Alert variant="destructive" className="mb-4">
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Connection Error - Demo Mode</AlertTitle>
+                <AlertTitle>Connection Error</AlertTitle>
                 <AlertDescription>
                     {error}
                 </AlertDescription>

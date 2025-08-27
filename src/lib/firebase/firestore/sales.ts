@@ -53,8 +53,43 @@ export interface SalesRecord {
 
 // Add a new sales record
 export const addSaleRecord = async (data: SalesRecordFormData): Promise<string> => {
-  console.log("Attempted to add sales record in demo mode:", data);
-  throw new Error("Demo Mode: Cannot save sales records.");
+    const salesCol = collection(db, 'salesRecords');
+    const allAccounts = await getAccounts();
+    const accountMap = createAccountMap(allAccounts);
+
+    const enrichedCash = { 
+        ...data.cash, 
+        accountName: accountMap.get(data.cash.accountId) || 'Unknown' 
+    };
+
+    const enrichedCards = data.cards?.map(card => ({
+        ...card,
+        accountName: accountMap.get(card.accountId) || 'Unknown'
+    })) || [];
+
+    const enrichedCredits = data.credits?.map(credit => ({
+        ...credit,
+        accountName: accountMap.get(credit.accountId) || 'Unknown'
+    })) || [];
+
+    const total = (data.cash?.amount || 0) + 
+                  (data.cards?.reduce((sum, item) => sum + item.amount, 0) || 0) +
+                  (data.credits?.reduce((sum, item) => sum + item.amount, 0) || 0);
+
+    const dataToSave = {
+        date: Timestamp.fromDate(data.date),
+        period: data.period,
+        cashier: data.salesperson,
+        total: total,
+        status: 'Pending Matching',
+        cash: enrichedCash,
+        cards: enrichedCards,
+        credits: enrichedCredits,
+        createdAt: Timestamp.now()
+    };
+
+    const newDocRef = await addDoc(salesCol, dataToSave);
+    return newDocRef.id;
 };
 
 
@@ -95,12 +130,22 @@ const enrichRecordsWithAccountNames = (records: Omit<SalesRecord, 'id'>[], accou
 
 // Get all sales records
 export const getSalesRecords = async (count: number = 20): Promise<SalesRecord[]> => {
-    console.log("Attempted to fetch sales records in demo mode.");
-    return [];
+    const salesCol = collection(db, 'salesRecords');
+    const q = query(salesCol, orderBy('createdAt', 'desc'), limit(count));
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) {
+        return [];
+    }
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SalesRecord));
 }
 
 // Get sales records by status
 export const getSalesRecordsByStatus = async (status: 'Pending Matching' | 'Matched'): Promise<SalesRecord[]> => {
-    console.log("Attempted to fetch sales records by status in demo mode.");
-    return [];
+    const salesCol = collection(db, 'salesRecords');
+    const q = query(salesCol, where('status', '==', status), orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) {
+        return [];
+    }
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SalesRecord));
 };

@@ -14,53 +14,14 @@ import { PlusCircle, FileDown, Loader2, RefreshCw, AlertCircle } from 'lucide-re
 import { AccountTree, type Account } from '@/components/chart-of-accounts/account-tree';
 import { AccountDialog, AccountFormData } from '@/components/chart-of-accounts/account-dialog';
 import { DeleteAccountDialog } from '@/components/chart-of-accounts/delete-account-dialog';
-// Temporarily disable direct DB calls
-// import { addAccount, deleteAccount, getAccounts, updateAccount } from '@/lib/firebase/firestore/accounts';
+import { addAccount, deleteAccount, getAccounts, updateAccount } from '@/lib/firebase/firestore/accounts';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-
-// --- Start of Demo Data ---
-const sampleAccounts: Account[] = [
-    {
-        id: '1', code: '1', name: 'الأصول', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: [],
-        children: [
-            {
-                id: '101', code: '11', name: 'الأصول المتداولة', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: [],
-                children: [
-                    { id: '10101', code: '1101', name: 'النقدية', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['Cashbox', 'Bank'], children: [] },
-                    { id: '10102', code: '1102', name: 'العملاء', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['Clients'], children: [] },
-                ]
-            },
-            {
-                id: '102', code: '12', name: 'الأصول الثابتة', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['Fixed Assets'], children: []
-            }
-        ]
-    },
-    {
-        id: '2', code: '2', name: 'الخصوم', type: 'Credit', group: 'Liabilities', status: 'Active', closingType: 'Balance Sheet', classifications: [],
-        children: [
-            { id: '201', code: '21', name: 'الموردون', type: 'Credit', group: 'Liabilities', status: 'Active', closingType: 'Balance Sheet', classifications: ['Suppliers'], children: [] }
-        ]
-    },
-    {
-        id: '4', code: '4', name: 'الإيرادات', type: 'Credit', group: 'Revenues', status: 'Active', closingType: 'Income Statement', classifications: ['Revenues'],
-        children: [
-             { id: '401', code: '401', name: 'إيرادات المبيعات', type: 'Credit', group: 'Revenues', status: 'Active', closingType: 'Income Statement', classifications: ['Revenues'], children: [] }
-        ]
-    },
-    {
-        id: '5', code: '5', name: 'المصروفات', type: 'Debit', group: 'Expenses', status: 'Active', closingType: 'Income Statement', classifications: ['Expenses'],
-        children: [
-            { id: '501', code: '501', name: 'مصروفات الرواتب', type: 'Debit', group: 'Expenses', status: 'Active', closingType: 'Income Statement', classifications: ['Expenses', 'Employee'], children: [] }
-        ]
-    }
-];
-// --- End of Demo Data ---
 
 
 export default function ChartOfAccountsPage() {
     const [accounts, setAccounts] = useState<Account[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -71,43 +32,98 @@ export default function ChartOfAccountsPage() {
     
     const refreshAccounts = async () => {
         setLoading(true);
-        setError("Failed to connect to Firestore. The app is currently running in offline demo mode with sample data. Your entries will not be saved. Please check your Firebase project setup to enable database functionality.");
-        // Simulate fetching data
-        setTimeout(() => {
-            setAccounts(sampleAccounts);
+        setError(null);
+        try {
+            const fetchedAccounts = await getAccounts();
+            setAccounts(fetchedAccounts);
+        } catch (e: any) {
+            console.error("Failed to fetch accounts:", e);
+            setError("Failed to connect to Firestore. Please check your Firebase project settings and security rules. The database might not be created or is not allowing reads.");
+            setAccounts([]); // Clear accounts on error
+        } finally {
             setLoading(false);
-            toast({
-                title: "Demo Mode Active",
-                description: "Displaying sample account data.",
-                variant: "default",
-            });
-        }, 500);
+        }
     };
 
     useEffect(() => {
         refreshAccounts();
     }, []);
 
+    const findAccount = (id: string, accs: Account[]): Account | undefined => {
+        for (const acc of accs) {
+            if (acc.id === id) return acc;
+            if (acc.children) {
+                const found = findAccount(id, acc.children);
+                if (found) return found;
+            }
+        }
+        return undefined;
+    };
+
     const handleAddAccount = (parentId: string | null = null) => {
-        toast({ title: "Demo Mode Active", description: "Cannot add accounts in demo mode.", variant: "destructive"});
+        setDialogMode(parentId ? 'addSub' : 'add');
+        setSelectedAccount(null);
+        const parent = parentId ? findAccount(parentId, accounts) : null;
+        setParentAccount(parent || null);
+        setIsAddEditDialogOpen(true);
     };
 
     const handleEditAccount = (account: Account) => {
-        toast({ title: "Demo Mode Active", description: "Cannot edit accounts in demo mode.", variant: "destructive"});
+        const parent = account.parentId ? findAccount(account.parentId, accounts) : null;
+        setDialogMode('edit');
+        setSelectedAccount(account);
+        setParentAccount(parent || null);
+        setIsAddEditDialogOpen(true);
     };
 
     const handleDeleteAccount = (account: Account) => {
-        toast({ title: "Demo Mode Active", description: "Cannot delete accounts in demo mode.", variant: "destructive"});
+        if (account.children && account.children.length > 0) {
+            toast({
+                title: "Deletion Failed",
+                description: "Cannot delete an account that has sub-accounts. Please delete the sub-accounts first.",
+                variant: "destructive"
+            });
+            return;
+        }
+        setSelectedAccount(account);
+        setIsDeleteDialogOpen(true);
     };
 
     const confirmSave = async (accountData: AccountFormData) => {
-        toast({ title: "Demo Mode Active", description: "Cannot save accounts in demo mode.", variant: "destructive"});
-        setIsAddEditDialogOpen(false);
+        try {
+            setLoading(true);
+            if (dialogMode === 'edit' && selectedAccount) {
+                await updateAccount(selectedAccount.id, accountData);
+                toast({ title: "Success", description: "Account updated successfully." });
+            } else {
+                const parentId = parentAccount ? parentAccount.id : null;
+                await addAccount(accountData, parentId);
+                toast({ title: "Success", description: "Account added successfully." });
+            }
+            setIsAddEditDialogOpen(false);
+            await refreshAccounts();
+        } catch (e: any) {
+            console.error("Failed to save account:", e);
+            toast({ title: "Error Saving Account", description: e.message, variant: "destructive" });
+        } finally {
+            setLoading(false);
+        }
     };
 
     const confirmDelete = async () => {
-        toast({ title: "Demo Mode Active", description: "Cannot delete accounts in demo mode.", variant: "destructive"});
-        setIsDeleteDialogOpen(false);
+        if (!selectedAccount) return;
+        try {
+            setLoading(true);
+            await deleteAccount(selectedAccount.id);
+            toast({ title: "Success", description: `Account "${selectedAccount.name}" deleted.` });
+            setIsDeleteDialogOpen(false);
+            await refreshAccounts();
+        } catch (e: any) {
+            console.error("Failed to delete account:", e);
+            toast({ title: "Error Deleting Account", description: e.message, variant: "destructive" });
+        } finally {
+            setLoading(false);
+        }
     };
 
   return (
@@ -135,7 +151,7 @@ export default function ChartOfAccountsPage() {
            {error && (
              <Alert variant="destructive" className="mb-4">
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Connection Error - Demo Mode</AlertTitle>
+                <AlertTitle>Connection Error</AlertTitle>
                 <AlertDescription>
                     {error}
                 </AlertDescription>
@@ -145,7 +161,7 @@ export default function ChartOfAccountsPage() {
             {loading ? (
                 <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <Loader2 className="h-8 w-8 animate-spin" />
-                    <p>Loading Demo Data...</p>
+                    <p>Loading Accounts...</p>
                 </div>
             ) : accounts.length > 0 ? (
                 <AccountTree 
@@ -154,12 +170,12 @@ export default function ChartOfAccountsPage() {
                     onEditAccount={handleEditAccount}
                     onDeleteAccount={handleDeleteAccount}
                 />
-            ) : (
+            ) : !error ? (
                  <div className="text-center text-muted-foreground">
                     <p>No accounts found.</p>
                     <p>Click "Add Main Account" to get started.</p>
                 </div>
-            )}
+            ) : null}
           </div>
         </CardContent>
       </Card>

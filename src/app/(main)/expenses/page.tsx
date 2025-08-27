@@ -8,17 +8,43 @@ import { useEffect, useState, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Info, AlertCircle } from 'lucide-react';
-// import { getAccounts } from '@/lib/firebase/firestore/accounts';
-
-const sampleAccounts: Account[] = [
-    { id: '1', code: '501', name: 'Salaries Expense', type: 'Debit', group: 'Expenses', status: 'Active', closingType: 'Income Statement', classifications: ['Expenses'] },
-    { id: '2', code: '502', name: 'Rent Expense', type: 'Debit', group: 'Expenses', status: 'Active', closingType: 'Income Statement', classifications: ['Expenses'] },
-];
+import { getAccounts } from '@/lib/firebase/firestore/accounts';
 
 export default function ExpensesPage() {
-    const [accounts, setAccounts] = useState<Account[]>(sampleAccounts);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>("This page is in demo mode. Your entries will not be saved. Please set up the Firestore connection in your Firebase project.");
+    const [accounts, setAccounts] = useState<Account[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchExpenseAccounts = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const allAccounts = await getAccounts();
+                // Flatten the account tree and filter for expense accounts
+                const expenseAccounts: Account[] = [];
+                const traverse = (accs: Account[]) => {
+                    for (const acc of accs) {
+                        if (acc.group === 'Expenses' && (!acc.children || acc.children.length === 0)) {
+                            expenseAccounts.push(acc);
+                        }
+                        if (acc.children) {
+                            traverse(acc.children);
+                        }
+                    }
+                };
+                traverse(allAccounts);
+                setAccounts(expenseAccounts);
+            } catch (e: any) {
+                console.error("Failed to fetch accounts:", e);
+                setError("Failed to load accounts from Firestore. Please ensure the connection is set up and you have permissions to read the 'accounts' collection.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchExpenseAccounts();
+    }, []);
 
     return (
         <div className="flex justify-center items-start pt-8">
@@ -27,7 +53,7 @@ export default function ExpensesPage() {
                      {error && (
                          <Alert variant="destructive" className="mb-6">
                             <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Demo Mode</AlertTitle>
+                            <AlertTitle>Connection Error</AlertTitle>
                             <AlertDescription>
                                {error}
                             </AlertDescription>

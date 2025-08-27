@@ -20,19 +20,8 @@ import { Badge } from '@/components/ui/badge';
 import { History, Printer, Loader2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import Link from 'next/link';
-import { SalesRecord } from '@/lib/firebase/firestore/sales';
-// import { getSalesRecords } from '@/lib/firebase/firestore/sales';
+import { SalesRecord, getSalesRecords } from '@/lib/firebase/firestore/sales';
 import { format } from 'date-fns';
-import { Timestamp } from 'firebase/firestore';
-
-// --- Demo Data ---
-const sampleRecords: SalesRecord[] = [
-    { id: '1', date: Timestamp.fromDate(new Date()), period: 'Morning', cashier: 'أحمد', total: 5500, status: 'Pending Matching', createdAt: Timestamp.now(), cash: {accountId: '' , amount: 0}, cards: [], credits: [] },
-    { id: '2', date: Timestamp.fromDate(new Date()), period: 'Evening', cashier: 'فاطمة', total: 7200, status: 'Matched', createdAt: Timestamp.now(), cash: {accountId: '' , amount: 0}, cards: [], credits: [] },
-    { id: '3', date: Timestamp.fromDate(new Date()), period: 'Morning', cashier: 'علي', total: 4800, status: 'Pending Upload', createdAt: Timestamp.now(), cash: {accountId: '' , amount: 0}, cards: [], credits: [] },
-];
-// ---
-
 
 const getStatusVariant = (status: string) => {
     switch (status) {
@@ -55,9 +44,15 @@ export function SalesRecords() {
     useEffect(() => {
         const fetchRecords = async () => {
             setLoading(true);
-            // using sample data
-            setRecords(sampleRecords);
-            setLoading(false);
+            try {
+                const fetchedRecords = await getSalesRecords(20);
+                setRecords(fetchedRecords);
+            } catch (error) {
+                console.error("Failed to fetch sales records:", error);
+                setRecords([]);
+            } finally {
+                setLoading(false);
+            }
         };
         fetchRecords();
     }, []);

@@ -32,16 +32,24 @@ export interface Transaction extends Omit<TransactionFormData, 'date' | 'created
 
 // Add a new transaction
 export const addTransaction = async (transactionData: Omit<TransactionFormData, 'createdAt'>): Promise<string> => {
-  // In demo mode, we just simulate the action.
-  console.log("Attempted to add transaction in demo mode:", transactionData);
-  // We throw an error to be caught by the form handler, which will show a toast.
-  throw new Error("Demo Mode: Cannot save transactions.");
+  const transactionsCol = collection(db, 'transactions');
+  const dataToSave = {
+    ...transactionData,
+    date: Timestamp.fromDate(transactionData.date),
+    createdAt: Timestamp.now(),
+  };
+  const newDocRef = await addDoc(transactionsCol, dataToSave);
+  return newDocRef.id;
 };
 
 
 // Get recent transactions for the dashboard
 export const getRecentTransactions = async (count: number = 5): Promise<Transaction[]> => {
-    // This function will now be handled by static data in the component itself.
-    console.log("Attempted to fetch recent transactions in demo mode.");
-    return [];
+    const transactionsCol = collection(db, 'transactions');
+    const q = query(transactionsCol, orderBy('createdAt', 'desc'), limit(count));
+    const transactionSnapshot = await getDocs(q);
+    if (transactionSnapshot.empty) {
+        return [];
+    }
+    return transactionSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction));
 }
