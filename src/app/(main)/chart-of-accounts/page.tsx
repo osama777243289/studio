@@ -10,12 +10,13 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, FileDown, Loader2, RefreshCw } from 'lucide-react';
+import { PlusCircle, FileDown, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import { AccountTree, type Account } from '@/components/chart-of-accounts/account-tree';
 import { AccountDialog, AccountFormData } from '@/components/chart-of-accounts/account-dialog';
 import { DeleteAccountDialog } from '@/components/chart-of-accounts/delete-account-dialog';
 import { addAccount, deleteAccount, getAccounts, updateAccount } from '@/lib/firebase/firestore/accounts';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 // Helper function to find an account in the tree
 const findAccountById = (searchAccounts: Account[], id: string): Account | null => {
@@ -45,6 +46,7 @@ const findParentOf = (searchAccounts: Account[], accountId: string, parent: Acco
 export default function ChartOfAccountsPage() {
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
@@ -54,20 +56,17 @@ export default function ChartOfAccountsPage() {
     
     const refreshAccounts = async () => {
         setLoading(true);
+        setError(null);
         try {
             const fetchedAccounts = await getAccounts();
             setAccounts(fetchedAccounts);
-             toast({
+            toast({
                 title: "Accounts Refreshed",
                 description: "The chart of accounts has been updated.",
             });
-        } catch (error) {
-            console.error("Failed to fetch accounts:", error);
-            toast({
-                title: "Error",
-                description: "Could not fetch the latest accounts.",
-                variant: "destructive",
-            });
+        } catch (e: any) {
+            console.error("Failed to fetch accounts:", e);
+            setError(`Connection Error - Demo Mode: Failed to connect to Firestore. The app is currently running in offline demo mode. Your entries will not be saved. Please check your Firebase project setup to enable database functionality. Original error: ${e.message}`);
         } finally {
             setLoading(false);
         }
@@ -78,6 +77,10 @@ export default function ChartOfAccountsPage() {
     }, []);
 
     const handleAddAccount = (parentId: string | null = null) => {
+        if (error) {
+            toast({ title: "Demo Mode Active", description: "Cannot add accounts while in demo mode. Please resolve the connection error.", variant: "destructive"});
+            return;
+        }
         const pAccount = parentId ? findAccountById(accounts, parentId) : null;
         const level = pAccount ? (pAccount.code.length === 1 ? 2 : (pAccount.code.length === 2 ? 3 : 4)) : 1;
         if (level > 4) {
@@ -126,9 +129,9 @@ export default function ChartOfAccountsPage() {
                 toast({ title: "Account Added", description: `Account "${accountData.name}" has been successfully created.` });
             }
             refreshAccounts();
-        } catch (error) {
-            console.error("Failed to save account:", error);
-            toast({ title: "Save Failed", description: "An error occurred while saving the account.", variant: "destructive" });
+        } catch (e) {
+            console.error("Failed to save account:", e);
+            toast({ title: "Save Failed", description: `An error occurred while saving the account. ${error}`, variant: "destructive" });
         } finally {
             setIsAddEditDialogOpen(false);
             setSelectedAccount(null);
@@ -142,9 +145,9 @@ export default function ChartOfAccountsPage() {
             await deleteAccount(selectedAccount.id);
             toast({ title: "Account Deleted", description: `Account "${selectedAccount.name}" has been deleted.` });
             refreshAccounts();
-        } catch (error) {
-            console.error("Failed to delete account:", error);
-            const errorMessage = (error as Error).message || "An unexpected error occurred.";
+        } catch (e) {
+            console.error("Failed to delete account:", e);
+            const errorMessage = (e as Error).message || "An unexpected error occurred.";
             toast({ title: "Deletion Failed", description: errorMessage, variant: "destructive" });
         } finally {
             setIsDeleteDialogOpen(false);
@@ -163,7 +166,7 @@ export default function ChartOfAccountsPage() {
               </div>
               <div className='flex gap-2'>
                   <Button variant="outline" onClick={refreshAccounts} disabled={loading}>
-                      <RefreshCw className="mr-2 h-4 w-4" />
+                      {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
                       Refresh
                   </Button>
                   <Button onClick={() => handleAddAccount()}>
@@ -174,13 +177,22 @@ export default function ChartOfAccountsPage() {
           </div>
         </CardHeader>
         <CardContent>
+           {error && (
+             <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Connection Error - Demo Mode</AlertTitle>
+                <AlertDescription>
+                    {error}
+                </AlertDescription>
+            </Alert>
+           )}
           <div className="border rounded-md p-4 min-h-[400px] flex items-center justify-center">
             {loading ? (
                 <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <Loader2 className="h-8 w-8 animate-spin" />
-                    <p>Loading accounts...</p>
+                    <p>Connecting to Firestore...</p>
                 </div>
-            ) : accounts.length > 0 ? (
+            ) : accounts.length > 0 && !error ? (
                 <AccountTree 
                     accounts={accounts} 
                     onAddSubAccount={(parentId) => handleAddAccount(parentId)}
