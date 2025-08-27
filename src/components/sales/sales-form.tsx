@@ -41,6 +41,7 @@ import {
   Pencil,
   Loader2,
   Hash,
+  Paperclip
 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import type { Account } from '../chart-of-accounts/account-tree';
@@ -74,6 +75,15 @@ const getAccountsByClassification = (accounts: Account[], classifications: strin
     return flattened;
 };
 
+const fileToDataUri = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+};
+
 
 export function SalesForm({ accounts }: SalesFormProps) {
   const { toast } = useToast();
@@ -86,7 +96,7 @@ export function SalesForm({ accounts }: SalesFormProps) {
         salesperson: '',
         postingNumber: '',
         cash: { accountId: '', amount: 0 },
-        cards: [{ accountId: '', amount: 0 }],
+        cards: [{ accountId: '', amount: 0, receiptImageUrl: '' }],
         credits: [{ accountId: '', amount: 0 }],
     }
   });
@@ -123,6 +133,17 @@ export function SalesForm({ accounts }: SalesFormProps) {
       });
     }
   }
+  
+  const handleImageUpload = async (file: File, index: number) => {
+    if (file) {
+      if (file.size > 1024 * 1024 * 2) { // 2MB limit
+        toast({ title: 'خطأ', description: 'حجم الصورة يجب أن يكون أقل من 2 ميجابايت.', variant: 'destructive' });
+        return;
+      }
+      const dataUri = await fileToDataUri(file);
+      form.setValue(`cards.${index}.receiptImageUrl`, dataUri);
+    }
+  };
 
 
   return (
@@ -287,9 +308,27 @@ export function SalesForm({ accounts }: SalesFormProps) {
                     <Label htmlFor={`card-amount-${field.id}`}>المبلغ</Label>
                     <Input id={`card-amount-${field.id}`} placeholder="0.00" type="number" {...form.register(`cards.${index}.amount`, { valueAsNumber: true })} />
                   </div>
+                  <div className="space-y-2">
+                     <Label htmlFor={`card-receipt-${index}`}>إيصال الشبكة (اختياري)</Label>
+                      <div className="flex items-center gap-2">
+                         <Input
+                            id={`card-receipt-${index}`}
+                            type="file"
+                            accept="image/*"
+                            className="flex-grow"
+                             onChange={(e) => e.target.files && handleImageUpload(e.target.files[0], index)}
+                         />
+                      </div>
+                       {form.watch(`cards.${index}.receiptImageUrl`) && (
+                          <div className="text-xs text-green-600 flex items-center gap-1">
+                              <Paperclip className="h-3 w-3" />
+                              تم إرفاق الصورة بنجاح.
+                          </div>
+                      )}
+                  </div>
                 </div>
               ))}
-              <Button type="button" variant="outline" className="w-full" onClick={() => appendCard({ accountId: '', amount: 0 })}>
+              <Button type="button" variant="outline" className="w-full" onClick={() => appendCard({ accountId: '', amount: 0, receiptImageUrl: '' })}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 إضافة حساب بطاقة
               </Button>

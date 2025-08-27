@@ -24,13 +24,17 @@ const accountDetailSchema = z.object({
   amount: z.coerce.number().min(0, 'Amount must be positive.'),
 });
 
+const cardAccountDetailSchema = accountDetailSchema.extend({
+  receiptImageUrl: z.string().optional(),
+});
+
 export const salesRecordSchema = z.object({
   date: z.date(),
   period: z.enum(['Morning', 'Evening']),
   salesperson: z.string().min(2, 'Salesperson name is required.'),
   postingNumber: z.string().optional(),
   cash: accountDetailSchema,
-  cards: z.array(accountDetailSchema).optional(),
+  cards: z.array(cardAccountDetailSchema).optional(),
   credits: z.array(accountDetailSchema).optional(),
 });
 
