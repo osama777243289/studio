@@ -31,8 +31,10 @@ import {
 import { UserDialog, type UserFormData } from '@/components/users/user-dialog';
 import { DeleteUserDialog } from '@/components/users/delete-user-dialog';
 import { Account } from '@/components/chart-of-accounts/account-tree';
-import { Role } from '@/lib/firebase/firestore/roles';
-
+import { Role, getRoles } from '@/lib/firebase/firestore/roles';
+import { getUsers, addUser, updateUser, deleteUser } from '@/lib/firebase/firestore/users';
+import { getAccounts } from '@/lib/firebase/firestore/accounts';
+import { useToast } from '@/hooks/use-toast';
 
 export interface PagePermissions {
     view?: boolean;
@@ -72,61 +74,43 @@ export interface User {
     employeeAccountId?: string;
 }
 
-const initialUsers: User[] = [
-    {
-        id: '1',
-        name: 'المدير العام',
-        email: 'manager@example.com',
-        mobile: '0500000001',
-        avatarUrl: 'https://picsum.photos/id/10/40/40',
-        type: 'regular',
-        role: ['Admin'],
-        status: 'نشط',
-        permissions: { pages: { dashboard: { view: true } } },
-    },
-    {
-        id: '2',
-        name: 'موظف الكاشير',
-        email: 'cashier@example.com',
-        mobile: '0500000002',
-        avatarUrl: 'https://picsum.photos/id/20/40/40',
-        type: 'employee',
-        role: ['Cashier'],
-        status: 'نشط',
-        permissions: { pages: { sales: { view: true, create: true } } },
-        employeeAccountId: 'some-account-id'
-    }
-];
-
-const initialRoles: Role[] = [
-    { id: '1', name: 'Admin' },
-    { id: '2', name: 'Cashier' },
-    { id: '3', name: 'Accountant' }
-];
-
-const initialAccounts: Account[] = []; // Keep this empty for now or populate if needed for the dialog
-
-
 export default function UsersPage() {
-  const [users, setUsers] = useState<User[]>(initialUsers);
-  const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
-  const [roles, setRoles] = useState<Role[]>(initialRoles);
-  const [loading, setLoading] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
+  const { toast } = useToast();
   
   const fetchData = async () => {
     setLoading(true);
-    setTimeout(() => {
-        setUsers(initialUsers);
-        setAccounts(initialAccounts);
-        setRoles(initialRoles);
+    try {
+        const [usersData, accountsData, rolesData] = await Promise.all([
+            getUsers(),
+            getAccounts(),
+            getRoles()
+        ]);
+        setUsers(usersData);
+        setAccounts(accountsData);
+        setRoles(rolesData);
+    } catch (error) {
+        console.error("Failed to fetch data:", error);
+        toast({
+            title: "Error",
+            description: "Failed to load data from the server. Please check your connection and try again.",
+            variant: "destructive",
+        });
+    } finally {
         setLoading(false);
-        alert("This is a demo. Data is not fetched from a server.");
-    }, 500);
+    }
   };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const handleAddUser = () => {
     setDialogMode('add');
@@ -146,17 +130,37 @@ export default function UsersPage() {
   };
 
   const confirmSave = async (userData: UserFormData) => {
-    alert("This is a demo. Your changes will not be saved.");
-    setIsDialogOpen(false);
-    setSelectedUser(null);
+     try {
+      if (dialogMode === 'edit' && selectedUser) {
+        await updateUser(selectedUser.id, userData);
+        toast({ title: "User Updated", description: `User "${userData.name}" has been successfully updated.` });
+      } else {
+        await addUser(userData);
+        toast({ title: "User Added", description: `User "${userData.name}" has been successfully created.` });
+      }
+      fetchData();
+    } catch (error) {
+      console.error("Failed to save user:", error);
+      toast({ title: "Save Failed", description: "An error occurred while saving the user.", variant: "destructive" });
+    } finally {
+      setIsDialogOpen(false);
+      setSelectedUser(null);
+    }
   };
 
   const confirmDelete = async () => {
-    if (selectedUser) {
-      alert("This is a demo. Your changes will not be saved.");
+    if (!selectedUser) return;
+    try {
+      await deleteUser(selectedUser.id);
+      toast({ title: "User Deleted", description: `User "${selectedUser.name}" has been deleted.` });
+      fetchData();
+    } catch (error) {
+      console.error("Failed to delete user:", error);
+      toast({ title: "Delete Failed", description: "An error occurred while deleting the user.", variant: "destructive" });
+    } finally {
+        setIsDeleteDialogOpen(false);
+        setSelectedUser(null);
     }
-    setIsDeleteDialogOpen(false);
-    setSelectedUser(null);
   };
 
 
@@ -167,7 +171,7 @@ export default function UsersPage() {
           <div className="flex justify-between items-center">
               <div>
                   <CardTitle className="font-headline">Users Directory</CardTitle>
-                  <CardDescription>Manage system users and permissions. (Demo Mode)</CardDescription>
+                  <CardDescription>Manage system users and permissions.</CardDescription>
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={fetchData} disabled={loading}>
@@ -199,7 +203,14 @@ export default function UsersPage() {
                     </TableRow>
                     </TableHeader>
                     <TableBody>
-                    {users.map((user) => (
+                     {users.length === 0 ? (
+                        <TableRow>
+                            <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                                No users found. Start by adding a new user.
+                            </TableCell>
+                        </TableRow>
+                    ) : (
+                        users.map((user) => (
                         <TableRow key={user.id}>
                         <TableCell>
                             <div className="flex items-center gap-4">
@@ -237,7 +248,8 @@ export default function UsersPage() {
                             </div>
                         </TableCell>
                         </TableRow>
-                    ))}
+                        ))
+                    )}
                     </TableBody>
                 </Table>
             )}

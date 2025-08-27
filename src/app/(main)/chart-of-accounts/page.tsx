@@ -14,100 +14,8 @@ import { PlusCircle, FileDown, Loader2, RefreshCw } from 'lucide-react';
 import { AccountTree, type Account } from '@/components/chart-of-accounts/account-tree';
 import { AccountDialog, AccountFormData } from '@/components/chart-of-accounts/account-dialog';
 import { DeleteAccountDialog } from '@/components/chart-of-accounts/delete-account-dialog';
-
-const initialAccountsData: Account[] = [
-  {
-    id: "1",
-    code: "1",
-    name: "الأصول",
-    type: "Debit",
-    group: "Assets",
-    status: "Active",
-    closingType: "Balance Sheet",
-    classifications: [],
-    children: [
-      {
-        id: "11",
-        code: "11",
-        name: "الأصول المتداولة",
-        type: "Debit",
-        group: "Assets",
-        status: "Active",
-        closingType: "Balance Sheet",
-        classifications: [],
-        children: [
-           {
-            id: "111",
-            code: "111",
-            name: "الصندوق",
-            type: "Debit",
-            group: "Assets",
-            status: "Active",
-            closingType: "Balance Sheet",
-            classifications: ['Cashbox'],
-            children: []
-          },
-          {
-            id: "112",
-            code: "112",
-            name: "البنوك",
-            type: "Debit",
-            group: "Assets",
-            status: "Active",
-            closingType: "Balance Sheet",
-            classifications: ['Bank'],
-            children: []
-          }
-        ]
-      }
-    ]
-  },
-   {
-    id: "2",
-    code: "2",
-    name: "الخصوم",
-    type: "Credit",
-    group: "Liabilities",
-    status: "Active",
-    closingType: "Balance Sheet",
-    classifications: [],
-    children: []
-  },
-  {
-    id: "3",
-    code: "3",
-    name: "حقوق الملكية",
-    type: "Credit",
-    group: "Equity",
-    status: "Active",
-    closingType: "Balance Sheet",
-    classifications: [],
-    children: []
-  },
-  {
-    id: "4",
-    code: "4",
-    name: "الإيرادات",
-    type: "Credit",
-    group: "Revenues",
-    status: "Active",
-    closingType: "Income Statement",
-    classifications: ['Revenues'],
-    children: []
-  },
-  {
-    id: "5",
-    code: "5",
-    name: "المصروفات",
-    type: "Debit",
-    group: "Expenses",
-    status: "Active",
-    closingType: "Income Statement",
-    classifications: ['Expenses'],
-    children: []
-  }
-];
-
+import { addAccount, deleteAccount, getAccounts, updateAccount } from '@/lib/firebase/firestore/accounts';
+import { useToast } from '@/hooks/use-toast';
 
 // Helper function to find an account in the tree
 const findAccountById = (searchAccounts: Account[], id: string): Account | null => {
@@ -135,29 +43,49 @@ const findParentOf = (searchAccounts: Account[], accountId: string, parent: Acco
 
 
 export default function ChartOfAccountsPage() {
-    const [accounts, setAccounts] = useState<Account[]>(initialAccountsData);
-    const [loading, setLoading] = useState(false);
+    const [accounts, setAccounts] = useState<Account[]>([]);
+    const [loading, setLoading] = useState(true);
     const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
     const [parentAccount, setParentAccount] = useState<Account | null>(null);
     const [dialogMode, setDialogMode] = useState<'add' | 'edit' | 'addSub'>('add');
+    const { toast } = useToast();
     
     const refreshAccounts = async () => {
-        // In demo mode, we just reset to the initial static data.
         setLoading(true);
-        setTimeout(() => {
-            setAccounts(initialAccountsData);
+        try {
+            const fetchedAccounts = await getAccounts();
+            setAccounts(fetchedAccounts);
+             toast({
+                title: "Accounts Refreshed",
+                description: "The chart of accounts has been updated.",
+            });
+        } catch (error) {
+            console.error("Failed to fetch accounts:", error);
+            toast({
+                title: "Error",
+                description: "Could not fetch the latest accounts.",
+                variant: "destructive",
+            });
+        } finally {
             setLoading(false);
-            alert("This is a demo. Data is not fetched from a server.");
-        }, 500);
+        }
     };
+
+    useEffect(() => {
+        refreshAccounts();
+    }, []);
 
     const handleAddAccount = (parentId: string | null = null) => {
         const pAccount = parentId ? findAccountById(accounts, parentId) : null;
         const level = pAccount ? (pAccount.code.length === 1 ? 2 : (pAccount.code.length === 2 ? 3 : 4)) : 1;
         if (level > 4) {
-            alert("Cannot add a sub-account deeper than the fourth level.");
+            toast({
+                title: "Cannot Add Account",
+                description: "Cannot add a sub-account deeper than the fourth level.",
+                variant: "destructive",
+            });
             return;
         }
         setDialogMode(parentId ? 'addSub' : 'add');
@@ -176,7 +104,11 @@ export default function ChartOfAccountsPage() {
 
     const handleDeleteAccount = (account: Account) => {
         if (account.children && account.children.length > 0) {
-            alert("Cannot delete an account that has sub-accounts. Please delete the sub-accounts first.");
+            toast({
+                title: "Deletion Failed",
+                description: "Cannot delete an account that has sub-accounts. Please delete the sub-accounts first.",
+                variant: "destructive",
+            });
             return;
         }
         setSelectedAccount(account);
@@ -184,17 +116,40 @@ export default function ChartOfAccountsPage() {
     };
 
     const confirmSave = async (accountData: AccountFormData) => {
-        alert("This is a demo. Your changes will not be saved.");
-        setIsAddEditDialogOpen(false);
-        setSelectedAccount(null);
-        setParentAccount(null);
+       try {
+            if (dialogMode === 'edit' && selectedAccount) {
+                await updateAccount(selectedAccount.id, accountData);
+                toast({ title: "Account Updated", description: `Account "${accountData.name}" has been successfully updated.` });
+            } else {
+                const parentId = parentAccount ? parentAccount.id : null;
+                await addAccount(accountData, parentId);
+                toast({ title: "Account Added", description: `Account "${accountData.name}" has been successfully created.` });
+            }
+            refreshAccounts();
+        } catch (error) {
+            console.error("Failed to save account:", error);
+            toast({ title: "Save Failed", description: "An error occurred while saving the account.", variant: "destructive" });
+        } finally {
+            setIsAddEditDialogOpen(false);
+            setSelectedAccount(null);
+            setParentAccount(null);
+        }
     };
 
     const confirmDelete = async () => {
         if (!selectedAccount) return;
-        alert("This is a demo. Your changes will not be saved.");
-        setIsDeleteDialogOpen(false);
-        setSelectedAccount(null);
+        try {
+            await deleteAccount(selectedAccount.id);
+            toast({ title: "Account Deleted", description: `Account "${selectedAccount.name}" has been deleted.` });
+            refreshAccounts();
+        } catch (error) {
+            console.error("Failed to delete account:", error);
+            const errorMessage = (error as Error).message || "An unexpected error occurred.";
+            toast({ title: "Deletion Failed", description: errorMessage, variant: "destructive" });
+        } finally {
+            setIsDeleteDialogOpen(false);
+            setSelectedAccount(null);
+        }
     };
 
   return (
@@ -204,7 +159,7 @@ export default function ChartOfAccountsPage() {
           <div className="flex justify-between items-center">
               <div>
                   <CardTitle className="font-headline">Chart of Accounts</CardTitle>
-                  <CardDescription>Browse and manage your accounting tree. (Demo Mode)</CardDescription>
+                  <CardDescription>Browse and manage your accounting tree.</CardDescription>
               </div>
               <div className='flex gap-2'>
                   <Button variant="outline" onClick={refreshAccounts} disabled={loading}>
@@ -228,7 +183,7 @@ export default function ChartOfAccountsPage() {
             ) : accounts.length > 0 ? (
                 <AccountTree 
                     accounts={accounts} 
-                    onAddSubAccount={handleAddAccount}
+                    onAddSubAccount={(parentId) => handleAddAccount(parentId)}
                     onEditAccount={handleEditAccount}
                     onDeleteAccount={handleDeleteAccount}
                 />

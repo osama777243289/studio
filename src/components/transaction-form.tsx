@@ -63,20 +63,23 @@ export function TransactionForm({
 
   async function onSubmit(values: z.infer<typeof transactionSchema>) {
     try {
-      // In a real app, this would save to a database.
-      // For this demo, we'll just show a success message.
-      console.log('Submitted data (demo):', values);
+      await addTransaction(values);
       toast({
-        title: 'Success (Demo)',
-        description: `The ${transactionType.toLowerCase()} has been recorded in this demo session. It will not be saved permanently.`,
+        title: 'Success',
+        description: `The ${transactionType.toLowerCase()} has been recorded successfully.`,
         variant: 'default',
       });
-      form.reset();
+      form.reset({
+          ...form.getValues(), // keep date and type
+          amount: undefined,
+          accountId: '',
+          description: '',
+      });
     } catch (error) {
        console.error(`Failed to save ${transactionType.toLowerCase()}:`, error);
        toast({
         title: 'Error',
-        description: `An unexpected error occurred.`,
+        description: `An unexpected error occurred. Could not save the ${transactionType.toLowerCase()}.`,
         variant: 'destructive',
       });
     }
@@ -105,7 +108,7 @@ export function TransactionForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Account</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select an account" />
@@ -114,7 +117,7 @@ export function TransactionForm({
                 <SelectContent>
                   {accounts.map((acc) => (
                     <SelectItem key={acc.id} value={acc.id}>
-                      {acc.name}
+                      {acc.name} ({acc.code})
                     </SelectItem>
                   ))}
                 </SelectContent>

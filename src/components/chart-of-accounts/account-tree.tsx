@@ -27,12 +27,13 @@ export interface Account {
   closingType: typeof closingAccountTypes[number];
   classifications: (typeof accountClassifications[number])[];
   children?: Account[];
+  parentId?: string | null;
 }
 
 interface AccountTreeProps {
   accounts: Account[];
   level?: number;
-  onAddSubAccount: (parentId: string, level: number) => void;
+  onAddSubAccount: (parentId: string) => void;
   onEditAccount: (account: Account) => void;
   onDeleteAccount: (account: Account) => void;
 }
@@ -40,14 +41,14 @@ interface AccountTreeProps {
 interface AccountItemProps {
   account: Account;
   level: number;
-  onAddSubAccount: (parentId: string, level: number) => void;
+  onAddSubAccount: (parentId: string) => void;
   onEditAccount: (account: Account) => void;
   onDeleteAccount: (account: Account) => void;
 }
 
 export function AccountTree({ accounts, level = 0, onAddSubAccount, onEditAccount, onDeleteAccount }: AccountTreeProps) {
   return (
-    <div className="space-y-1">
+    <div className="space-y-1 w-full">
       {accounts.map((account) => (
         <AccountItem 
           key={account.id} 
@@ -65,11 +66,11 @@ export function AccountTree({ accounts, level = 0, onAddSubAccount, onEditAccoun
 function AccountItem({ account, level, onAddSubAccount, onEditAccount, onDeleteAccount }: AccountItemProps) {
   const [isOpen, setIsOpen] = React.useState(level < 2);
   const hasChildren = account.children && account.children.length > 0;
-  const isTransactional = level === 3;
+  const isTransactional = !hasChildren;
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <div className={cn("flex flex-col gap-2 p-2 rounded-md hover:bg-muted/50 group", `ml-${level * 4 + 2}`)}>
+        <div className={cn("flex flex-col gap-2 p-2 rounded-md hover:bg-muted/50 group", `ml-${level * 4}`)}>
             <div className="flex items-center gap-2">
                 <div className='w-6'>
                 {hasChildren && (
@@ -95,12 +96,10 @@ function AccountItem({ account, level, onAddSubAccount, onEditAccount, onDeleteA
                         <Pencil className="h-4 w-4 text-blue-500"/>
                         <span className="sr-only">Edit</span>
                     </Button>
-                     {!isTransactional && (
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onAddSubAccount(account.id, level + 1)}>
-                            <Plus className="h-4 w-4 text-green-500"/>
-                            <span className="sr-only">Add Sub-account</span>
-                        </Button>
-                    )}
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onAddSubAccount(account.id)}>
+                        <Plus className="h-4 w-4 text-green-500"/>
+                        <span className="sr-only">Add Sub-account</span>
+                    </Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDeleteAccount(account)}>
                         <Trash2 className="h-4 w-4 text-red-500"/>
                         <span className="sr-only">Delete</span>
@@ -108,7 +107,7 @@ function AccountItem({ account, level, onAddSubAccount, onEditAccount, onDeleteA
                 </div>
             </div>
             {account.classifications && account.classifications.length > 0 && (
-                 <div className={cn("flex items-center gap-2 flex-wrap", `ml-${level * 4 + 8}`)}>
+                 <div className={cn("flex items-center gap-2 flex-wrap", `ml-8`)}>
                      {account.classifications.map(c => <Badge key={c} variant="secondary">{c}</Badge>)}
                  </div>
             )}

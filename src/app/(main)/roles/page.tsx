@@ -28,31 +28,38 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { RoleDialog, type RoleFormData } from '@/components/roles/role-dialog';
 import { DeleteRoleDialog } from '@/components/roles/delete-role-dialog';
-import { type Role } from '@/lib/firebase/firestore/roles';
-
-const initialRoles: Role[] = [
-    { id: '1', name: 'Admin' },
-    { id: '2', name: 'Cashier' },
-    { id: '3', name: 'Accountant' },
-    { id: '4', name: 'Data Entry' }
-];
+import { type Role, getRoles, addRole, updateRole, deleteRole } from '@/lib/firebase/firestore/roles';
+import { useToast } from '@/hooks/use-toast';
 
 export default function RolesPage() {
-    const [roles, setRoles] = useState<Role[]>(initialRoles);
-    const [loading, setLoading] = useState(false);
+    const [roles, setRoles] = useState<Role[]>([]);
+    const [loading, setLoading] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedRole, setSelectedRole] = useState<Role | null>(null);
     const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
+    const { toast } = useToast();
 
     const fetchRoles = async () => {
         setLoading(true);
-        setTimeout(() => {
-            setRoles(initialRoles);
+        try {
+            const fetchedRoles = await getRoles();
+            setRoles(fetchedRoles);
+        } catch (error) {
+             console.error("Failed to fetch roles:", error);
+            toast({
+                title: "Error",
+                description: "Could not fetch roles from the database.",
+                variant: "destructive",
+            });
+        } finally {
             setLoading(false);
-            alert("This is a demo. Data is not fetched from a server.");
-        }, 500);
+        }
     };
+
+    useEffect(() => {
+        fetchRoles();
+    }, []);
 
     const handleAddRole = () => {
         setDialogMode('add');
@@ -72,17 +79,37 @@ export default function RolesPage() {
     };
 
     const confirmSave = async (roleData: RoleFormData) => {
-        alert("This is a demo. Your changes will not be saved.");
-        setIsDialogOpen(false);
-        setSelectedRole(null);
+        try {
+            if (dialogMode === 'edit' && selectedRole) {
+                await updateRole(selectedRole.id, roleData);
+                toast({ title: "Role Updated", description: `Role "${roleData.name}" was successfully updated.` });
+            } else {
+                await addRole(roleData);
+                toast({ title: "Role Added", description: `Role "${roleData.name}" was successfully created.` });
+            }
+            fetchRoles();
+        } catch (error) {
+            console.error("Failed to save role:", error);
+            toast({ title: "Save Failed", description: "An error occurred while saving the role.", variant: "destructive" });
+        } finally {
+            setIsDialogOpen(false);
+            setSelectedRole(null);
+        }
     };
 
     const confirmDelete = async () => {
-        if (selectedRole) {
-           alert("This is a demo. Your changes will not be saved.");
+        if (!selectedRole) return;
+        try {
+           await deleteRole(selectedRole.id);
+           toast({ title: "Role Deleted", description: `Role "${selectedRole.name}" was deleted.` });
+           fetchRoles();
+        } catch (error) {
+            console.error("Failed to delete role:", error);
+            toast({ title: "Delete Failed", description: "An error occurred while deleting the role.", variant: "destructive" });
+        } finally {
+            setIsDeleteDialogOpen(false);
+            setSelectedRole(null);
         }
-        setIsDeleteDialogOpen(false);
-        setSelectedRole(null);
     };
 
     return (
@@ -92,7 +119,7 @@ export default function RolesPage() {
                     <div className="flex justify-between items-center">
                         <div>
                             <CardTitle className="font-headline">إدارة الأدوار</CardTitle>
-                            <CardDescription>إضافة وتعديل وحذف أدوار المستخدمين في النظام. (وضع العرض)</CardDescription>
+                            <CardDescription>إضافة وتعديل وحذف أدوار المستخدمين في النظام.</CardDescription>
                         </div>
                          <div className="flex gap-2">
                              <Button variant="outline" onClick={fetchRoles} disabled={loading}>
