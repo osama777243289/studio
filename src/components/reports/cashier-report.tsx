@@ -164,45 +164,37 @@ export function CashierReport() {
                              const Icon = item.icon;
                              const difference = item.actual - item.original;
                              return (
-                                <React.Fragment key={index}>
-                                    <TableRow>
-                                        <TableCell className="font-medium flex items-center gap-2">
-                                            <Icon className="h-5 w-5 text-muted-foreground"/>
-                                            {item.method}
-                                            {item.isCard && item.receiptImageUrl && (
-                                                <Dialog>
-                                                    <DialogTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-6 w-6 print:hidden">
-                                                            <ImageIcon className="text-blue-500"/>
-                                                        </Button>
-                                                    </DialogTrigger>
-                                                    <DialogContent>
-                                                        <DialogHeader>
-                                                            <DialogTitle>إيصال الشبكة لـ {item.account}</DialogTitle>
-                                                        </DialogHeader>
-                                                        <div className="relative h-96 w-full">
-                                                            <Image src={item.receiptImageUrl} alt={`إيصال لـ ${item.account}`} layout="fill" objectFit="contain" />
-                                                        </div>
-                                                    </DialogContent>
-                                                </Dialog>
-                                            )}
-                                        </TableCell>
-                                        <TableCell className="text-center">{item.original.toFixed(2)}</TableCell>
-                                        <TableCell className="text-center">{item.actual.toFixed(2)}</TableCell>
-                                        <TableCell className="text-center">{getDifferenceText(difference)}</TableCell>
-                                        <TableCell>{item.account}: {item.original.toFixed(2)}</TableCell>
-                                    </TableRow>
-                                    {item.isCard && item.receiptImageUrl && (
-                                        <TableRow className="hidden print:table-row">
-                                            <TableCell colSpan={5} className="p-2 text-center">
-                                                <div className="mx-auto my-2 border p-2 rounded-md" style={{ maxWidth: '200px' }}>
-                                                    <p className="text-xs font-semibold mb-1">إيصال: {item.account}</p>
-                                                    <Image src={item.receiptImageUrl} alt={`إيصال لـ ${item.account}`} width={200} height={300} style={{ objectFit: 'contain' }} />
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </React.Fragment>
+                                <TableRow key={index}>
+                                    <TableCell className="font-medium flex items-center gap-2">
+                                        <Icon className="h-5 w-5 text-muted-foreground"/>
+                                        {item.method}
+                                    </TableCell>
+                                    <TableCell className="text-center">{item.original.toFixed(2)}</TableCell>
+                                    <TableCell className="text-center">{item.actual.toFixed(2)}</TableCell>
+                                    <TableCell className="text-center">{getDifferenceText(difference)}</TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-2">
+                                        <span>{item.account}: {item.original.toFixed(2)}</span>
+                                        {item.isCard && item.receiptImageUrl && (
+                                            <Dialog>
+                                                <DialogTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-6 w-6">
+                                                        <ImageIcon className="text-blue-500"/>
+                                                    </Button>
+                                                </DialogTrigger>
+                                                <DialogContent>
+                                                    <DialogHeader>
+                                                        <DialogTitle>إيصال الشبكة لـ {item.account}</DialogTitle>
+                                                    </DialogHeader>
+                                                    <div className="relative h-96 w-full">
+                                                        <Image src={item.receiptImageUrl} alt={`إيصال لـ ${item.account}`} layout="fill" objectFit="contain" />
+                                                    </div>
+                                                </DialogContent>
+                                            </Dialog>
+                                        )}
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
                             )
                         })}
                     </TableBody>
@@ -222,7 +214,7 @@ export function CashierReport() {
                     {salesData.map((item, index) => (
                         <React.Fragment key={index}>
                            <p>{item.method} (أصلي)</p><Separator className="flex-1" /><p className="font-mono text-left">{item.original.toFixed(2)} ريال</p>
-                           <p>{item.method} (فعلي)</p><Separator className="flex-1" /><p className="font-mono text-left">{item.actual.toFixed(2)} ريال {getDifferenceText(item.actual - item.original)}</p>
+                           <p>{item.method} (فعلي)</p><Separator className="flex-1" /><p className="font-mono text-left">{item.actual.toFixed(2)} ريال ({getDifferenceText(item.actual - item.original)})</p>
                         </React.Fragment>
                     ))}
                 </div>
