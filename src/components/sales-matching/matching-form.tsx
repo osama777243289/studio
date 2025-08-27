@@ -13,11 +13,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { FileCheck, Coins, Receipt, Wallet, CreditCard, BookUser, MessageSquare, Ban, Save, Info, MinusCircle, CheckCircle2, Hash } from 'lucide-react';
+import { FileCheck, Coins, Receipt, Wallet, CreditCard, BookUser, MessageSquare, Ban, Save, Info, MinusCircle, CheckCircle2, Hash, Image as ImageIcon } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useEffect, useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import { SalesRecord, AccountDetail } from '@/lib/firebase/firestore/sales';
+import { SalesRecord, CardAccountDetail } from '@/lib/firebase/firestore/sales';
+import Image from 'next/image';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 
 interface MatchingFormProps {
     record: SalesRecord | null;
@@ -92,12 +100,31 @@ export function MatchingForm({ record }: MatchingFormProps) {
 
   const totalDifference = totalActual - totalRegistered;
   
-  const renderMatchingRow = (label: string, registeredAmount: number, actualKey: string) => {
+  const renderMatchingRow = (label: string, registeredAmount: number, actualKey: string, card?: CardAccountDetail) => {
     const actualAmount = getNumericValue(actualKey);
     const difference = actualAmount - registeredAmount;
     return (
       <TableRow>
-        <TableCell className="font-medium">{label}</TableCell>
+        <TableCell className="font-medium flex items-center gap-2">
+            {label}
+            {card?.receiptImageUrl && (
+                 <Dialog>
+                    <DialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-6 w-6">
+                            <ImageIcon className="text-blue-500"/>
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>إيصال الشبكة لـ {label}</DialogTitle>
+                        </DialogHeader>
+                        <div className="relative h-96 w-full">
+                            <Image src={card.receiptImageUrl} alt={`إيصال لـ ${label}`} layout="fill" objectFit="contain" />
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            )}
+        </TableCell>
         <TableCell>{registeredAmount.toFixed(2)}</TableCell>
         <TableCell>
            <Input 
@@ -164,7 +191,7 @@ export function MatchingForm({ record }: MatchingFormProps) {
             </TableHeader>
             <TableBody>
                 {record.cash && renderMatchingRow(record.cash.accountName || 'نقدي', record.cash.amount, 'cash')}
-                {record.cards.map((card, i) => renderMatchingRow(card.accountName || `بطاقة ${i+1}`, card.amount, `card-${i}`))}
+                {record.cards.map((card, i) => renderMatchingRow(card.accountName || `بطاقة ${i+1}`, card.amount, `card-${i}`, card))}
                 {record.credits.map((credit, i) => renderMatchingRow(credit.accountName || `آجل ${i+1}`, credit.amount, `credit-${i}`))}
             </TableBody>
         </Table>
