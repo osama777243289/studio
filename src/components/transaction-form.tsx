@@ -62,11 +62,12 @@ export function TransactionForm({
   });
 
   async function onSubmit(values: z.infer<typeof transactionSchema>) {
+    const typeText = transactionType === 'Income' ? 'الدخل' : 'المصروف';
     try {
       await addTransaction(values);
       toast({
-        title: 'Success',
-        description: `The ${transactionType.toLowerCase()} has been recorded successfully.`,
+        title: 'نجاح',
+        description: `تم تسجيل ${typeText} بنجاح.`,
         variant: 'default',
       });
       form.reset({
@@ -76,10 +77,10 @@ export function TransactionForm({
           description: '',
       });
     } catch (error: any) {
-       console.error(`Failed to save ${transactionType.toLowerCase()}:`, error);
+       console.error(`Failed to save ${typeText}:`, error);
        toast({
-        title: 'Error Saving Transaction',
-        description: `Failed to save the ${transactionType.toLowerCase()}. Please try again.`,
+        title: 'خطأ في حفظ المعاملة',
+        description: `فشل حفظ ${typeText}. يرجى المحاولة مرة أخرى.`,
         variant: 'destructive',
       });
     }
@@ -94,7 +95,7 @@ export function TransactionForm({
           name="amount"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Amount</FormLabel>
+              <FormLabel>المبلغ</FormLabel>
               <FormControl>
                 <Input type="number" placeholder="0.00" {...field} onChange={event => field.onChange(+event.target.value)} />
               </FormControl>
@@ -107,11 +108,11 @@ export function TransactionForm({
           name="accountId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Account</FormLabel>
+              <FormLabel>الحساب</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select an account" />
+                    <SelectValue placeholder="اختر حسابًا" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -131,23 +132,23 @@ export function TransactionForm({
           name="date"
           render={({ field }) => (
             <FormItem className="flex flex-col">
-              <FormLabel>Date</FormLabel>
+              <FormLabel>التاريخ</FormLabel>
               <Popover>
                 <PopoverTrigger asChild>
                   <FormControl>
                     <Button
                       variant={'outline'}
                       className={cn(
-                        'w-full pl-3 text-left font-normal',
+                        'w-full pr-3 text-right font-normal',
                         !field.value && 'text-muted-foreground'
                       )}
                     >
                       {field.value ? (
                         format(field.value, 'PPP')
                       ) : (
-                        <span>Pick a date</span>
+                        <span>اختر تاريخًا</span>
                       )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      <CalendarIcon className="mr-auto h-4 w-4 opacity-50" />
                     </Button>
                   </FormControl>
                 </PopoverTrigger>
@@ -172,9 +173,9 @@ export function TransactionForm({
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Description (Optional)</FormLabel>
+              <FormLabel>الوصف (اختياري)</FormLabel>
               <FormControl>
-                <Textarea placeholder="Add a short note..." {...field} />
+                <Textarea placeholder="أضف ملاحظة قصيرة..." {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

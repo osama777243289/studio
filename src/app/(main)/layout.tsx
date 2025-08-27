@@ -19,16 +19,17 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 const navLinks: NavLink[] = [
-  { title: 'Dashboard', href: '/dashboard', icon: 'LayoutDashboard' },
-  { title: 'Income', href: '/income', icon: 'ArrowUpCircle' },
-  { title: 'Expenses', href: '/expenses', icon: 'ArrowDownCircle' },
-  { title: 'Daily Sales', href: '/sales', icon: 'ShoppingCart' },
-  { title: 'Sales Matching', href: '/sales-matching', icon: 'CheckSquare' },
-  { title: 'Chart of Accounts', href: '/chart-of-accounts', icon: 'Network' },
-  { title: 'Cash Flow', href: '/cash-flow', icon: 'TrendingUp' },
-  { title: 'Reports', href: '/reports', icon: 'FileText' },
-  { title: 'Users', href: '/users', icon: 'Users' },
-  { title: 'Role Management', href: '/roles', icon: 'ShieldCheck' },
+  { title: 'لوحة التحكم', href: '/dashboard', icon: 'LayoutDashboard' },
+  { title: 'الدخل', href: '/income', icon: 'ArrowUpCircle' },
+  { title: 'المصروفات', href: '/expenses', icon: 'ArrowDownCircle' },
+  { title: 'المبيعات اليومية', href: '/sales', icon: 'ShoppingCart' },
+  { title: 'مطابقة المبيعات', href: '/sales-matching', icon: 'CheckSquare' },
+  { title: 'دليل الحسابات', href: '/chart-of-accounts', icon: 'Network' },
+  { title: 'التدفق النقدي', href: '/cash-flow', icon: 'TrendingUp' },
+  { title: 'التقارير', href: '/reports', icon: 'FileText' },
+  { title: 'المستخدمون', href: '/users', icon: 'Users' },
+  { title: 'إدارة الأدوار', href: '/roles', icon: 'ShieldCheck' },
+  { title: 'إعدادات البيانات', href: '/data-settings', icon: 'Database' },
 ];
 
 export default function MainLayout({
@@ -38,12 +39,12 @@ export default function MainLayout({
 }) {
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <div className="hidden border-r bg-card md:block">
+      <div className="hidden border-l bg-card md:block">
         <div className="flex h-full max-h-screen flex-col gap-4">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
               <Landmark className="h-6 w-6 text-primary" />
-              <span className="font-headline text-xl text-primary">Accounter</span>
+              <span className="font-headline text-xl text-primary">المحاسب</span>
             </Link>
           </div>
           <div className="flex-1 overflow-y-auto">
@@ -61,14 +62,14 @@ export default function MainLayout({
                 className="shrink-0 md:hidden"
               >
                 <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle navigation menu</span>
+                <span className="sr-only">تبديل قائمة التنقل</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="flex flex-col">
+            <SheetContent side="right" className="flex flex-col">
               <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
                  <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
                     <Landmark className="h-6 w-6 text-primary" />
-                    <span className="font-headline text-xl text-primary">Accounter</span>
+                    <span className="font-headline text-xl text-primary">المحاسب</span>
                 </Link>
               </div>
               <Nav links={navLinks} />
@@ -79,16 +80,16 @@ export default function MainLayout({
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="icon" className="rounded-full">
                 <CircleUser className="h-5 w-5" />
-                <span className="sr-only">Toggle user menu</span>
+                <span className="sr-only">تبديل قائمة المستخدم</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>حسابي</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Settings</DropdownMenuItem>
-              <DropdownMenuItem>Support</DropdownMenuItem>
+              <DropdownMenuItem>الإعدادات</DropdownMenuItem>
+              <DropdownMenuItem>الدعم</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Logout</DropdownMenuItem>
+              <DropdownMenuItem>تسجيل الخروج</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </header>

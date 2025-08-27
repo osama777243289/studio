@@ -6,8 +6,8 @@ import { Inter } from 'next/font/google';
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
 export const metadata: Metadata = {
-  title: 'Accounter - Your Financial Companion',
-  description: 'An integrated accounting application to manage your finances.',
+  title: 'المحاسب - رفيقك المالي',
+  description: 'تطبيق محاسبي متكامل لإدارة أموالك.',
   icons: {
     icon: '/favicon.ico',
   }
@@ -19,7 +19,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" dir="ltr" suppressHydrationWarning>
+    <html lang="ar" dir="rtl" suppressHydrationWarning>
       <body className={`font-sans antialiased ${inter.variable}`}>
         {children}
         <Toaster />

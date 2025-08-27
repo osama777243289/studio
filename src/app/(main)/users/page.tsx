@@ -57,6 +57,8 @@ export interface UserPermissions {
         cashFlow?: PagePermissions;
         reports?: PagePermissions;
         users?: PagePermissions;
+        roles?: PagePermissions;
+        dataSettings?: PagePermissions;
     };
     accounts?: string[]; // Array of allowed account IDs
 }
@@ -103,7 +105,7 @@ export default function UsersPage() {
         setRoles(fetchedRoles);
     } catch (e: any) {
         console.error("Failed to fetch data:", e);
-        setError("Failed to load user data from Firestore. Please check your connection and permissions.");
+        setError("فشل تحميل بيانات المستخدم من Firestore. يرجى التحقق من اتصالك وصلاحياتك.");
     } finally {
         setLoading(false);
     }
@@ -133,18 +135,18 @@ export default function UsersPage() {
   const confirmSave = async (userData: UserFormData) => {
     setLoading(true);
     try {
-        if (mode === 'edit' && selectedUser) {
+        if (dialogMode === 'edit' && selectedUser) {
             await updateUser(selectedUser.id, userData);
-            toast({ title: "Success", description: "User updated successfully." });
+            toast({ title: "نجاح", description: "تم تحديث المستخدم بنجاح." });
         } else {
             await addUser(userData);
-            toast({ title: "Success", description: "User added successfully." });
+            toast({ title: "نجاح", description: "تمت إضافة المستخدم بنجاح." });
         }
         setIsDialogOpen(false);
         await fetchData();
     } catch (e: any) {
         console.error("Failed to save user:", e);
-        toast({ title: "Error", description: e.message, variant: "destructive" });
+        toast({ title: "خطأ", description: e.message, variant: "destructive" });
     } finally {
         setLoading(false);
     }
@@ -155,12 +157,12 @@ export default function UsersPage() {
     setLoading(true);
     try {
         await deleteUser(selectedUser.id);
-        toast({ title: "Success", description: `User "${selectedUser.name}" has been deleted.` });
+        toast({ title: "نجاح", description: `تم حذف المستخدم "${selectedUser.name}".` });
         setIsDeleteDialogOpen(false);
         await fetchData();
     } catch (e: any) {
         console.error("Failed to delete user:", e);
-        toast({ title: "Error", description: e.message, variant: "destructive" });
+        toast({ title: "خطأ", description: e.message, variant: "destructive" });
     } finally {
         setLoading(false);
     }
@@ -173,17 +175,17 @@ export default function UsersPage() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                  <CardTitle className="font-headline">Users Directory</CardTitle>
-                  <CardDescription>Manage system users and permissions.</CardDescription>
+                  <CardTitle className="font-headline">دليل المستخدمين</CardTitle>
+                  <CardDescription>إدارة مستخدمي النظام والصلاحيات.</CardDescription>
               </div>
               <div className="flex gap-2 w-full sm:w-auto">
                 <Button variant="outline" onClick={fetchData} disabled={loading} className="flex-1 sm:flex-initial">
-                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                    Refresh
+                    {loading ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <RefreshCw className="ml-2 h-4 w-4" />}
+                    تحديث
                 </Button>
                 <Button onClick={handleAddUser} className="flex-1 sm:flex-initial">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Add New User
+                    <PlusCircle className="ml-2 h-4 w-4" />
+                    إضافة مستخدم جديد
                 </Button>
               </div>
           </div>
@@ -192,7 +194,7 @@ export default function UsersPage() {
             {error && (
              <Alert variant="destructive" className="mb-4">
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Connection Error</AlertTitle>
+                <AlertTitle>خطأ في الاتصال</AlertTitle>
                 <AlertDescription>
                     {error}
                 </AlertDescription>
@@ -203,14 +205,15 @@ export default function UsersPage() {
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
             ) : (
+                <div className="overflow-x-auto">
                 <Table>
                     <TableHeader>
                     <TableRow>
-                        <TableHead>User</TableHead>
-                        <TableHead className="hidden md:table-cell">Role</TableHead>
-                        <TableHead className="hidden sm:table-cell">Status</TableHead>
+                        <TableHead>المستخدم</TableHead>
+                        <TableHead className="hidden md:table-cell">الدور</TableHead>
+                        <TableHead className="hidden sm:table-cell">الحالة</TableHead>
                         <TableHead>
-                        <span className="sr-only">Actions</span>
+                        <span className="sr-only">الإجراءات</span>
                         </TableHead>
                     </TableRow>
                     </TableHeader>
@@ -218,7 +221,7 @@ export default function UsersPage() {
                      {users.length === 0 ? (
                         <TableRow>
                             <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                                No users found. Start by adding a new user.
+                                لم يتم العثور على مستخدمين. ابدأ بإضافة مستخدم جديد.
                             </TableCell>
                         </TableRow>
                     ) : (
@@ -264,6 +267,7 @@ export default function UsersPage() {
                     )}
                     </TableBody>
                 </Table>
+                </div>
             )}
         </CardContent>
       </Card>

@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useEffect } from 'react';
@@ -15,7 +16,7 @@ import { Label } from "@/components/ui/label"
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import type { Role } from '@/app/(main)/roles/page';
+import type { Role } from '@/lib/firebase/firestore/roles';
 
 const roleSchema = z.object({
     name: z.string().min(2, { message: "يجب أن يكون اسم الدور حرفين على الأقل." }),

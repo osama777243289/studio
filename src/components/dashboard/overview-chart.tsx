@@ -8,21 +8,21 @@ import {
 } from "@/components/ui/chart"
 
 const data = [
-  { month: "Jan", income: 1860, expenses: 800 },
-  { month: "Feb", income: 3050, expenses: 1900 },
-  { month: "Mar", income: 2370, expenses: 1200 },
-  { month: "Apr", income: 730, expenses: 2900 },
-  { month: "May", income: 2090, expenses: 1800 },
-  { month: "Jun", income: 2140, expenses: 1100 },
+  { month: "يناير", income: 1860, expenses: 800 },
+  { month: "فبراير", income: 3050, expenses: 1900 },
+  { month: "مارس", income: 2370, expenses: 1200 },
+  { month: "أبريل", income: 730, expenses: 2900 },
+  { month: "مايو", income: 2090, expenses: 1800 },
+  { month: "يونيو", income: 2140, expenses: 1100 },
 ]
 
 const chartConfig = {
   income: {
-    label: "Income",
+    label: "الدخل",
     color: "hsl(var(--chart-1))",
   },
   expenses: {
-    label: "Expenses",
+    label: "المصروفات",
     color: "hsl(var(--chart-2))",
   },
 } satisfies ChartConfig

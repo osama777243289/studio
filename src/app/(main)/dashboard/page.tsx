@@ -40,10 +40,12 @@ interface TransactionWithAccountName extends Transaction {
 export default function DashboardPage() {
   const [transactions, setTransactions] = useState<TransactionWithAccountName[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
         setLoading(true);
+        setError(null);
         try {
             const [recentTransactions, allAccounts] = await Promise.all([
                 getRecentTransactions(),
@@ -54,13 +56,13 @@ export default function DashboardPage() {
 
             const transactionsWithNames = recentTransactions.map(tx => ({
                 ...tx,
-                accountName: accountMap.get(tx.accountId) || 'Unknown Account'
+                accountName: accountMap.get(tx.accountId) || 'حساب غير معروف'
             }));
 
             setTransactions(transactionsWithNames);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to fetch dashboard data:", error);
-            // In case of error, we can show an empty state.
+            setError("فشل الاتصال بـ Firestore. التطبيق يعمل الآن في وضع العرض التوضيحي.");
             setTransactions([]);
         } finally {
             setLoading(false);
@@ -70,54 +72,70 @@ export default function DashboardPage() {
     fetchData();
   }, []);
 
+  if (error) {
+     return (
+        <div className="flex justify-center items-center h-full">
+             <Card className="w-full max-w-lg">
+                <CardHeader>
+                    <CardTitle>خطأ في الاتصال - وضع العرض التوضيحي</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p>{error}</p>
+                    <p className="mt-4">لن يتم حفظ أي تغييرات. يرجى التحقق من إعدادات مشروع Firebase الخاص بك.</p>
+                </CardContent>
+            </Card>
+        </div>
+     )
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Income</CardTitle>
+            <CardTitle className="text-sm font-medium">إجمالي الدخل</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">$45,231.89</div>
             <p className="text-xs text-muted-foreground">
-              +20.1% from last month
+              +20.1% من الشهر الماضي
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+            <CardTitle className="text-sm font-medium">إجمالي المصروفات</CardTitle>
             <TrendingDown className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">$21,876.33</div>
             <p className="text-xs text-muted-foreground">
-              +12.4% from last month
+              +12.4% من الشهر الماضي
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
+            <CardTitle className="text-sm font-medium">صافي الربح</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">$23,355.56</div>
             <p className="text-xs text-muted-foreground">
-              +31.3% from last month
+              +31.3% من الشهر الماضي
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Balance</CardTitle>
+            <CardTitle className="text-sm font-medium">الرصيد</CardTitle>
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">$102,942.00</div>
             <p className="text-xs text-muted-foreground">
-              Across all accounts
+              عبر جميع الحسابات
             </p>
           </CardContent>
         </Card>
@@ -126,7 +144,7 @@ export default function DashboardPage() {
       <div className="grid gap-4 lg:grid-cols-7">
         <Card className="lg:col-span-4">
           <CardHeader>
-            <CardTitle className="font-headline">Overview</CardTitle>
+            <CardTitle className="font-headline">نظرة عامة</CardTitle>
           </CardHeader>
           <CardContent className="pl-2">
             <OverviewChart />
@@ -134,9 +152,9 @@ export default function DashboardPage() {
         </Card>
         <Card className="lg:col-span-3">
           <CardHeader>
-            <CardTitle className="font-headline">Recent Transactions</CardTitle>
+            <CardTitle className="font-headline">المعاملات الأخيرة</CardTitle>
             <CardDescription>
-              {loading ? 'Loading transactions...' : `The last ${transactions.length} recorded transactions.`}
+              {loading ? 'جاري تحميل المعاملات...' : `آخر ${transactions.length} معاملات مسجلة.`}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -144,11 +162,11 @@ export default function DashboardPage() {
                 <div className="space-y-6">
                     {[...Array(5)].map((_, i) => (
                         <div key={i} className="flex items-center">
-                            <div className="ml-4 space-y-2">
+                            <div className="mr-4 space-y-2">
                                 <Skeleton className="h-4 w-[150px]" />
                                 <Skeleton className="h-3 w-[100px]" />
                             </div>
-                            <div className="ml-auto">
+                            <div className="mr-auto">
                                 <Skeleton className="h-6 w-[80px]" />
                             </div>
                         </div>

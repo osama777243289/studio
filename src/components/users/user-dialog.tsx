@@ -23,7 +23,7 @@ import {
 import { useForm, SubmitHandler, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import type { User, UserRole } from '@/app/(main)/users/page';
+import type { User, UserRole, UserPermissions } from '@/app/(main)/users/page';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { Checkbox } from '../ui/checkbox';
 import { Account } from '../chart-of-accounts/account-tree';
@@ -41,6 +41,8 @@ const permissionsSchema = z.object({
         cashFlow: z.object({ view: z.boolean().optional(), create: z.boolean().optional() }).optional(),
         reports: z.object({ view: z.boolean().optional(), export: z.boolean().optional() }).optional(),
         users: z.object({ view: z.boolean().optional(), create: z.boolean().optional(), edit: z.boolean().optional(), delete: z.boolean().optional(), managePermissions: z.boolean().optional() }).optional(),
+        roles: z.object({ view: z.boolean().optional(), create: z.boolean().optional(), edit: z.boolean().optional(), delete: z.boolean().optional() }).optional(),
+        dataSettings: z.object({ view: z.boolean().optional() }).optional(),
     }).optional(),
     accounts: z.array(z.string()).optional(),
 }).optional();
@@ -119,6 +121,8 @@ const permissionLabels: { [key: string]: { page: string, actions: { [key: string
     cashFlow: { page: 'التدفق النقدي', actions: { view: 'عرض', create: 'إنشاء توقع' } },
     reports: { page: 'التقارير', actions: { view: 'عرض', export: 'تصدير' } },
     users: { page: 'المستخدمين', actions: { view: 'عرض', create: 'إضافة', edit: 'تعديل', delete: 'حذف', managePermissions: 'إدارة الصلاحيات' } },
+    roles: { page: 'الأدوار', actions: { view: 'عرض', create: 'إضافة', edit: 'تعديل', delete: 'حذف' } },
+    dataSettings: { page: 'إعدادات البيانات', actions: { view: 'عرض' } },
 };
 
 function AccountPermissionsTree({ accounts, control, name }: { accounts: Account[], control: any, name: any }) {
@@ -140,7 +144,7 @@ function AccountPermissionsTree({ accounts, control, name }: { accounts: Account
     
     const renderTree = (nodes: Account[], level = 0) => {
         return nodes.map(account => (
-            <div key={account.id} style={{ marginLeft: `${level * 20}px` }}>
+            <div key={account.id} style={{ marginRight: `${level * 20}px` }}>
                 <div className="flex items-center gap-2 my-1">
                     <Checkbox
                         id={`account-${account.id}`}
@@ -199,7 +203,7 @@ export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts, role
             type: user.type,
             role: user.role, 
             status: user.status,
-            permissions: user.permissions,
+            permissions: user.permissions as any,
             employeeAccountId: user.employeeAccountId,
         });
       } else {
@@ -234,7 +238,7 @@ export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts, role
         </Label>
         <div className="col-span-3">
             {children}
-            {error && <p className="text-red-500 text-xs mt-1">{errors.name?.message || errors.mobile?.message || errors.email?.message || errors.password?.message || errors.confirmPassword?.message || errors.role?.message || errors.type?.message || errors.status?.message}</p>}
+            {error && <p className="text-red-500 text-xs mt-1">{error.message}</p>}
         </div>
     </div>
   )
@@ -357,7 +361,7 @@ export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts, role
                                             {Object.entries(pageInfo.actions).map(([actionKey, actionLabel]) => (
                                                 <div key={actionKey} className="flex items-center gap-2">
                                                     <Controller
-                                                        name={`permissions.pages.${pageKey}.${actionKey}`}
+                                                        name={`permissions.pages.${pageKey}.${actionKey}` as any}
                                                         control={control}
                                                         render={({ field }) => (
                                                              <Checkbox

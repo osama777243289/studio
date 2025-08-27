@@ -23,15 +23,15 @@ export function DeleteAccountDialog({ isOpen, onClose, onConfirm, accountName }:
     <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+          <AlertDialogTitle>هل أنت متأكد تمامًا؟</AlertDialogTitle>
           <AlertDialogDescription>
-            This action will permanently delete the account "{accountName}". This action cannot be undone.
+            سيؤدي هذا الإجراء إلى حذف الحساب "{accountName}" بشكل دائم. لا يمكن التراجع عن هذا الإجراء.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel onClick={onClose}>إلغاء</AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm} className="bg-destructive hover:bg-destructive/90">
-            Yes, delete account
+            نعم، احذف الحساب
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -33,40 +33,42 @@ export function RecordsToMatch({ records, onSelectRecord, selectedRecord }: Reco
       <CardHeader>
         <div className="flex items-center gap-2">
           <ListChecks className="h-6 w-6" />
-          <CardTitle>Records Pending Matching</CardTitle>
+          <CardTitle>السجلات قيد المطابقة</CardTitle>
         </div>
         <CardDescription>
-          Select a record from the list below to start the matching process.
+          اختر سجلاً من القائمة أدناه لبدء عملية المطابقة.
         </CardDescription>
       </CardHeader>
       <CardContent>
         {records.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No records are currently pending matching.</p>
+            <p className="text-center text-muted-foreground py-8">لا توجد سجلات قيد المطابقة حاليًا.</p>
         ) : (
+            <div className='overflow-x-auto'>
             <Table>
             <TableHeader>
                 <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Period</TableHead>
-                <TableHead>Cashier</TableHead>
-                <TableHead>Total</TableHead>
+                <TableHead>التاريخ</TableHead>
+                <TableHead>الفترة</TableHead>
+                <TableHead>الكاشير</TableHead>
+                <TableHead>الإجمالي</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {records.map((record, index) => (
+                {records.map((record) => (
                 <TableRow 
                     key={record.id}
                     className={cn("cursor-pointer hover:bg-muted/50", selectedRecord?.id === record.id && 'bg-primary/10 hover:bg-primary/20')}
                     onClick={() => onSelectRecord(record)}
                 >
                     <TableCell>{format(record.date.toDate(), 'PPP')}</TableCell>
-                    <TableCell>{record.period}</TableCell>
+                    <TableCell>{record.period === 'Morning' ? 'صباحية' : 'مسائية'}</TableCell>
                     <TableCell>{record.cashier}</TableCell>
                     <TableCell>${record.total.toFixed(2)}</TableCell>
                 </TableRow>
                 ))}
             </TableBody>
             </Table>
+            </div>
         )}
       </CardContent>
     </Card>

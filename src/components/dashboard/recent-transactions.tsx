@@ -1,6 +1,6 @@
 import { Transaction } from "@/lib/firebase/firestore/transactions"
 import { formatDistanceToNow } from 'date-fns';
-import { enUS } from 'date-fns/locale';
+import { arSA } from 'date-fns/locale';
 
 interface RecentTransactionsProps {
     transactions: Transaction[];
@@ -10,7 +10,7 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
   if (transactions.length === 0) {
       return (
           <div className="flex items-center justify-center h-full text-muted-foreground">
-              <p>No transactions recorded yet.</p>
+              <p>لم يتم تسجيل أي معاملات بعد.</p>
           </div>
       )
   }
@@ -19,16 +19,16 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
     <div className="space-y-6">
         {transactions.map((transaction) => (
              <div key={transaction.id} className="flex items-center">
-                <div className="ml-4 space-y-1">
+                <div className="mr-4 space-y-1">
                 <p className="text-sm font-medium leading-none">{transaction.accountName}</p>
                 <p className="text-sm text-muted-foreground">
                     {/* Check if date is a Firebase Timestamp */}
                     {transaction.date && typeof transaction.date.toDate === 'function' 
-                        ? formatDistanceToNow(transaction.date.toDate(), { addSuffix: true, locale: enUS })
-                        : 'Invalid date'}
+                        ? formatDistanceToNow(transaction.date.toDate(), { addSuffix: true, locale: arSA })
+                        : 'تاريخ غير صالح'}
                 </p>
                 </div>
-                <div className={`ml-auto font-medium text-lg ${transaction.type === 'Income' ? 'text-green-600' : 'text-destructive'}`}>
+                <div className={`mr-auto font-medium text-lg ${transaction.type === 'Income' ? 'text-green-600' : 'text-destructive'}`}>
                     {transaction.type === 'Income' ? '+' : '-'}${transaction.amount.toFixed(2)}
                 </div>
             </div>

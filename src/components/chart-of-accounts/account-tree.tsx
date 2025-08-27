@@ -13,10 +13,10 @@ import { cn } from "@/lib/utils"
 import { Badge } from "../ui/badge"
 
 export const accountClassifications = [
-    'Cashbox', 'Bank', 'Networks', 'Employee', 'Custody', 'Fixed Assets', 
-    'Clients', 'Cashiers', 'Suppliers', 'Expenses', 'Revenues'
+    'صندوق', 'بنك', 'شبكات', 'موظف', 'عهدة', 'أصول ثابتة', 
+    'عملاء', 'كاشير', 'موردون', 'مصروفات', 'إيرادات'
 ];
-export const closingAccountTypes = ['Balance Sheet', 'Income Statement'];
+export const closingAccountTypes = ['الميزانية العمومية', 'قائمة الدخل'];
 
 export interface Account {
   id: string;
@@ -69,16 +69,27 @@ function AccountItem({ account, level, onAddSubAccount, onEditAccount, onDeleteA
   const hasChildren = account.children && account.children.length > 0;
   const isTransactional = !hasChildren;
 
+  const translateGroup = (group: string) => {
+    switch (group) {
+        case 'Assets': return 'الأصول';
+        case 'Liabilities': return 'الخصوم';
+        case 'Equity': return 'حقوق الملكية';
+        case 'Revenues': return 'الإيرادات';
+        case 'Expenses': return 'المصروفات';
+        default: return group;
+    }
+  }
+
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <div className={cn("flex flex-col gap-2 p-2 rounded-md hover:bg-muted/50 group", `pl-${level * 4}`)}>
+        <div className={cn("flex flex-col gap-2 p-2 rounded-md hover:bg-muted/50 group", `pr-${level * 4}`)}>
             <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                 <div className='w-6'>
                 {hasChildren && (
                     <CollapsibleTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-6 w-6">
                             <ChevronsUpDown className="h-4 w-4" />
-                            <span className="sr-only">Toggle</span>
+                            <span className="sr-only">تبديل</span>
                         </Button>
                     </CollapsibleTrigger>
                 )}
@@ -86,29 +97,31 @@ function AccountItem({ account, level, onAddSubAccount, onEditAccount, onDeleteA
                 <span className="font-mono text-sm text-muted-foreground w-24">{account.code}</span>
                 <span className="flex-1 font-medium flex items-center gap-2">
                   {account.name}
-                  {isTransactional && <FileText className="h-4 w-4 text-blue-500" title="Transactional Account" />}
+                  {isTransactional && <FileText className="h-4 w-4 text-blue-500" title="حساب تحليلي" />}
                 </span>
                 <div className="flex items-center gap-2">
-                    <Badge variant="outline">{account.group}</Badge>
-                    <Badge variant={account.status === 'Active' ? 'default' : 'destructive'} className={account.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>{account.status}</Badge>
+                    <Badge variant="outline">{translateGroup(account.group)}</Badge>
+                    <Badge variant={account.status === 'Active' ? 'default' : 'destructive'} className={account.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                        {account.status === 'Active' ? 'نشط' : 'غير نشط'}
+                    </Badge>
                 </div>
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEditAccount(account)}>
                         <Pencil className="h-4 w-4 text-blue-500"/>
-                        <span className="sr-only">Edit</span>
+                        <span className="sr-only">تعديل</span>
                     </Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onAddSubAccount(account.id)}>
                         <Plus className="h-4 w-4 text-green-500"/>
-                        <span className="sr-only">Add Sub-account</span>
+                        <span className="sr-only">إضافة حساب فرعي</span>
                     </Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDeleteAccount(account)}>
                         <Trash2 className="h-4 w-4 text-red-500"/>
-                        <span className="sr-only">Delete</span>
+                        <span className="sr-only">حذف</span>
                     </Button>
                 </div>
             </div>
             {account.classifications && account.classifications.length > 0 && (
-                 <div className={cn("flex items-center gap-2 flex-wrap", `pl-8`)}>
+                 <div className={cn("flex items-center gap-2 flex-wrap", `pr-8`)}>
                      {account.classifications.map(c => <Badge key={c} variant="secondary">{c}</Badge>)}
                  </div>
             )}

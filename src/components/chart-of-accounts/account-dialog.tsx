@@ -45,25 +45,25 @@ const createAccountSchema = (parentCode?: string) => {
     const expectedLength = level < 4 ? levelLengths[level + 1] : -1;
     const currentLength = levelLengths[level];
 
-    let codeSchema = z.string().regex(/^\d+$/, { message: "Code must contain only digits."});
+    let codeSchema = z.string().regex(/^\d+$/, { message: "يجب أن يحتوي الرمز على أرقام فقط."});
 
     if (parentCode) {
-        codeSchema = codeSchema.min(expectedLength, { message: `Code must be ${expectedLength} digits long.` })
-            .max(expectedLength, { message: `Code must be ${expectedLength} digits long.` })
-            .refine(code => code.startsWith(parentCode), { message: `Code must start with the parent code (${parentCode})` });
+        codeSchema = codeSchema.min(expectedLength, { message: `يجب أن يتكون الرمز من ${expectedLength} أرقام.` })
+            .max(expectedLength, { message: `يجب أن يتكون الرمز من ${expectedLength} أرقام.` })
+            .refine(code => code.startsWith(parentCode), { message: `يجب أن يبدأ الرمز برمز الحساب الأصلي (${parentCode})` });
     } else {
         // This is a root account (Level 1)
-        codeSchema = codeSchema.min(1, { message: "Code must be 1 digit long." })
-                               .max(1, { message: "Code must be 1 digit long." });
+        codeSchema = codeSchema.min(1, { message: "يجب أن يتكون الرمز من رقم واحد." })
+                               .max(1, { message: "يجب أن يتكون الرمز من رقم واحد." });
     }
 
     return z.object({
-        name: z.string().min(3, { message: "Account name must be at least 3 characters." }),
+        name: z.string().min(3, { message: "يجب أن يكون اسم الحساب 3 أحرف على الأقل." }),
         code: codeSchema,
-        type: z.enum(['Debit', 'Credit'], { required_error: 'Account type is required' }),
-        group: z.enum(['Assets', 'Liabilities', 'Equity', 'Revenues', 'Expenses'], { required_error: 'Account group is required' }),
-        status: z.enum(['Active', 'Inactive'], { required_error: 'Account status is required' }),
-        closingType: z.string({ required_error: 'Closing account type is required' }),
+        type: z.enum(['Debit', 'Credit'], { required_error: 'نوع الحساب مطلوب' }),
+        group: z.enum(['Assets', 'Liabilities', 'Equity', 'Revenues', 'Expenses'], { required_error: 'مجموعة الحساب مطلوبة' }),
+        status: z.enum(['Active', 'Inactive'], { required_error: 'حالة الحساب مطلوبة' }),
+        closingType: z.string({ required_error: 'نوع حساب الإغلاق مطلوب' }),
         classifications: z.array(z.string()).optional(),
     });
 };
@@ -81,9 +81,9 @@ interface AccountDialogProps {
 }
 
 const titles = {
-    add: 'Add New Main Account',
-    edit: 'Edit Account',
-    addSub: 'Add New Sub-Account'
+    add: 'إضافة حساب رئيسي جديد',
+    edit: 'تعديل الحساب',
+    addSub: 'إضافة حساب فرعي جديد'
 }
 
 export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount, mode }: AccountDialogProps) {
@@ -165,11 +165,11 @@ export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount,
             <DialogTitle>{titles[mode]}</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-                {parentAccount && renderRow("Parent Account", "parent", <Input id="parent" value={`${parentAccount.name} (${parentAccount.code})`} readOnly disabled className="bg-muted/50" />) }
-                {renderRow("Code", "code", <Input id="code" {...register("code")} className="w-full ltr" />, errors.code)}
-                {renderRow("Name", "name", <Input id="name" {...register("name")} className="w-full" />, errors.name)}
+                {parentAccount && renderRow("الحساب الأصل", "parent", <Input id="parent" value={`${parentAccount.name} (${parentAccount.code})`} readOnly disabled className="bg-muted/50" />) }
+                {renderRow("الرمز", "code", <Input id="code" {...register("code")} className="w-full ltr" />, errors.code)}
+                {renderRow("الاسم", "name", <Input id="name" {...register("name")} className="w-full" />, errors.name)}
                 
-                {renderRow("Account Type", "type", (
+                {renderRow("نوع الحساب", "type", (
                     <Controller
                         name="type"
                         control={control}
@@ -177,15 +177,15 @@ export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount,
                             <Select onValueChange={field.onChange} value={field.value}>
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="Debit">Debit</SelectItem>
-                                    <SelectItem value="Credit">Credit</SelectItem>
+                                    <SelectItem value="Debit">مدين</SelectItem>
+                                    <SelectItem value="Credit">دائن</SelectItem>
                                 </SelectContent>
                             </Select>
                         )}
                     />
                 ), errors.type)}
 
-                {renderRow("Account Group", "group", (
+                {renderRow("مجموعة الحساب", "group", (
                      <Controller
                         name="group"
                         control={control}
@@ -193,18 +193,18 @@ export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount,
                             <Select onValueChange={field.onChange} value={field.value}>
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="Assets">Assets</SelectItem>
-                                    <SelectItem value="Liabilities">Liabilities</SelectItem>
-                                    <SelectItem value="Equity">Equity</SelectItem>
-                                    <SelectItem value="Revenues">Revenues</SelectItem>
-                                    <SelectItem value="Expenses">Expenses</SelectItem>
+                                    <SelectItem value="Assets">الأصول</SelectItem>
+                                    <SelectItem value="Liabilities">الخصوم</SelectItem>
+                                    <SelectItem value="Equity">حقوق الملكية</SelectItem>
+                                    <SelectItem value="Revenues">الإيرادات</SelectItem>
+                                    <SelectItem value="Expenses">المصروفات</SelectItem>
                                 </SelectContent>
                             </Select>
                         )}
                     />
                 ), errors.group)}
 
-                {renderRow("Closing Account Type", "closingType", (
+                {renderRow("نوع حساب الإغلاق", "closingType", (
                      <Controller
                         name="closingType"
                         control={control}
@@ -219,7 +219,7 @@ export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount,
                     />
                 ), errors.closingType)}
                 
-                {renderRow("Account Classification", "classifications", (
+                {renderRow("تصنيف الحساب", "classifications", (
                     <Controller
                         name="classifications"
                         control={control}
@@ -232,7 +232,7 @@ export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount,
                                     className="w-full justify-between font-normal"
                                     >
                                     <span className="truncate">
-                                      {selectedClassifications.length > 0 ? selectedClassifications.join(', ') : "Select classifications..."}
+                                      {selectedClassifications.length > 0 ? selectedClassifications.join(', ') : "اختر التصنيفات..."}
                                     </span>
                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                     </Button>
@@ -240,7 +240,7 @@ export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount,
                                 <PopoverContent className="w-[300px] p-0">
                                 <ScrollArea className='h-72'>
                                   {accountClassifications.map((item) => (
-                                    <div key={item} className="flex items-center space-x-2 px-4 py-2">
+                                    <div key={item} className="flex items-center space-x-2 space-x-reverse px-4 py-2">
                                       <Checkbox
                                         id={item}
                                         checked={field.value?.includes(item)}
@@ -262,7 +262,7 @@ export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount,
                 ), errors.classifications)}
 
 
-                 {renderRow("Account Status", "status", (
+                 {renderRow("حالة الحساب", "status", (
                      <Controller
                         name="status"
                         control={control}
@@ -270,8 +270,8 @@ export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount,
                            <Select onValueChange={field.onChange} value={field.value}>
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="Active">Active</SelectItem>
-                                    <SelectItem value="Inactive">Inactive</SelectItem>
+                                    <SelectItem value="Active">نشط</SelectItem>
+                                    <SelectItem value="Inactive">غير نشط</SelectItem>
                                 </SelectContent>
                             </Select>
                         )}
@@ -280,9 +280,9 @@ export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount,
             </div>
             <DialogFooter>
                 <DialogClose asChild>
-                    <Button type="button" variant="secondary">Cancel</Button>
+                    <Button type="button" variant="secondary">إلغاء</Button>
                 </DialogClose>
-                <Button type="submit">Save</Button>
+                <Button type="submit">حفظ</Button>
             </DialogFooter>
         </form>
       </DialogContent>

@@ -4,7 +4,7 @@
 import { TransactionForm } from '@/components/transaction-form';
 import { Card, CardContent } from '@/components/ui/card';
 import { Account } from '@/components/chart-of-accounts/account-tree';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Info, AlertCircle } from 'lucide-react';
@@ -37,7 +37,7 @@ export default function ExpensesPage() {
                 setAccounts(expenseAccounts);
             } catch (e: any) {
                 console.error("Failed to fetch accounts:", e);
-                setError("Failed to load accounts from Firestore. Please ensure the connection is set up and you have permissions to read the 'accounts' collection.");
+                setError("فشل تحميل الحسابات من Firestore. يرجى التأكد من أن الاتصال مهيأ ولديك صلاحيات لقراءة مجموعة 'accounts'.");
             } finally {
                 setLoading(false);
             }
@@ -53,7 +53,7 @@ export default function ExpensesPage() {
                      {error && (
                          <Alert variant="destructive" className="mb-6">
                             <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Connection Error</AlertTitle>
+                            <AlertTitle>خطأ في الاتصال</AlertTitle>
                             <AlertDescription>
                                {error}
                             </AlertDescription>
@@ -78,8 +78,8 @@ export default function ExpensesPage() {
                         </div>
                     ) : (
                         <TransactionForm
-                            formTitle="Record New Expense"
-                            formButtonText="Add Expense"
+                            formTitle="تسجيل مصروف جديد"
+                            formButtonText="إضافة مصروف"
                             accounts={accounts}
                             transactionType="Expense"
                         />

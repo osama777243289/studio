@@ -25,11 +25,11 @@ import { format } from 'date-fns';
 
 const getStatusVariant = (status: string) => {
     switch (status) {
-        case 'Pending Upload':
+        case 'قيد الرفع':
             return 'secondary'
-        case 'Pending Matching':
+        case 'قيد المطابقة':
             return 'destructive'
-        case 'Matched':
+        case 'مطابق':
             return 'default'
         default:
             return 'outline'
@@ -57,12 +57,26 @@ export function SalesRecords() {
         fetchRecords();
     }, []);
 
+    const translateStatus = (status: string) => {
+        switch (status) {
+            case 'Pending Upload': return 'قيد الرفع';
+            case 'Pending Matching': return 'قيد المطابقة';
+            case 'Matched': return 'مطابق';
+            default: return status;
+        }
+    }
+
+    const translatePeriod = (period: string) => {
+        return period === 'Morning' ? 'صباحية' : 'مسائية';
+    }
+
+
   return (
     <Card>
       <CardHeader>
          <div className="flex items-center gap-2">
             <History className="h-5 w-5" />
-            <CardTitle>Sales Records</CardTitle>
+            <CardTitle>سجلات المبيعات</CardTitle>
         </div>
       </CardHeader>
       <CardContent>
@@ -71,38 +85,39 @@ export function SalesRecords() {
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
         ) : records.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">No sales records found.</p>
+            <p className="text-muted-foreground text-center py-8">لم يتم العثور على سجلات مبيعات.</p>
         ) : (
+            <div className='overflow-x-auto'>
             <Table>
             <TableHeader>
                 <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Period</TableHead>
-                <TableHead>Total</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead>التاريخ</TableHead>
+                <TableHead>الفترة</TableHead>
+                <TableHead>الإجمالي</TableHead>
+                <TableHead>الحالة</TableHead>
+                <TableHead>الإجراءات</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
                 {records.map((record) => (
                 <TableRow key={record.id} className="cursor-pointer hover:bg-muted/50">
                     <TableCell>{format(record.date.toDate(), 'PPP')}</TableCell>
-                    <TableCell>{record.period}</TableCell>
+                    <TableCell>{translatePeriod(record.period)}</TableCell>
                     <TableCell>${record.total.toFixed(2)}</TableCell>
                     <TableCell>
-                    <Badge variant={getStatusVariant(record.status)} className={
+                    <Badge variant={getStatusVariant(translateStatus(record.status))} className={
                         record.status === 'Matched' ? 'bg-green-100 text-green-800' : 
                         record.status === 'Pending Matching' ? 'bg-yellow-100 text-yellow-800' : ''
                     }>
-                        {record.status}
+                        {translateStatus(record.status)}
                     </Badge>
                     </TableCell>
                     <TableCell>
                         {record.status !== 'Pending Upload' && (
                             <Button asChild variant="outline" size="sm">
                                 <Link href={`/reports/cashier-sales?id=${record.id}`}>
-                                    <Printer className="mr-2 h-4 w-4"/>
-                                    View & Print
+                                    <Printer className="ml-2 h-4 w-4"/>
+                                    عرض وطباعة
                                 </Link>
                             </Button>
                         )}
@@ -111,6 +126,7 @@ export function SalesRecords() {
                 ))}
             </TableBody>
             </Table>
+            </div>
         )}
       </CardContent>
     </Card>

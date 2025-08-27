@@ -51,7 +51,7 @@ export default function RolesPage() {
             setRoles(fetchedRoles);
         } catch (e: any) {
             console.error("Failed to fetch roles:", e);
-            setError("Failed to connect to Firestore. Please check your connection and permissions.");
+            setError("فشل الاتصال بـ Firestore. يرجى التحقق من اتصالك وصلاحياتك.");
         } finally {
             setLoading(false);
         }
@@ -83,16 +83,16 @@ export default function RolesPage() {
         try {
             if (dialogMode === 'edit' && selectedRole) {
                 await updateRole(selectedRole.id, roleData);
-                toast({ title: "Success", description: "Role updated successfully." });
+                toast({ title: "نجاح", description: "تم تحديث الدور بنجاح." });
             } else {
                 await addRole(roleData);
-                toast({ title: "Success", description: "Role added successfully." });
+                toast({ title: "نجاح", description: "تمت إضافة الدور بنجاح." });
             }
             setIsDialogOpen(false);
             await fetchRoles();
         } catch (e: any) {
             console.error("Failed to save role:", e);
-            toast({ title: "Error", description: e.message, variant: "destructive" });
+            toast({ title: "خطأ", description: e.message, variant: "destructive" });
         } finally {
             setLoading(false);
         }
@@ -103,12 +103,12 @@ export default function RolesPage() {
         setLoading(true);
         try {
             await deleteRole(selectedRole.id);
-            toast({ title: "Success", description: `Role "${selectedRole.name}" has been deleted.` });
+            toast({ title: "نجاح", description: `تم حذف الدور "${selectedRole.name}".` });
             setIsDeleteDialogOpen(false);
             await fetchRoles();
         } catch (e: any) {
             console.error("Failed to delete role:", e);
-            toast({ title: "Error", description: e.message, variant: "destructive" });
+            toast({ title: "خطأ", description: e.message, variant: "destructive" });
         } finally {
             setLoading(false);
         }
@@ -125,7 +125,7 @@ export default function RolesPage() {
                         </div>
                          <div className="flex gap-2 w-full sm:w-auto">
                              <Button variant="outline" onClick={fetchRoles} disabled={loading} className="flex-1 sm:flex-initial">
-                                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                                {loading ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <RefreshCw className="ml-2 h-4 w-4" />}
                                 تحديث
                             </Button>
                             <Button onClick={handleAddRole} className="flex-1 sm:flex-initial">
@@ -139,7 +139,7 @@ export default function RolesPage() {
                     {error && (
                         <Alert variant="destructive" className="mb-4">
                             <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Connection Error</AlertTitle>
+                            <AlertTitle>خطأ في الاتصال</AlertTitle>
                             <AlertDescription>{error}</AlertDescription>
                         </Alert>
                     )}

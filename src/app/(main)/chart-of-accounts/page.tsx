@@ -38,7 +38,7 @@ export default function ChartOfAccountsPage() {
             setAccounts(fetchedAccounts);
         } catch (e: any) {
             console.error("Failed to fetch accounts:", e);
-            setError("Failed to connect to Firestore. Please check your Firebase project settings and security rules. The database might not be created or is not allowing reads.");
+            setError("فشل الاتصال بـ Firestore. يرجى التحقق من إعدادات مشروع Firebase وقواعد الأمان. قد لا تكون قاعدة البيانات قد تم إنشاؤها أو أنها لا تسمح بالقراءة.");
             setAccounts([]); // Clear accounts on error
         } finally {
             setLoading(false);
@@ -79,8 +79,8 @@ export default function ChartOfAccountsPage() {
     const handleDeleteAccount = (account: Account) => {
         if (account.children && account.children.length > 0) {
             toast({
-                title: "Deletion Failed",
-                description: "Cannot delete an account that has sub-accounts. Please delete the sub-accounts first.",
+                title: "فشل الحذف",
+                description: "لا يمكن حذف حساب يحتوي على حسابات فرعية. يرجى حذف الحسابات الفرعية أولاً.",
                 variant: "destructive"
             });
             return;
@@ -94,17 +94,17 @@ export default function ChartOfAccountsPage() {
             setLoading(true);
             if (dialogMode === 'edit' && selectedAccount) {
                 await updateAccount(selectedAccount.id, accountData);
-                toast({ title: "Success", description: "Account updated successfully." });
+                toast({ title: "نجاح", description: "تم تحديث الحساب بنجاح." });
             } else {
                 const parentId = parentAccount ? parentAccount.id : null;
                 await addAccount(accountData, parentId);
-                toast({ title: "Success", description: "Account added successfully." });
+                toast({ title: "نجاح", description: "تمت إضافة الحساب بنجاح." });
             }
             setIsAddEditDialogOpen(false);
             await refreshAccounts();
         } catch (e: any) {
             console.error("Failed to save account:", e);
-            toast({ title: "Error Saving Account", description: e.message, variant: "destructive" });
+            toast({ title: "خطأ في حفظ الحساب", description: e.message, variant: "destructive" });
         } finally {
             setLoading(false);
         }
@@ -115,12 +115,12 @@ export default function ChartOfAccountsPage() {
         try {
             setLoading(true);
             await deleteAccount(selectedAccount.id);
-            toast({ title: "Success", description: `Account "${selectedAccount.name}" deleted.` });
+            toast({ title: "نجاح", description: `تم حذف الحساب "${selectedAccount.name}".` });
             setIsDeleteDialogOpen(false);
             await refreshAccounts();
         } catch (e: any) {
             console.error("Failed to delete account:", e);
-            toast({ title: "Error Deleting Account", description: e.message, variant: "destructive" });
+            toast({ title: "خطأ في حذف الحساب", description: e.message, variant: "destructive" });
         } finally {
             setLoading(false);
         }
@@ -132,17 +132,17 @@ export default function ChartOfAccountsPage() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                  <CardTitle className="font-headline">Chart of Accounts</CardTitle>
-                  <CardDescription>Browse and manage your accounting tree.</CardDescription>
+                  <CardTitle className="font-headline">دليل الحسابات</CardTitle>
+                  <CardDescription>تصفح وإدارة شجرة الحسابات الخاصة بك.</CardDescription>
               </div>
               <div className='flex gap-2 w-full sm:w-auto'>
                   <Button variant="outline" onClick={refreshAccounts} disabled={loading} className="flex-1 sm:flex-initial">
-                      {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                      Refresh
+                      {loading ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <RefreshCw className="ml-2 h-4 w-4" />}
+                      تحديث
                   </Button>
                   <Button onClick={() => handleAddAccount()} className="flex-1 sm:flex-initial">
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Add Main Account
+                      <PlusCircle className="ml-2 h-4 w-4" />
+                      إضافة حساب رئيسي
                   </Button>
               </div>
           </div>
@@ -151,7 +151,7 @@ export default function ChartOfAccountsPage() {
            {error && (
              <Alert variant="destructive" className="mb-4">
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Connection Error</AlertTitle>
+                <AlertTitle>خطأ في الاتصال</AlertTitle>
                 <AlertDescription>
                     {error}
                 </AlertDescription>
@@ -161,7 +161,7 @@ export default function ChartOfAccountsPage() {
             {loading ? (
                 <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <Loader2 className="h-8 w-8 animate-spin" />
-                    <p>Loading Accounts...</p>
+                    <p>جاري تحميل الحسابات...</p>
                 </div>
             ) : accounts.length > 0 ? (
                 <AccountTree 
@@ -172,8 +172,8 @@ export default function ChartOfAccountsPage() {
                 />
             ) : !error ? (
                  <div className="text-center text-muted-foreground">
-                    <p>No accounts found.</p>
-                    <p>Click "Add Main Account" to get started.</p>
+                    <p>لم يتم العثور على حسابات.</p>
+                    <p>انقر على "إضافة حساب رئيسي" للبدء.</p>
                 </div>
             ) : null}
           </div>
