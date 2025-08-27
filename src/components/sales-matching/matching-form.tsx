@@ -203,13 +203,6 @@ export function MatchingForm({ record }: MatchingFormProps) {
             </div>
             <Textarea id="notes" placeholder="اكتب ملاحظاتك هنا..." />
         </div>
-
-        <div className="space-y-2">
-            <Label htmlFor="attachment">إرفاق صورة (اختياري)</Label>
-            <Input id="attachment" type="file" />
-        </div>
-
-
       </CardContent>
       <CardFooter className="flex justify-between">
         <Button variant="outline">

@@ -41,7 +41,6 @@ import {
   Pencil,
   Loader2,
   Hash,
-  Paperclip,
 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import type { Account } from '../chart-of-accounts/account-tree';
@@ -87,7 +86,7 @@ export function SalesForm({ accounts }: SalesFormProps) {
         salesperson: '',
         postingNumber: '',
         cash: { accountId: '', amount: 0 },
-        cards: [{ accountId: '', amount: 0, receiptImage: null }],
+        cards: [{ accountId: '', amount: 0 }],
         credits: [{ accountId: '', amount: 0 }],
     }
   });
@@ -288,20 +287,9 @@ export function SalesForm({ accounts }: SalesFormProps) {
                     <Label htmlFor={`card-amount-${field.id}`}>المبلغ</Label>
                     <Input id={`card-amount-${field.id}`} placeholder="0.00" type="number" {...form.register(`cards.${index}.amount`, { valueAsNumber: true })} />
                   </div>
-                   <div className="space-y-2">
-                        <Label htmlFor={`card-image-${field.id}`}>إيصال الشبكة</Label>
-                        <div className="flex items-center gap-2">
-                            <Input 
-                                id={`card-image-${field.id}`} 
-                                type="file" 
-                                className="flex-1"
-                                {...form.register(`cards.${index}.receiptImage`)} 
-                            />
-                        </div>
-                    </div>
                 </div>
               ))}
-              <Button type="button" variant="outline" className="w-full" onClick={() => appendCard({ accountId: '', amount: 0, receiptImage: null })}>
+              <Button type="button" variant="outline" className="w-full" onClick={() => appendCard({ accountId: '', amount: 0 })}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 إضافة حساب بطاقة
               </Button>

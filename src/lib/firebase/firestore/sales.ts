@@ -24,18 +24,13 @@ const accountDetailSchema = z.object({
   amount: z.coerce.number().min(0, 'Amount must be positive.'),
 });
 
-// Create a separate schema for card details to include the image
-const cardAccountDetailSchema = accountDetailSchema.extend({
-  receiptImage: z.any().optional(), // Using `any` for now to accommodate file objects
-});
-
 export const salesRecordSchema = z.object({
   date: z.date(),
   period: z.enum(['Morning', 'Evening']),
   salesperson: z.string().min(2, 'Salesperson name is required.'),
   postingNumber: z.string().optional(),
   cash: accountDetailSchema,
-  cards: z.array(cardAccountDetailSchema).optional(),
+  cards: z.array(accountDetailSchema).optional(),
   credits: z.array(accountDetailSchema).optional(),
 });
 
@@ -48,7 +43,7 @@ export interface AccountDetail {
 }
 
 export interface CardAccountDetail extends AccountDetail {
-  receiptImageUrl?: string; // We'll store the URL of the uploaded image here
+  receiptImageUrl?: string; 
 }
 
 export interface SalesRecord {
@@ -160,22 +155,11 @@ export const addSaleRecord = async (
     accountName: accountMap.get(data.cash.accountId) || 'Unknown',
   };
 
-  // NOTE: File upload logic is not implemented.
-  // This is a placeholder for where you would upload the image to a service like Firebase Storage
-  // and get a URL back. For now, we'll just remove the file object.
   const enrichedCards =
     data.cards?.map((card) => {
-      const { receiptImage, ...cardData } = card;
-      // In a real app, you would do:
-      // const imageUrl = await uploadFile(receiptImage);
-      // return { ...cardData, accountName: accountMap.get(card.accountId) || 'Unknown', receiptImageUrl: imageUrl }
       return {
-        ...cardData,
+        ...card,
         accountName: accountMap.get(card.accountId) || 'Unknown',
-        // Storing a placeholder image URL for demonstration
-        receiptImageUrl: receiptImage
-          ? 'https://picsum.photos/seed/receipt/100/150'
-          : undefined,
       };
     }) || [];
 

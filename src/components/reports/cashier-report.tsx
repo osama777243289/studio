@@ -17,14 +17,11 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { AlertCircle, Calendar, CheckCircle2, FileText, Gift, Lightbulb, MessageSquare, RefreshCw, Wallet, CreditCard, BookUser, Hash, Loader2, ImageIcon } from "lucide-react";
+import { AlertCircle, Calendar, CheckCircle2, FileText, Gift, Lightbulb, MessageSquare, RefreshCw, Wallet, CreditCard, BookUser, Hash, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
-import { SalesRecord, CardAccountDetail, getSaleRecordById } from "@/lib/firebase/firestore/sales";
+import { SalesRecord, getSaleRecordById } from "@/lib/firebase/firestore/sales";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import Image from "next/image";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
-import { Button } from "../ui/button";
 
 
 // Mock data for initial design and when no data is fetched
@@ -99,9 +96,9 @@ export function CashierReport() {
     
     const getSalesData = () => {
         const sales = [];
-        if (reportData.cash.amount > 0) sales.push({ method: "نقداً", icon: Wallet, original: reportData.cash.amount, actual: getActualAmount('cash'), account: reportData.cash.accountName || '', isCard: false });
-        reportData.cards.forEach((card, i) => sales.push({ method: "بطاقة/شبكة", icon: CreditCard, original: card.amount, actual: getActualAmount('card', i), account: card.accountName || '', isCard: true, receiptImageUrl: card.receiptImageUrl }));
-        reportData.credits.forEach((credit, i) => sales.push({ method: "أجل/ائتمان", icon: BookUser, original: credit.amount, actual: getActualAmount('credit', i), account: credit.accountName || '', isCard: false }));
+        if (reportData.cash.amount > 0) sales.push({ method: "نقداً", icon: Wallet, original: reportData.cash.amount, actual: getActualAmount('cash'), account: reportData.cash.accountName || '' });
+        reportData.cards.forEach((card, i) => sales.push({ method: "بطاقة/شبكة", icon: CreditCard, original: card.amount, actual: getActualAmount('card', i), account: card.accountName || '' }));
+        reportData.credits.forEach((credit, i) => sales.push({ method: "أجل/ائتمان", icon: BookUser, original: credit.amount, actual: getActualAmount('credit', i), account: credit.accountName || '' }));
         return sales;
     }
     const salesData = getSalesData();
@@ -172,28 +169,7 @@ export function CashierReport() {
                                     <TableCell className="text-center">{item.original.toFixed(2)}</TableCell>
                                     <TableCell className="text-center">{item.actual.toFixed(2)}</TableCell>
                                     <TableCell className="text-center">{getDifferenceText(difference)}</TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                        <span>{item.account}: {item.original.toFixed(2)}</span>
-                                        {item.isCard && item.receiptImageUrl && (
-                                            <Dialog>
-                                                <DialogTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-6 w-6">
-                                                        <ImageIcon className="text-blue-500"/>
-                                                    </Button>
-                                                </DialogTrigger>
-                                                <DialogContent>
-                                                    <DialogHeader>
-                                                        <DialogTitle>إيصال الشبكة لـ {item.account}</DialogTitle>
-                                                    </DialogHeader>
-                                                    <div className="relative h-96 w-full">
-                                                        <Image src={item.receiptImageUrl} alt={`إيصال لـ ${item.account}`} layout="fill" objectFit="contain" />
-                                                    </div>
-                                                </DialogContent>
-                                            </Dialog>
-                                        )}
-                                        </div>
-                                    </TableCell>
+                                    <TableCell>{item.account}: {item.original.toFixed(2)}</TableCell>
                                 </TableRow>
                             )
                         })}
