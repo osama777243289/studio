@@ -8,7 +8,9 @@ import {
   limit,
   getDocs,
   Timestamp,
-  where
+  where,
+  writeBatch,
+  doc
 } from 'firebase/firestore';
 import { z } from 'zod';
 import { getAccounts } from './accounts';
@@ -48,6 +50,56 @@ export interface SalesRecord {
     cards: AccountDetail[];
     credits: AccountDetail[];
     createdAt: Timestamp;
+}
+
+const seedSalesRecords = async () => {
+    const allAccounts = await getAccounts();
+    const accountMap = createAccountMap(allAccounts);
+
+    const cashAccount = [...accountMap.entries()].find(([id, name]) => name.includes('كاشير'))?.[0];
+    const networkAccount = [...accountMap.entries()].find(([id, name]) => name.includes('شبكة'))?.[0];
+    const clientAccount = [...accountMap.entries()].find(([id, name]) => name.includes('اسامه'))?.[0];
+
+    if (!cashAccount || !networkAccount || !clientAccount) {
+        console.log("Could not find default accounts for seeding sales. Creating some...");
+        // This part is complex, for now we will rely on the default accounts being there
+        // from the account seeding. If not, we skip seeding sales.
+        return;
+    }
+
+    const defaultRecords = [
+        {
+            date: Timestamp.fromDate(new Date()),
+            period: 'Morning',
+            cashier: 'Yousef Khaled',
+            total: 650,
+            status: 'Pending Matching',
+            cash: { accountId: cashAccount, accountName: accountMap.get(cashAccount), amount: 500 },
+            cards: [{ accountId: networkAccount, accountName: accountMap.get(networkAccount), amount: 150 }],
+            credits: [],
+            createdAt: Timestamp.now()
+        },
+        {
+            date: Timestamp.fromDate(new Date()),
+            period: 'Evening',
+            cashier: 'Ahmad Ali',
+            total: 1200,
+            status: 'Matched',
+            cash: { accountId: cashAccount, accountName: accountMap.get(cashAccount), amount: 800 },
+            cards: [],
+            credits: [{ accountId: clientAccount, accountName: accountMap.get(clientAccount), amount: 400 }],
+            createdAt: Timestamp.now()
+        }
+    ];
+
+    const batch = writeBatch(db);
+    const salesCol = collection(db, 'salesRecords');
+    defaultRecords.forEach(rec => {
+        const newDocRef = doc(salesCol);
+        batch.set(newDocRef, rec);
+    });
+    await batch.commit();
+    console.log("Default sales records have been seeded.");
 }
 
 
@@ -133,9 +185,15 @@ export const getSalesRecords = async (count: number = 20): Promise<SalesRecord[]
     const salesCol = collection(db, 'salesRecords');
     const q = query(salesCol, orderBy('createdAt', 'desc'), limit(count));
     const snapshot = await getDocs(q);
+
     if (snapshot.empty) {
-        return [];
+        console.log("No sales records found, seeding database...");
+        await seedSalesRecords();
+        const seededSnapshot = await getDocs(q);
+        if (seededSnapshot.empty) return [];
+        return seededSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SalesRecord));
     }
+    
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SalesRecord));
 }
 
@@ -144,8 +202,14 @@ export const getSalesRecordsByStatus = async (status: 'Pending Matching' | 'Matc
     const salesCol = collection(db, 'salesRecords');
     const q = query(salesCol, where('status', '==', status), orderBy('createdAt', 'desc'));
     const snapshot = await getDocs(q);
-    if (snapshot.empty) {
-        return [];
+
+    if (snapshot.empty && status === 'Pending Matching') {
+         console.log("No pending matching records found, trying to seed...");
+         // We only seed when getting all records to avoid multiple seeds.
+         // This function will likely be called after getSalesRecords has run and seeded.
+         // If still empty, then there are truly no records with this status.
+         return [];
     }
+
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SalesRecord));
 };
