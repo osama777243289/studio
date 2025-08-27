@@ -13,7 +13,7 @@ const firebaseConfig = {
   authDomain: "osama-2020.firebaseapp.com",
   databaseURL: "https://osama-2020-default-rtdb.firebaseio.com",
   projectId: "osama-2020",
-  storageBucket: "osama-2020.firebasestorage.app",
+  storageBucket: "osama-2020.appspot.com",
   messagingSenderId: "390287828886",
   appId: "1:390287828886:web:ce0523224f5de42c7cdfb7",
   measurementId: "G-SW1C8RELTP"
