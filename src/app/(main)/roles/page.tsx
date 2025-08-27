@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -17,7 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { PlusCircle, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
+import { PlusCircle, MoreHorizontal, Pencil, Trash2, Loader2, RefreshCw } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,25 +28,34 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { RoleDialog, type RoleFormData } from '@/components/roles/role-dialog';
 import { DeleteRoleDialog } from '@/components/roles/delete-role-dialog';
+import { getRoles, addRole, updateRole, deleteRole, type Role } from '@/lib/firebase/firestore/roles';
 
-export interface Role {
-    id: string;
-    name: string;
-}
-
-const initialRoles: Role[] = [
-    { id: '1', name: 'مدير' },
-    { id: '2', name: 'محاسب' },
-    { id: '3', name: 'كاشير' },
-    { id: '4', name: 'مدخل بيانات' }
-];
 
 export default function RolesPage() {
-    const [roles, setRoles] = useState<Role[]>(initialRoles);
+    const [roles, setRoles] = useState<Role[]>([]);
+    const [loading, setLoading] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedRole, setSelectedRole] = useState<Role | null>(null);
     const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
+
+    const fetchRoles = async () => {
+        setLoading(true);
+        try {
+            const fetchedRoles = await getRoles();
+            setRoles(fetchedRoles);
+        } catch (error) {
+            console.error("Failed to fetch roles:", error);
+            // Optionally, show a toast or error message to the user
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchRoles();
+    }, []);
+
 
     const handleAddRole = () => {
         setDialogMode('add');
@@ -64,24 +74,32 @@ export default function RolesPage() {
         setIsDeleteDialogOpen(true);
     };
 
-    const confirmSave = (roleData: RoleFormData) => {
-        if (dialogMode === 'add') {
-            const newRole: Role = {
-                id: Date.now().toString(),
-                name: roleData.name,
-            };
-            setRoles(prev => [...prev, newRole]);
-        } else if (dialogMode === 'edit' && selectedRole) {
-            const updatedRole = { ...selectedRole, name: roleData.name };
-            setRoles(prev => prev.map(r => r.id === selectedRole.id ? updatedRole : r));
+    const confirmSave = async (roleData: RoleFormData) => {
+        try {
+            if (dialogMode === 'add') {
+                await addRole(roleData);
+            } else if (dialogMode === 'edit' && selectedRole) {
+                await updateRole(selectedRole.id, roleData);
+            }
+            await fetchRoles(); // Refresh roles from Firestore
+        } catch (error) {
+             console.error("Failed to save role:", error);
+             alert("فشل حفظ الدور. يرجى المحاولة مرة أخرى.");
+        } finally {
+            setIsDialogOpen(false);
+            setSelectedRole(null);
         }
-        setIsDialogOpen(false);
-        setSelectedRole(null);
     };
 
-    const confirmDelete = () => {
+    const confirmDelete = async () => {
         if (selectedRole) {
-            setRoles(prev => prev.filter(r => r.id !== selectedRole.id));
+            try {
+                await deleteRole(selectedRole.id);
+                await fetchRoles(); // Refresh roles from Firestore
+            } catch (error) {
+                console.error("Failed to delete role:", error);
+                alert("فشل حذف الدور. يرجى المحاولة مرة أخرى.");
+            }
         }
         setIsDeleteDialogOpen(false);
         setSelectedRole(null);
@@ -94,42 +112,62 @@ export default function RolesPage() {
                     <div className="flex justify-between items-center">
                         <div>
                             <CardTitle className="font-headline">إدارة الأدوار</CardTitle>
-                            <CardDescription>إضافة وتعديل وحذف أدوار المستخدمين في النظام.</CardDescription>
+                            <CardDescription>إضافة وتعديل وحذف أدوار المستخدمين في النظام من Firestore.</CardDescription>
                         </div>
-                        <Button onClick={handleAddRole}>
-                            <PlusCircle className="ml-2 h-4 w-4" />
-                            إضافة دور جديد
-                        </Button>
+                         <div className="flex gap-2">
+                             <Button variant="outline" onClick={fetchRoles} disabled={loading}>
+                                <RefreshCw className="ml-2 h-4 w-4" />
+                                تحديث
+                            </Button>
+                            <Button onClick={handleAddRole}>
+                                <PlusCircle className="ml-2 h-4 w-4" />
+                                إضافة دور جديد
+                            </Button>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>اسم الدور</TableHead>
-                                <TableHead>
-                                    <span className="sr-only">الإجراءات</span>
-                                </TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {roles.map((role) => (
-                                <TableRow key={role.id}>
-                                    <TableCell className="font-medium">{role.name}</TableCell>
-                                    <TableCell className="text-left">
-                                        <div className='flex items-center justify-end'>
-                                            <Button variant="ghost" size="icon" onClick={() => handleEditRole(role)}>
-                                                <Pencil className="h-4 w-4 text-blue-500" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" onClick={() => handleDeleteRole(role)}>
-                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                            </Button>
-                                        </div>
-                                    </TableCell>
+                     {loading ? (
+                        <div className="flex justify-center items-center min-h-[200px]">
+                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                        </div>
+                    ) : (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>اسم الدور</TableHead>
+                                    <TableHead>
+                                        <span className="sr-only">الإجراءات</span>
+                                    </TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {roles.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={2} className="text-center text-muted-foreground py-8">
+                                            لم يتم العثور على أدوار. ابدأ بإضافة دور جديد.
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    roles.map((role) => (
+                                        <TableRow key={role.id}>
+                                            <TableCell className="font-medium">{role.name}</TableCell>
+                                            <TableCell className="text-left">
+                                                <div className='flex items-center justify-end'>
+                                                    <Button variant="ghost" size="icon" onClick={() => handleEditRole(role)}>
+                                                        <Pencil className="h-4 w-4 text-blue-500" />
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteRole(role)}>
+                                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    )}
                 </CardContent>
             </Card>
 
