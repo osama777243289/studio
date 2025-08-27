@@ -18,16 +18,16 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 const navLinks: NavLink[] = [
-  { title: 'لوحة التحكم', href: '/dashboard', icon: 'LayoutDashboard' },
-  { title: 'الدخل', href: '/income', icon: 'ArrowUpCircle' },
-  { title: 'المصروفات', href: '/expenses', icon: 'ArrowDownCircle' },
-  { title: 'المبيعات اليومية', href: '/sales', icon: 'ShoppingCart' },
-  { title: 'مطابقة المبيعات', href: '/sales-matching', icon: 'CheckSquare' },
-  { title: 'دليل الحسابات', href: '/chart-of-accounts', icon: 'Network' },
-  { title: 'التدفق النقدي', href: '/cash-flow', icon: 'TrendingUp' },
-  { title: 'التقارير', href: '/reports', icon: 'FileText' },
-  { title: 'المستخدمون', href: '/users', icon: 'Users' },
-  { title: 'إدارة الأدوار', href: '/roles', icon: 'ShieldCheck' },
+  { title: 'Dashboard', href: '/dashboard', icon: 'LayoutDashboard' },
+  { title: 'Income', href: '/income', icon: 'ArrowUpCircle' },
+  { title: 'Expenses', href: '/expenses', icon: 'ArrowDownCircle' },
+  { title: 'Daily Sales', href: '/sales', icon: 'ShoppingCart' },
+  { title: 'Sales Matching', href: '/sales-matching', icon: 'CheckSquare' },
+  { title: 'Chart of Accounts', href: '/chart-of-accounts', icon: 'Network' },
+  { title: 'Cash Flow', href: '/cash-flow', icon: 'TrendingUp' },
+  { title: 'Reports', href: '/reports', icon: 'FileText' },
+  { title: 'Users', href: '/users', icon: 'Users' },
+  { title: 'Role Management', href: '/roles', icon: 'ShieldCheck' },
 ];
 
 export default function MainLayout({
@@ -42,7 +42,7 @@ export default function MainLayout({
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
               <Landmark className="h-6 w-6 text-primary" />
-              <span className="font-headline text-xl text-primary">حسابي</span>
+              <span className="font-headline text-xl text-primary">Accounter</span>
             </Link>
           </div>
           <div className="flex-1">
@@ -67,7 +67,7 @@ export default function MainLayout({
               <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
                  <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
                     <Landmark className="h-6 w-6 text-primary" />
-                    <span className="font-headline text-xl text-primary">حسابي</span>
+                    <span className="font-headline text-xl text-primary">Accounter</span>
                 </Link>
               </div>
               <Nav links={navLinks} />
@@ -82,12 +82,12 @@ export default function MainLayout({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>حسابي</DropdownMenuLabel>
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>الإعدادات</DropdownMenuItem>
-              <DropdownMenuItem>الدعم</DropdownMenuItem>
+              <DropdownMenuItem>Settings</DropdownMenuItem>
+              <DropdownMenuItem>Support</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>تسجيل الخروج</DropdownMenuItem>
+              <DropdownMenuItem>Logout</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </header>

@@ -82,7 +82,7 @@ export default function ChartOfAccountsPage() {
 
     const handleAddAccount = (parentId: string | null = null, parentLevel: number = 0) => {
         if (parentLevel >= 4) {
-            alert("لا يمكن إضافة حساب فرعي لمستوى أعمق من المستوى الرابع.");
+            alert("Cannot add a sub-account deeper than the fourth level.");
             return;
         }
         setDialogMode(parentId ? 'addSub' : 'add');
@@ -116,7 +116,7 @@ export default function ChartOfAccountsPage() {
             await refreshAccounts();
         } catch (error) {
             console.error("Failed to save account:", error);
-            alert("فشل حفظ الحساب. يرجى المحاولة مرة أخرى.");
+            alert("Failed to save account. Please try again.");
         } finally {
             setIsAddEditDialogOpen(false);
             setSelectedAccount(null);
@@ -131,7 +131,7 @@ export default function ChartOfAccountsPage() {
                 await refreshAccounts();
             } catch (error) {
                  console.error("Failed to delete account:", error);
-                 alert("فشل حذف الحساب. قد يحتوي على حسابات فرعية.");
+                 alert("Failed to delete account. It may contain sub-accounts.");
             }
         }
         setIsDeleteDialogOpen(false);
@@ -145,17 +145,17 @@ export default function ChartOfAccountsPage() {
         <CardHeader>
           <div className="flex justify-between items-center">
               <div>
-                  <CardTitle className="font-headline">دليل الحسابات</CardTitle>
-                  <CardDescription>تصفح وقم بإدارة شجرة الحسابات المحاسبية الخاصة بك من Firestore.</CardDescription>
+                  <CardTitle className="font-headline">Chart of Accounts</CardTitle>
+                  <CardDescription>Browse and manage your accounting tree from Firestore.</CardDescription>
               </div>
               <div className='flex gap-2'>
                   <Button variant="outline" onClick={refreshAccounts} disabled={loading}>
-                      <RefreshCw className="ml-2 h-4 w-4" />
-                      تحديث
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Refresh
                   </Button>
                   <Button onClick={() => handleAddAccount()}>
-                      <PlusCircle className="ml-2 h-4 w-4" />
-                      إضافة حساب رئيسي
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Add Main Account
                   </Button>
               </div>
           </div>
@@ -165,7 +165,7 @@ export default function ChartOfAccountsPage() {
             {loading ? (
                 <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <Loader2 className="h-8 w-8 animate-spin" />
-                    <p>جاري تحميل الحسابات من Firestore...</p>
+                    <p>Loading accounts from Firestore...</p>
                 </div>
             ) : accounts.length > 0 ? (
                 <AccountTree 
@@ -176,8 +176,8 @@ export default function ChartOfAccountsPage() {
                 />
             ) : (
                  <div className="text-center text-muted-foreground">
-                    <p>لم يتم العثور على حسابات.</p>
-                    <p>انقر فوق "إضافة حساب رئيسي" للبدء.</p>
+                    <p>No accounts found.</p>
+                    <p>Click "Add Main Account" to get started.</p>
                 </div>
             )}
           </div>

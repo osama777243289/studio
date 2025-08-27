@@ -12,18 +12,18 @@ import { cn } from "@/lib/utils"
 import { Badge } from "../ui/badge"
 
 export const accountClassifications = [
-    'صندوق', 'بنك', 'شبكات', 'موظف', 'عهد', 'اصول ثابتة', 
-    'عملاء', 'كواشير', 'موردين', 'مصروفات', 'ايرادات'
+    'Cashbox', 'Bank', 'Networks', 'Employee', 'Custody', 'Fixed Assets', 
+    'Clients', 'Cashiers', 'Suppliers', 'Expenses', 'Revenues'
 ];
-export const closingAccountTypes = ['الميزانية العمومية', 'قائمة الدخل'];
+export const closingAccountTypes = ['Balance Sheet', 'Income Statement'];
 
 export interface Account {
   id: string;
   code: string;
   name: string;
-  type: 'مدين' | 'دائن';
-  group: 'الأصول' | 'الخصوم' | 'حقوق الملكية' | 'الإيرادات' | 'المصروفات';
-  status: 'نشط' | 'غير نشط';
+  type: 'Debit' | 'Credit';
+  group: 'Assets' | 'Liabilities' | 'Equity' | 'Revenues' | 'Expenses';
+  status: 'Active' | 'Inactive';
   closingType: typeof closingAccountTypes[number];
   classifications: (typeof accountClassifications[number])[];
   children?: Account[];
@@ -69,7 +69,7 @@ function AccountItem({ account, level, onAddSubAccount, onEditAccount, onDeleteA
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <div className={cn("flex flex-col gap-2 p-2 rounded-md hover:bg-muted/50 group", `mr-${level * 4 + 2}`)}>
+        <div className={cn("flex flex-col gap-2 p-2 rounded-md hover:bg-muted/50 group", `ml-${level * 4 + 2}`)}>
             <div className="flex items-center gap-2">
                 <div className='w-6'>
                 {hasChildren && (
@@ -84,11 +84,11 @@ function AccountItem({ account, level, onAddSubAccount, onEditAccount, onDeleteA
                 <span className="font-mono text-sm text-muted-foreground w-24">{account.code}</span>
                 <span className="flex-1 font-medium flex items-center gap-2">
                   {account.name}
-                  {isTransactional && <FileText className="h-4 w-4 text-blue-500" title="حساب تحليلي" />}
+                  {isTransactional && <FileText className="h-4 w-4 text-blue-500" title="Transactional Account" />}
                 </span>
                 <div className="flex items-center gap-2">
                     <Badge variant="outline">{account.group}</Badge>
-                    <Badge variant={account.status === 'نشط' ? 'default' : 'destructive'} className={account.status === 'نشط' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>{account.status}</Badge>
+                    <Badge variant={account.status === 'Active' ? 'default' : 'destructive'} className={account.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>{account.status}</Badge>
                 </div>
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEditAccount(account)}>
@@ -108,7 +108,7 @@ function AccountItem({ account, level, onAddSubAccount, onEditAccount, onDeleteA
                 </div>
             </div>
             {account.classifications && account.classifications.length > 0 && (
-                 <div className={cn("flex items-center gap-2 flex-wrap", `mr-${level * 4 + 8}`)}>
+                 <div className={cn("flex items-center gap-2 flex-wrap", `ml-${level * 4 + 8}`)}>
                      {account.classifications.map(c => <Badge key={c} variant="secondary">{c}</Badge>)}
                  </div>
             )}

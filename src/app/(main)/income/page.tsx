@@ -42,7 +42,7 @@ export default function IncomePage() {
         fetchAccounts();
     }, []);
 
-    const incomeAccounts = useMemo(() => getTransactionalAccounts(accounts, 'الإيرادات'), [accounts]);
+    const incomeAccounts = useMemo(() => getTransactionalAccounts(accounts, 'Revenues'), [accounts]);
 
     return (
         <div className="flex justify-center items-start pt-8">
@@ -67,8 +67,8 @@ export default function IncomePage() {
                         </div>
                     ) : (
                         <TransactionForm
-                            formTitle="تسجيل دخل جديد"
-                            formButtonText="إضافة الدخل"
+                            formTitle="Record New Income"
+                            formButtonText="Add Income"
                             accounts={incomeAccounts}
                             transactionType="Income"
                         />

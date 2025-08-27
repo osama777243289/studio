@@ -41,7 +41,7 @@ export default function ExpensesPage() {
         fetchAccounts();
     }, []);
 
-    const expenseAccounts = useMemo(() => getTransactionalAccounts(accounts, 'المصروفات'), [accounts]);
+    const expenseAccounts = useMemo(() => getTransactionalAccounts(accounts, 'Expenses'), [accounts]);
 
     return (
         <div className="flex justify-center items-start pt-8">
@@ -66,8 +66,8 @@ export default function ExpensesPage() {
                         </div>
                     ) : (
                         <TransactionForm
-                            formTitle="تسجيل مصروف جديد"
-                            formButtonText="إضافة المصروف"
+                            formTitle="Record New Expense"
+                            formButtonText="Add Expense"
                             accounts={expenseAccounts}
                             transactionType="Expense"
                         />

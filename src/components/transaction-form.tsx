@@ -62,8 +62,8 @@ export function TransactionForm({
     try {
       await addTransaction({ ...values, type: transactionType });
       toast({
-        title: `تم تسجيل ${transactionType === 'Income' ? 'الدخل' : 'المصروف'}`,
-        description: `تم تسجيل ${transactionType === 'Income' ? 'دخل' : 'مصروف'} بقيمة ${values.amount} بنجاح.`,
+        title: `${transactionType} Recorded`,
+        description: `Successfully recorded ${transactionType.toLowerCase()} of ${values.amount}.`,
       });
       form.reset({
         amount: undefined,
@@ -75,8 +75,8 @@ export function TransactionForm({
     } catch (error) {
       console.error("Failed to add transaction:", error);
       toast({
-        title: 'حدث خطأ',
-        description: `فشل تسجيل ${transactionType === 'Income' ? 'الدخل' : 'المصروف'}. يرجى المحاولة مرة أخرى.`,
+        title: 'An error occurred',
+        description: `Failed to record ${transactionType.toLowerCase()}. Please try again.`,
         variant: 'destructive',
       });
     }
@@ -91,7 +91,7 @@ export function TransactionForm({
           name="amount"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>المبلغ</FormLabel>
+              <FormLabel>Amount</FormLabel>
               <FormControl>
                 <Input type="number" placeholder="0.00" {...field} onChange={event => field.onChange(+event.target.value)} />
               </FormControl>
@@ -104,11 +104,11 @@ export function TransactionForm({
           name="accountId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>الحساب</FormLabel>
+              <FormLabel>Account</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="اختر الحساب" />
+                    <SelectValue placeholder="Select an account" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -128,7 +128,7 @@ export function TransactionForm({
           name="date"
           render={({ field }) => (
             <FormItem className="flex flex-col">
-              <FormLabel>التاريخ</FormLabel>
+              <FormLabel>Date</FormLabel>
               <Popover>
                 <PopoverTrigger asChild>
                   <FormControl>
@@ -142,9 +142,9 @@ export function TransactionForm({
                       {field.value ? (
                         format(field.value, 'PPP')
                       ) : (
-                        <span>اختر تاريخاً</span>
+                        <span>Pick a date</span>
                       )}
-                      <CalendarIcon className="mr-auto h-4 w-4 opacity-50" />
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                     </Button>
                   </FormControl>
                 </PopoverTrigger>
@@ -169,16 +169,16 @@ export function TransactionForm({
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>الوصف (اختياري)</FormLabel>
+              <FormLabel>Description (Optional)</FormLabel>
               <FormControl>
-                <Textarea placeholder="أضف ملاحظة قصيرة..." {...field} />
+                <Textarea placeholder="Add a short note..." {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
         <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-           {form.formState.isSubmitting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+           {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {formButtonText}
         </Button>
       </form>

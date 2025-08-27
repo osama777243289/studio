@@ -1,10 +1,13 @@
 import type { Metadata } from 'next';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
+import { Inter } from 'next/font/google';
+
+const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
 export const metadata: Metadata = {
-  title: 'حسابي - رفيقك المالي',
-  description: 'تطبيق محاسبي متكامل لإدارة أموالك.',
+  title: 'Accounter - Your Financial Companion',
+  description: 'An integrated accounting application to manage your finances.',
   icons: {
     icon: '/favicon.ico',
   }
@@ -16,13 +19,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ar" dir="rtl" suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet" />
-      </head>
-      <body className="font-body antialiased">
+    <html lang="en" dir="ltr" suppressHydrationWarning>
+      <body className={`font-sans antialiased ${inter.variable}`}>
         {children}
         <Toaster />
       </body>

@@ -106,50 +106,50 @@ export const deleteAccount = async (accountId: string): Promise<void> => {
 // The initial data that was previously hardcoded
 const initialChartOfAccountsData: Omit<Account, 'id' | 'children'>[] = [
     // L1
-    { code: '1', name: 'الأصول', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: [] },
-    { code: '2', name: 'الخصوم', type: 'دائن', group: 'الخصوم', status: 'نشط', closingType: 'الميزانية العمومية', classifications: [] },
-    { code: '3', name: 'حقوق الملكية', type: 'دائن', group: 'حقوق الملكية', status: 'نشط', closingType: 'الميزانية العمومية', classifications: [] },
-    { code: '4', name: 'الإيرادات', type: 'دائن', group: 'الإيرادات', status: 'نشط', closingType: 'قائمة الدخل', classifications: [] },
-    { code: '5', name: 'المصروفات', type: 'مدين', group: 'المصروفات', status: 'نشط', closingType: 'قائمة الدخل', classifications: [] },
+    { code: '1', name: 'Assets', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: [] },
+    { code: '2', name: 'Liabilities', type: 'Credit', group: 'Liabilities', status: 'Active', closingType: 'Balance Sheet', classifications: [] },
+    { code: '3', name: 'Equity', type: 'Credit', group: 'Equity', status: 'Active', closingType: 'Balance Sheet', classifications: [] },
+    { code: '4', name: 'Revenues', type: 'Credit', group: 'Revenues', status: 'Active', closingType: 'Income Statement', classifications: [] },
+    { code: '5', name: 'Expenses', type: 'Debit', group: 'Expenses', status: 'Active', closingType: 'Income Statement', classifications: [] },
     
     // L2 under 1
-    { code: '11', name: 'الأصول المتداولة', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: [] },
-    { code: '12', name: 'الأصول الثابتة', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: [] },
+    { code: '11', name: 'Current Assets', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: [] },
+    { code: '12', name: 'Fixed Assets', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: [] },
 
     // L3 under 11
-    { code: '1101', name: 'النقدية وما في حكمها', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: [] },
-    { code: '1102', name: 'الذمم المدينة', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: [] },
-    { code: '1103', name: 'حسابات الشبكة', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: [] },
+    { code: '1101', name: 'Cash and Equivalents', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: [] },
+    { code: '1102', name: 'Accounts Receivable', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: [] },
+    { code: '1103', name: 'Network Accounts', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: [] },
 
     // L4 under 1101
-    { code: '1101001', name: 'صندوق المحل', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: ['صندوق'] },
-    { code: '1101002', name: 'بنك الراجحي', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: ['بنك'] },
-    { code: '1101003', name: 'صندوق الخزنة', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: ['صندوق'] },
+    { code: '1101001', name: 'Shop Cashbox', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['Cashbox'] },
+    { code: '1101002', name: 'Al-Rajhi Bank', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['Bank'] },
+    { code: '1101003', name: 'Safe Cashbox', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['Cashbox'] },
 
     // L4 under 1102
-    { code: '1102001', name: 'العميل محمد', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: ['عملاء'] },
-    { code: '1102002', name: 'العميل شركة الأمل', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: ['عملاء'] },
+    { code: '1102001', name: 'Client Mohammed', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['Clients'] },
+    { code: '1102002', name: 'Client Al-Amal Co.', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['Clients'] },
 
     // L4 under 1103
-    { code: '1103001', name: 'شبكة مدى - بنك الراجحي', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: ['شبكات'] },
-    { code: '1103002', name: 'شبكة فيزا - بنك الأهلي', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: ['شبكات'] },
+    { code: '1103001', name: 'Mada Network - Al-Rajhi', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['Networks'] },
+    { code: '1103002', name: 'Visa Network - Al-Ahli', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['Networks'] },
 
     // L3 under 12
-    { code: '1201', name: 'الأراضي', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: [] },
-    { code: '1202', name: 'السيارات', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: [] },
+    { code: '1201', name: 'Land', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: [] },
+    { code: '1202', name: 'Vehicles', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: [] },
 
     // L4 under 1202
-    { code: '1202001', name: 'سيارة هيونداي', type: 'مدين', group: 'الأصول', status: 'نشط', closingType: 'الميزانية العمومية', classifications: ['اصول ثابتة'] },
+    { code: '1202001', name: 'Hyundai Car', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['Fixed Assets'] },
 
     // L2 under 5
-    { code: '51', name: 'مصروفات التشغيل', type: 'مدين', group: 'المصروفات', status: 'نشط', closingType: 'قائمة الدخل', classifications: [] },
+    { code: '51', name: 'Operating Expenses', type: 'Debit', group: 'Expenses', status: 'Active', closingType: 'Income Statement', classifications: [] },
     
     // L3 under 51
-    { code: '5101', name: 'الرواتب', type: 'مدين', group: 'المصروفات', status: 'نشط', closingType: 'قائمة الدخل', classifications: [] },
+    { code: '5101', name: 'Salaries', type: 'Debit', group: 'Expenses', status: 'Active', closingType: 'Income Statement', classifications: [] },
 
     // L4 under 5101
-    { code: '5101001', name: 'راتب الموظف أحمد', type: 'مدين', group: 'المصروفات', status: 'نشط', closingType: 'قائمة الدخل', classifications: ['مصروفات', 'موظف'] },
-    { code: '5101002', name: 'راتب الموظف علي', type: 'مدين', group: 'المصروفات', status: 'نشط', closingType: 'قائمة الدخل', classifications: ['مصروفات', 'موظف'] },
+    { code: '5101001', name: 'Salary Employee Ahmed', type: 'Debit', group: 'Expenses', status: 'Active', closingType: 'Income Statement', classifications: ['Expenses', 'Employee'] },
+    { code: '5101002', name: 'Salary Employee Ali', type: 'Debit', group: 'Expenses', status: 'Active', closingType: 'Income Statement', classifications: ['Expenses', 'Employee'] },
 ];
 
 const getParentCode = (code: string): string | null => {

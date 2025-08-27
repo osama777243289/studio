@@ -1,6 +1,6 @@
 import { Transaction } from "@/lib/firebase/firestore/transactions"
 import { formatDistanceToNow } from 'date-fns';
-import { ar } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 
 interface RecentTransactionsProps {
     transactions: Transaction[];
@@ -10,7 +10,7 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
   if (transactions.length === 0) {
       return (
           <div className="flex items-center justify-center h-full text-muted-foreground">
-              <p>لا توجد معاملات مسجلة حتى الآن.</p>
+              <p>No transactions recorded yet.</p>
           </div>
       )
   }
@@ -24,11 +24,11 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
                 <p className="text-sm text-muted-foreground">
                     {/* Check if date is a Firebase Timestamp */}
                     {transaction.date && typeof transaction.date.toDate === 'function' 
-                        ? formatDistanceToNow(transaction.date.toDate(), { addSuffix: true, locale: ar })
-                        : 'تاريخ غير صالح'}
+                        ? formatDistanceToNow(transaction.date.toDate(), { addSuffix: true, locale: enUS })
+                        : 'Invalid date'}
                 </p>
                 </div>
-                <div className={`mr-auto font-medium text-lg ${transaction.type === 'Income' ? 'text-green-600' : 'text-destructive'}`}>
+                <div className={`ml-auto font-medium text-lg ${transaction.type === 'Income' ? 'text-green-600' : 'text-destructive'}`}>
                     {transaction.type === 'Income' ? '+' : '-'}${transaction.amount.toFixed(2)}
                 </div>
             </div>
