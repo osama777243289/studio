@@ -64,7 +64,7 @@ export default function ChartOfAccountsPage() {
         const parent = parentId ? findAccount(parentId, accounts) : null;
 
         if (parent) {
-            const level = parent.code.length === 1 ? 2 : parent.code.length === 2 ? 3 : 4;
+            const level = parent.code.length === 1 ? 2 : parent.code.length === 4 ? 3 : 4;
             if (level >= 4) {
                  toast({
                     title: "لا يمكن الإضافة",
@@ -105,16 +105,26 @@ export default function ChartOfAccountsPage() {
     const confirmSave = async (accountData: AccountFormData) => {
         try {
             setLoading(true);
-            if (dialogMode === 'edit' && selectedAccount) {
-                await updateAccount(selectedAccount.id, accountData);
-                toast({ title: "نجاح", description: "تم تحديث الحساب بنجاح." });
-            } else {
-                const parentId = parentAccount ? parentAccount.id : null;
-                await addAccount(accountData, parentId);
-                toast({ title: "نجاح", description: "تمت إضافة الحساب بنجاح." });
+            const isNew = dialogMode !== 'edit';
+            const parentId = accountData.parentId || null;
+
+            if (isNew && !parentId) {
+                toast({ title: "خطأ", description: "يجب اختيار حساب أب عند إضافة حساب جديد.", variant: "destructive" });
+                setLoading(false);
+                return;
             }
-            setIsAddEditDialogOpen(false);
-            await refreshAccounts();
+
+            const checkResult = await (isNew ? 
+                addAccount(accountData, parentId) : 
+                updateAccount(selectedAccount!.id, accountData));
+
+            if (!checkResult.success) {
+                toast({ title: "فشل الحفظ", description: checkResult.message, variant: "destructive" });
+            } else {
+                 toast({ title: "نجاح", description: isNew ? "تمت إضافة الحساب بنجاح." : "تم تحديث الحساب بنجاح." });
+                 setIsAddEditDialogOpen(false);
+                 await refreshAccounts();
+            }
         } catch (e: any) {
             console.error("Failed to save account:", e);
             toast({ title: "خطأ في حفظ الحساب", description: e.message, variant: "destructive" });
@@ -155,7 +165,7 @@ export default function ChartOfAccountsPage() {
                   </Button>
                   <Button onClick={() => handleAddAccount()} className="flex-1 sm:flex-initial">
                       <PlusCircle className="ml-2 h-4 w-4" />
-                      إضافة حساب رئيسي
+                      إضافة حساب جديد
                   </Button>
               </div>
           </div>
@@ -186,7 +196,7 @@ export default function ChartOfAccountsPage() {
             ) : !error ? (
                  <div className="text-center text-muted-foreground">
                     <p>لم يتم العثور على حسابات.</p>
-                    <p>انقر على "إضافة حساب رئيسي" للبدء.</p>
+                    <p>انقر على "إضافة حساب جديد" للبدء.</p>
                 </div>
             ) : null}
           </div>
@@ -200,9 +210,10 @@ export default function ChartOfAccountsPage() {
             setParentAccount(null);
         }}
         onSave={confirmSave}
-        account={dialogMode === 'edit' ? selectedAccount : null}
+        account={selectedAccount}
         parentAccount={parentAccount}
         mode={dialogMode}
+        allAccounts={accounts}
       />
       <DeleteAccountDialog
         isOpen={isDeleteDialogOpen}

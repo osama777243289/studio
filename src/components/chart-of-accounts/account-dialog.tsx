@@ -27,7 +27,7 @@ import type { Account } from './account-tree';
 import { accountClassifications, closingAccountTypes } from './account-tree';
 import { Checkbox } from '../ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '../ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
 import { CheckIcon, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
@@ -42,7 +42,6 @@ const createAccountSchema = (parentCode?: string) => {
         else if (len === 4) level = 3; // Parent is L3, creating L4
     }
     
-    // Define the code length for each level
     const levelLengths = [1, 2, 4, 7]; 
     const expectedLength = level < 4 ? levelLengths[level] : -1;
     
@@ -55,12 +54,14 @@ const createAccountSchema = (parentCode?: string) => {
             .max(nextLevelLength, { message: `يجب أن يتكون الرمز من ${nextLevelLength} أرقام.` })
             .refine(code => code.startsWith(parentCode), { message: `يجب أن يبدأ الرمز برمز الحساب الأصلي (${parentCode})` });
     } else {
-        // This is a root account (Level 1)
-        codeSchema = codeSchema.min(1, { message: "يجب أن يتكون الرمز من رقم واحد." })
-                               .max(1, { message: "يجب أن يتكون الرمز من رقم واحد." });
+        // This is a root account (Level 1), but we now require a parent for all.
+        // The logic will be handled outside, but schema needs to be tolerant.
+        // We will validate parent existence in the component.
+        codeSchema = codeSchema.min(1, { message: "الرمز مطلوب." });
     }
 
     return z.object({
+        parentId: z.string({ required_error: 'يجب اختيار الحساب الأصل.' }).min(1, 'يجب اختيار الحساب الأصل.'),
         name: z.string().min(3, { message: "يجب أن يكون اسم الحساب 3 أحرف على الأقل." }),
         code: codeSchema,
         type: z.enum(['Debit', 'Credit'], { required_error: 'نوع الحساب مطلوب' }),
@@ -81,35 +82,79 @@ interface AccountDialogProps {
   account: Account | null;
   parentAccount: Account | null;
   mode: 'add' | 'edit' | 'addSub';
+  allAccounts: Account[];
 }
 
 const titles = {
-    add: 'إضافة حساب رئيسي جديد',
+    add: 'إضافة حساب جديد',
     edit: 'تعديل الحساب',
     addSub: 'إضافة حساب فرعي جديد'
 }
 
-export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount, mode }: AccountDialogProps) {
+function flattenAccounts(accounts: Account[]): { label: string; value: string; code: string }[] {
+    const flattened: { label: string; value: string; code: string }[] = [];
+    const traverse = (accs: Account[], level = 0) => {
+        for (const acc of accs) {
+            flattened.push({
+                label: `${'--'.repeat(level)} ${acc.name} (${acc.code})`,
+                value: acc.id,
+                code: acc.code
+            });
+            if (acc.children) {
+                traverse(acc.children, level + 1);
+            }
+        }
+    };
+    traverse(accounts);
+    return flattened;
+}
 
+
+export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount, mode, allAccounts }: AccountDialogProps) {
+
+  const parentCode = watch('parentId') ? flattenAccounts(allAccounts).find(a => a.value === watch('parentId'))?.code : undefined;
+  
   const accountSchema = useMemo(() => {
-    const code = mode === 'edit' ? parentAccount?.code : (mode === 'addSub' ? parentAccount?.code : undefined);
-    return createAccountSchema(code);
-  }, [mode, parentAccount, account]);
+     const pAcc = allAccounts.flatMap(flattenAccounts).find(a => a.value === parentAccount?.id);
+     let codeForSchema: string | undefined;
+
+     if (mode === 'edit' && account?.parentId) {
+         codeForSchema = flattenAccounts(allAccounts).find(a => a.value === account.parentId)?.code;
+     } else if (mode === 'addSub' && parentAccount) {
+         codeForSchema = parentAccount.code;
+     } else {
+         codeForSchema = parentCode
+     }
+     return createAccountSchema(codeForSchema);
+  }, [mode, parentAccount, account, allAccounts, parentCode]);
 
 
-  const { register, handleSubmit, reset, control, formState: { errors }, watch } = useForm<AccountFormData>({
+  const { register, handleSubmit, reset, control, formState: { errors }, watch, setValue } = useForm<AccountFormData>({
     resolver: zodResolver(accountSchema),
     defaultValues: {
-        classifications: []
+        classifications: [],
+        parentId: '',
     }
   });
 
-  const selectedClassifications = watch('classifications') || [];
+  const watchedParentId = watch('parentId');
+
+  useEffect(() => {
+    const selectedParent = flattenAccounts(allAccounts).find(a => a.value === watchedParentId);
+    if(selectedParent) {
+        const parentLvl = selectedParent.code.length === 1 ? 1 : selectedParent.code.length === 2 ? 2 : selectedParent.code.length === 4 ? 3 : 4;
+        if (parentLvl >= 4) {
+             setValue('parentId', ''); // Reset if invalid parent is selected
+        }
+    }
+  }, [watchedParentId, allAccounts, setValue]);
+
 
   useEffect(() => {
     if (isOpen) {
       if (mode === 'edit' && account) {
         reset({ 
+            parentId: account.parentId || '',
             name: account.name, 
             code: account.code, 
             type: account.type, 
@@ -120,6 +165,7 @@ export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount,
         });
       } else if (mode === 'addSub' && parentAccount) {
          reset({ 
+            parentId: parentAccount.id,
             name: '', 
             code: parentAccount.code, 
             type: parentAccount.type, 
@@ -131,6 +177,7 @@ export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount,
       }
       else {
         reset({ 
+            parentId: '',
             name: '', 
             code: '', 
             type: 'Debit', 
@@ -145,7 +192,6 @@ export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount,
 
   const onSubmit: SubmitHandler<AccountFormData> = (data) => {
     onSave(data);
-    onClose();
   };
   
   const renderRow = (label: string, id: string, children: React.ReactNode, error?: {message?: string} ) => (
@@ -159,6 +205,8 @@ export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount,
         </div>
     </div>
   )
+  
+  const flattenedAccountsForSelect = useMemo(() => flattenAccounts(allAccounts), [allAccounts]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -168,7 +216,57 @@ export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount,
             <DialogTitle>{titles[mode]}</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-                {parentAccount && renderRow("الحساب الأصل", "parent", <Input id="parent" value={`${parentAccount.name} (${parentAccount.code})`} readOnly disabled className="bg-muted/50" />) }
+                {renderRow("الحساب الأصل", "parent", (
+                    <Controller
+                        name="parentId"
+                        control={control}
+                        render={({ field }) => (
+                             <Popover>
+                                <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
+                                    disabled={mode === 'addSub' || mode === 'edit'}
+                                >
+                                    {field.value
+                                    ? flattenedAccountsForSelect.find(
+                                        (acc) => acc.value === field.value
+                                        )?.label
+                                    : "اختر الحساب الأصل"}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[300px] p-0">
+                                    <Command>
+                                        <CommandInput placeholder="ابحث عن حساب..." />
+                                        <CommandEmpty>لم يتم العثور على حساب.</CommandEmpty>
+                                        <CommandList>
+                                            <CommandGroup>
+                                                <ScrollArea className="h-72">
+                                                    {flattenedAccountsForSelect.map((acc) => (
+                                                         <CommandItem
+                                                            value={acc.label}
+                                                            key={acc.value}
+                                                            onSelect={() => {
+                                                                setValue("parentId", acc.value)
+                                                            }}
+                                                         >
+                                                             <CheckIcon
+                                                                className={cn("mr-2 h-4 w-4", acc.value === field.value ? "opacity-100" : "opacity-0")}
+                                                            />
+                                                            {acc.label}
+                                                         </CommandItem>
+                                                    ))}
+                                                </ScrollArea>
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
+                        )}
+                    />
+                ), errors.parentId)}
                 {renderRow("الرمز", "code", <Input id="code" {...register("code")} className="w-full ltr" />, errors.code)}
                 {renderRow("الاسم", "name", <Input id="name" {...register("name")} className="w-full" />, errors.name)}
                 
@@ -235,7 +333,7 @@ export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount,
                                     className="w-full justify-between font-normal"
                                     >
                                     <span className="truncate">
-                                      {selectedClassifications.length > 0 ? selectedClassifications.join(', ') : "اختر التصنيفات..."}
+                                      {(field.value && field.value.length > 0) ? field.value.join(', ') : "اختر التصنيفات..."}
                                     </span>
                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                     </Button>
