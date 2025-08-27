@@ -28,6 +28,7 @@ const navLinks: NavLink[] = [
   { title: 'Reports', href: '/reports', icon: 'FileText' },
   { title: 'Users', href: '/users', icon: 'Users' },
   { title: 'Role Management', href: '/roles', icon: 'ShieldCheck' },
+  { title: 'Data Settings', href: '/data-settings', icon: 'Database' },
 ];
 
 export default function MainLayout({
