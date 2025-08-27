@@ -75,16 +75,6 @@ const getAccountsByClassification = (accounts: Account[], classifications: strin
     return flattened;
 };
 
-const fileToDataUri = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
-};
-
-
 export function SalesForm({ accounts }: SalesFormProps) {
   const { toast } = useToast();
 
@@ -96,7 +86,7 @@ export function SalesForm({ accounts }: SalesFormProps) {
         salesperson: '',
         postingNumber: '',
         cash: { accountId: '', amount: 0 },
-        cards: [{ accountId: '', amount: 0, receiptImageUrl: '' }],
+        cards: [{ accountId: '', amount: 0, receiptImageFile: undefined }],
         credits: [{ accountId: '', amount: 0 }],
     }
   });
@@ -115,8 +105,8 @@ export function SalesForm({ accounts }: SalesFormProps) {
   const networkAccounts = useMemo(() => getAccountsByClassification(accounts, ['شبكات']), [accounts]);
   const customerAccounts = useMemo(() => getAccountsByClassification(accounts, ['عملاء']), [accounts]);
 
-
   const onSubmit = async (data: any) => {
+    form.formState.isSubmitting = true;
     try {
       await addSaleRecord(data);
       toast({
@@ -129,30 +119,31 @@ export function SalesForm({ accounts }: SalesFormProps) {
         salesperson: '',
         postingNumber: '',
         cash: { accountId: '', amount: 0 },
-        cards: [{ accountId: '', amount: 0, receiptImageUrl: '' }],
+        cards: [{ accountId: '', amount: 0, receiptImageFile: undefined }],
         credits: [{ accountId: '', amount: 0 }],
       });
-    } catch (error) {
+    } catch (error: any) {
        console.error("Failed to add sales record:", error);
       toast({
         title: 'فشل حفظ سجل المبيعات',
-        description: `لا يمكن حفظ سجلات المبيعات. الرجاء تكوين اتصال Firebase الخاص بك.`,
+        description: error.message || 'لا يمكن حفظ سجلات المبيعات. الرجاء مراجعة اتصالك.',
         variant: 'destructive',
       });
+    } finally {
+        form.formState.isSubmitting = false;
     }
   }
   
   const handleImageUpload = async (file: File | undefined, index: number) => {
     if (file) {
-      if (file.size > 1024 * 1024 * 2) { // 2MB limit
-        toast({ title: 'خطأ', description: 'حجم الصورة يجب أن يكون أقل من 2 ميجابايت.', variant: 'destructive' });
+      if (file.size > 1024 * 1024 * 5) { // 5MB limit
+        toast({ title: 'خطأ', description: 'حجم الصورة يجب أن يكون أقل من 5 ميجابايت.', variant: 'destructive' });
         return;
       }
-      const dataUri = await fileToDataUri(file);
-      form.setValue(`cards.${index}.receiptImageUrl`, dataUri, { shouldValidate: true });
+      form.setValue(`cards.${index}.receiptImageFile`, file, { shouldValidate: true });
+       toast({ title: 'نجاح', description: 'تم إرفاق الصورة بنجاح وجاهزة للرفع عند الحفظ.'});
     }
   };
-
 
   return (
     <Card>
@@ -244,7 +235,6 @@ export function SalesForm({ accounts }: SalesFormProps) {
               </div>
            </div>
 
-
           <Card className="p-4">
             <CardHeader className="p-2">
                 <div className="flex items-center gap-2">
@@ -327,16 +317,16 @@ export function SalesForm({ accounts }: SalesFormProps) {
                             onChange={(e) => handleImageUpload(e.target.files?.[0], index)}
                          />
                       </div>
-                       {form.watch(`cards.${index}.receiptImageUrl`) && (
+                       {form.watch(`cards.${index}.receiptImageFile`) && (
                           <div className="text-xs text-green-600 flex items-center gap-1 mt-1">
                               <Paperclip className="h-3 w-3" />
-                              تم إرفاق الصورة بنجاح.
+                              تم تحديد ملف الصورة. سيتم الرفع عند الحفظ.
                           </div>
                       )}
                   </div>
                 </div>
               ))}
-              <Button type="button" variant="outline" className="w-full" onClick={() => appendCard({ accountId: '', amount: 0, receiptImageUrl: '' })}>
+              <Button type="button" variant="outline" className="w-full" onClick={() => appendCard({ accountId: '', amount: 0, receiptImageFile: undefined })}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 إضافة حساب بطاقة
               </Button>

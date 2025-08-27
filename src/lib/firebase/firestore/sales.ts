@@ -1,7 +1,7 @@
 
 'use client';
 
-import { db } from '@/lib/firebase/client';
+import { db, storage } from '@/lib/firebase/client';
 import {
   collection,
   addDoc,
@@ -15,6 +15,7 @@ import {
   doc,
   getDoc,
 } from 'firebase/firestore';
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { z } from 'zod';
 import { getAccounts } from './accounts';
 import { Account } from '@/components/chart-of-accounts/account-tree';
@@ -25,6 +26,7 @@ const accountDetailSchema = z.object({
 });
 
 const cardAccountDetailSchema = accountDetailSchema.extend({
+  receiptImageFile: z.instanceof(File).optional(),
   receiptImageUrl: z.string().optional(),
 });
 
@@ -84,8 +86,6 @@ const seedSalesRecords = async () => {
     console.log(
       'Could not find default accounts for seeding sales. Creating some...'
     );
-    // This part is complex, for now we will rely on the default accounts being there
-    // from the account seeding. If not, we skip seeding sales.
     return;
   }
 
@@ -146,6 +146,7 @@ const seedSalesRecords = async () => {
   console.log('Default sales records have been seeded.');
 };
 
+
 // Add a new sales record
 export const addSaleRecord = async (
   data: SalesRecordFormData
@@ -158,18 +159,25 @@ export const addSaleRecord = async (
     ...data.cash,
     accountName: accountMap.get(data.cash.accountId) || 'Unknown',
   };
+  
+  const enrichedCards = await Promise.all(
+      (data.cards || []).map(async (card) => {
+          let imageUrl = card.receiptImageUrl || '';
+          if (card.receiptImageFile) {
+              const file = card.receiptImageFile;
+              const storageRef = ref(storage, `receipts/${Date.now()}-${file.name}`);
+              const snapshot = await uploadBytes(storageRef, file);
+              imageUrl = await getDownloadURL(snapshot.ref);
+          }
+          return {
+              accountId: card.accountId,
+              amount: card.amount,
+              accountName: accountMap.get(card.accountId) || 'Unknown',
+              receiptImageUrl: imageUrl,
+          };
+      })
+  );
 
-  const enrichedCards =
-    data.cards?.map((card) => {
-      const newCard: any = {
-        ...card,
-        accountName: accountMap.get(card.accountId) || 'Unknown',
-      };
-      if (!card.receiptImageUrl) {
-        delete newCard.receiptImageUrl;
-      }
-      return newCard;
-    }) || [];
 
   const enrichedCredits =
     data.credits?.map((credit) => ({
@@ -198,6 +206,7 @@ export const addSaleRecord = async (
   const newDocRef = await addDoc(salesCol, dataToSave);
   return newDocRef.id;
 };
+
 
 // Helper to create a map of account IDs to names
 const createAccountMap = (accounts: Account[]): Map<string, string> => {
@@ -273,9 +282,6 @@ export const getSalesRecordsByStatus = async (
 
   if (snapshot.empty && status === 'Pending Matching') {
     console.log('No pending matching records found, trying to seed...');
-    // We only seed when getting all records to avoid multiple seeds.
-    // This function will likely be called after getSalesRecords has run and seeded.
-    // If still empty, then there are truly no records with this status.
     return [];
   }
 
