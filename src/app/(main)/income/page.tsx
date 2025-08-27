@@ -3,52 +3,35 @@
 
 import { TransactionForm } from '@/components/transaction-form';
 import { Card, CardContent } from '@/components/ui/card';
-import { getAccounts } from '@/lib/firebase/firestore/accounts';
 import { Account } from '@/components/chart-of-accounts/account-tree';
 import { useEffect, useState, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Info } from 'lucide-react';
 
-// Helper to flatten the account tree and filter by classification and group
-const getTransactionalAccounts = (accounts: Account[], group: string): Account[] => {
-    const flattened: Account[] = [];
-    const traverse = (accs: Account[]) => {
-        for (const acc of accs) {
-            // A transactional account is one that does not have children.
-            if (!acc.children || acc.children.length === 0) {
-                 if (acc.group === group) {
-                    flattened.push(acc);
-                }
-            }
-            if (acc.children) {
-                traverse(acc.children);
-            }
-        }
-    };
-    traverse(accounts);
-    return flattened;
-};
-
+const demoAccounts: Account[] = [
+    { id: '1', code: '401', name: 'إيرادات المبيعات', type: 'Credit', group: 'Revenues', status: 'Active', classifications: ['Revenues'], closingType: 'Income Statement' },
+    { id: '2', code: '402', name: 'إيرادات الخدمات', type: 'Credit', group: 'Revenues', status: 'Active', classifications: ['Revenues'], closingType: 'Income Statement' },
+];
 
 export default function IncomePage() {
-    const [accounts, setAccounts] = useState<Account[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchAccounts = async () => {
-            setLoading(true);
-            const fetchedAccounts = await getAccounts();
-            setAccounts(fetchedAccounts);
-            setLoading(false);
-        };
-        fetchAccounts();
-    }, []);
-
-    const incomeAccounts = useMemo(() => getTransactionalAccounts(accounts, 'Revenues'), [accounts]);
+    const [accounts, setAccounts] = useState<Account[]>(demoAccounts);
+    const [loading, setLoading] = useState(false); // No loading in demo mode
+    const [isDemo, setIsDemo] = useState(true);
 
     return (
         <div className="flex justify-center items-start pt-8">
             <Card className="w-full max-w-lg">
                 <CardContent className="pt-6">
+                    {isDemo && (
+                         <Alert className="mb-6">
+                            <Info className="h-4 w-4" />
+                            <AlertTitle>وضع العرض التوضيحي</AlertTitle>
+                            <AlertDescription>
+                                أنت تعمل الآن في وضع عدم الاتصال. لن يتم حفظ أي إدخالات.
+                            </AlertDescription>
+                        </Alert>
+                    )}
                      {loading ? (
                         <div className="space-y-8">
                             <Skeleton className="h-8 w-1/2" />
@@ -70,7 +53,7 @@ export default function IncomePage() {
                         <TransactionForm
                             formTitle="Record New Income"
                             formButtonText="Add Income"
-                            accounts={incomeAccounts}
+                            accounts={accounts}
                             transactionType="Income"
                         />
                     )}
@@ -79,4 +62,3 @@ export default function IncomePage() {
         </div>
     );
 }
-

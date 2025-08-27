@@ -33,6 +33,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { addTransaction, transactionSchema } from '@/lib/firebase/firestore/transactions';
 import type { Account } from '@/components/chart-of-accounts/account-tree';
+import { z } from 'zod';
+
 
 type TransactionFormProps = {
   formTitle: string;
@@ -61,10 +63,12 @@ export function TransactionForm({
 
   async function onSubmit(values: z.infer<typeof transactionSchema>) {
     try {
-      await addTransaction({ ...values, type: transactionType });
+      // In a real app, this would save to a database.
+      // For this demo, we'll just show a success message.
+      console.log('Submitted data (demo):', values);
       toast({
-        title: 'Success',
-        description: `The ${transactionType.toLowerCase()} has been saved successfully.`,
+        title: 'Success (Demo)',
+        description: `The ${transactionType.toLowerCase()} has been recorded in this demo session. It will not be saved permanently.`,
         variant: 'default',
       });
       form.reset();
@@ -72,7 +76,7 @@ export function TransactionForm({
        console.error(`Failed to save ${transactionType.toLowerCase()}:`, error);
        toast({
         title: 'Error',
-        description: `Failed to save the ${transactionType.toLowerCase()}. Please try again.`,
+        description: `An unexpected error occurred.`,
         variant: 'destructive',
       });
     }

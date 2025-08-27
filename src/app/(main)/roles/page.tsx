@@ -28,12 +28,18 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { RoleDialog, type RoleFormData } from '@/components/roles/role-dialog';
 import { DeleteRoleDialog } from '@/components/roles/delete-role-dialog';
-import { getRoles, addRole, updateRole, deleteRole, type Role } from '@/lib/firebase/firestore/roles';
+import { type Role } from '@/lib/firebase/firestore/roles';
 
+const initialRoles: Role[] = [
+    { id: '1', name: 'Admin' },
+    { id: '2', name: 'Cashier' },
+    { id: '3', name: 'Accountant' },
+    { id: '4', name: 'Data Entry' }
+];
 
 export default function RolesPage() {
-    const [roles, setRoles] = useState<Role[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [roles, setRoles] = useState<Role[]>(initialRoles);
+    const [loading, setLoading] = useState(false);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedRole, setSelectedRole] = useState<Role | null>(null);
@@ -41,21 +47,12 @@ export default function RolesPage() {
 
     const fetchRoles = async () => {
         setLoading(true);
-        try {
-            const fetchedRoles = await getRoles();
-            setRoles(fetchedRoles);
-        } catch (error) {
-            console.error("Failed to fetch roles:", error);
-            // Optionally, show a toast or error message to the user
-        } finally {
+        setTimeout(() => {
+            setRoles(initialRoles);
             setLoading(false);
-        }
+            alert("This is a demo. Data is not fetched from a server.");
+        }, 500);
     };
-
-    useEffect(() => {
-        fetchRoles();
-    }, []);
-
 
     const handleAddRole = () => {
         setDialogMode('add');
@@ -75,31 +72,14 @@ export default function RolesPage() {
     };
 
     const confirmSave = async (roleData: RoleFormData) => {
-        try {
-            if (dialogMode === 'add') {
-                await addRole(roleData);
-            } else if (dialogMode === 'edit' && selectedRole) {
-                await updateRole(selectedRole.id, roleData);
-            }
-            await fetchRoles(); // Refresh roles from Firestore
-        } catch (error) {
-             console.error("Failed to save role:", error);
-             alert("فشل حفظ الدور. يرجى المحاولة مرة أخرى.");
-        } finally {
-            setIsDialogOpen(false);
-            setSelectedRole(null);
-        }
+        alert("This is a demo. Your changes will not be saved.");
+        setIsDialogOpen(false);
+        setSelectedRole(null);
     };
 
     const confirmDelete = async () => {
         if (selectedRole) {
-            try {
-                await deleteRole(selectedRole.id);
-                await fetchRoles(); // Refresh roles from Firestore
-            } catch (error) {
-                console.error("Failed to delete role:", error);
-                alert("فشل حذف الدور. يرجى المحاولة مرة أخرى.");
-            }
+           alert("This is a demo. Your changes will not be saved.");
         }
         setIsDeleteDialogOpen(false);
         setSelectedRole(null);
@@ -112,7 +92,7 @@ export default function RolesPage() {
                     <div className="flex justify-between items-center">
                         <div>
                             <CardTitle className="font-headline">إدارة الأدوار</CardTitle>
-                            <CardDescription>إضافة وتعديل وحذف أدوار المستخدمين في النظام من Firestore.</CardDescription>
+                            <CardDescription>إضافة وتعديل وحذف أدوار المستخدمين في النظام. (وضع العرض)</CardDescription>
                         </div>
                          <div className="flex gap-2">
                              <Button variant="outline" onClick={fetchRoles} disabled={loading}>

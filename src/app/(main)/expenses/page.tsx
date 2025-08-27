@@ -1,52 +1,38 @@
+
 'use client';
 
 import { TransactionForm } from '@/components/transaction-form';
 import { Card, CardContent } from '@/components/ui/card';
-import { getAccounts } from '@/lib/firebase/firestore/accounts';
 import { Account } from '@/components/chart-of-accounts/account-tree';
 import { useEffect, useState, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Info } from 'lucide-react';
 
-// Helper to flatten the account tree and filter by classification and group
-const getTransactionalAccounts = (accounts: Account[], group: string): Account[] => {
-    const flattened: Account[] = [];
-    const traverse = (accs: Account[]) => {
-        for (const acc of accs) {
-            // A transactional account is one that does not have children.
-            if (!acc.children || acc.children.length === 0) {
-                 if (acc.group === group) {
-                    flattened.push(acc);
-                }
-            }
-            if (acc.children) {
-                traverse(acc.children);
-            }
-        }
-    };
-    traverse(accounts);
-    return flattened;
-};
+const demoAccounts: Account[] = [
+    { id: '1', code: '501', name: 'مصاريف الرواتب', type: 'Debit', group: 'Expenses', status: 'Active', classifications: ['Expenses'], closingType: 'Income Statement' },
+    { id: '2', code: '502', name: 'مصاريف الإيجار', type: 'Debit', group: 'Expenses', status: 'Active', classifications: ['Expenses'], closingType: 'Income Statement' },
+    { id: '3', code: '503', name: 'مصاريف التسويق', type: 'Debit', group: 'Expenses', status: 'Active', classifications: ['Expenses'], closingType: 'Income Statement' },
+];
 
 export default function ExpensesPage() {
-    const [accounts, setAccounts] = useState<Account[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchAccounts = async () => {
-            setLoading(true);
-            const fetchedAccounts = await getAccounts();
-            setAccounts(fetchedAccounts);
-            setLoading(false);
-        };
-        fetchAccounts();
-    }, []);
-
-    const expenseAccounts = useMemo(() => getTransactionalAccounts(accounts, 'Expenses'), [accounts]);
+    const [accounts, setAccounts] = useState<Account[]>(demoAccounts);
+    const [loading, setLoading] = useState(false);
+    const [isDemo, setIsDemo] = useState(true);
 
     return (
         <div className="flex justify-center items-start pt-8">
             <Card className="w-full max-w-lg">
                 <CardContent className="pt-6">
+                    {isDemo && (
+                         <Alert className="mb-6">
+                            <Info className="h-4 w-4" />
+                            <AlertTitle>وضع العرض التوضيحي</AlertTitle>
+                            <AlertDescription>
+                                أنت تعمل الآن في وضع عدم الاتصال. لن يتم حفظ أي إدخالات.
+                            </AlertDescription>
+                        </Alert>
+                    )}
                      {loading ? (
                         <div className="space-y-8">
                             <Skeleton className="h-8 w-1/2" />
@@ -68,7 +54,7 @@ export default function ExpensesPage() {
                         <TransactionForm
                             formTitle="Record New Expense"
                             formButtonText="Add Expense"
-                            accounts={expenseAccounts}
+                            accounts={accounts}
                             transactionType="Expense"
                         />
                     )}

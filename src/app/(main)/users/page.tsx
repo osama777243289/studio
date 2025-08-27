@@ -31,9 +31,7 @@ import {
 import { UserDialog, type UserFormData } from '@/components/users/user-dialog';
 import { DeleteUserDialog } from '@/components/users/delete-user-dialog';
 import { Account } from '@/components/chart-of-accounts/account-tree';
-import { getAccounts } from '@/lib/firebase/firestore/accounts';
-import { getRoles, Role } from '@/lib/firebase/firestore/roles';
-import { getUsers, addUser, updateUser, deleteUser } from '@/lib/firebase/firestore/users';
+import { Role } from '@/lib/firebase/firestore/roles';
 
 
 export interface PagePermissions {
@@ -74,11 +72,46 @@ export interface User {
     employeeAccountId?: string;
 }
 
+const initialUsers: User[] = [
+    {
+        id: '1',
+        name: 'المدير العام',
+        email: 'manager@example.com',
+        mobile: '0500000001',
+        avatarUrl: 'https://picsum.photos/id/10/40/40',
+        type: 'regular',
+        role: ['Admin'],
+        status: 'نشط',
+        permissions: { pages: { dashboard: { view: true } } },
+    },
+    {
+        id: '2',
+        name: 'موظف الكاشير',
+        email: 'cashier@example.com',
+        mobile: '0500000002',
+        avatarUrl: 'https://picsum.photos/id/20/40/40',
+        type: 'employee',
+        role: ['Cashier'],
+        status: 'نشط',
+        permissions: { pages: { sales: { view: true, create: true } } },
+        employeeAccountId: 'some-account-id'
+    }
+];
+
+const initialRoles: Role[] = [
+    { id: '1', name: 'Admin' },
+    { id: '2', name: 'Cashier' },
+    { id: '3', name: 'Accountant' }
+];
+
+const initialAccounts: Account[] = []; // Keep this empty for now or populate if needed for the dialog
+
+
 export default function UsersPage() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [users, setUsers] = useState<User[]>(initialUsers);
+  const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
+  const [roles, setRoles] = useState<Role[]>(initialRoles);
+  const [loading, setLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -86,27 +119,14 @@ export default function UsersPage() {
   
   const fetchData = async () => {
     setLoading(true);
-    try {
-        const [fetchedUsers, fetchedAccounts, fetchedRoles] = await Promise.all([
-            getUsers(),
-            getAccounts(),
-            getRoles()
-        ]);
-        
-        setUsers(fetchedUsers);
-        setAccounts(fetchedAccounts);
-        setRoles(fetchedRoles);
-    } catch (error) {
-        console.error("Failed to fetch data:", error);
-        // Optionally show an error toast
-    } finally {
+    setTimeout(() => {
+        setUsers(initialUsers);
+        setAccounts(initialAccounts);
+        setRoles(initialRoles);
         setLoading(false);
-    }
+        alert("This is a demo. Data is not fetched from a server.");
+    }, 500);
   };
-
-  useEffect(() => {
-      fetchData();
-  }, []);
 
   const handleAddUser = () => {
     setDialogMode('add');
@@ -126,31 +146,14 @@ export default function UsersPage() {
   };
 
   const confirmSave = async (userData: UserFormData) => {
-    try {
-        if (dialogMode === 'add') {
-            await addUser(userData);
-        } else if (dialogMode === 'edit' && selectedUser) {
-            await updateUser(selectedUser.id, userData);
-        }
-        await fetchData(); // Refresh data
-    } catch (error) {
-        console.error("Failed to save user:", error);
-        alert("Failed to save user. Please try again.");
-    } finally {
-        setIsDialogOpen(false);
-        setSelectedUser(null);
-    }
+    alert("This is a demo. Your changes will not be saved.");
+    setIsDialogOpen(false);
+    setSelectedUser(null);
   };
 
   const confirmDelete = async () => {
     if (selectedUser) {
-      try {
-        await deleteUser(selectedUser.id);
-        await fetchData(); // Refresh data
-      } catch (error) {
-         console.error("Failed to delete user:", error);
-         alert("Failed to delete user. Please try again.");
-      }
+      alert("This is a demo. Your changes will not be saved.");
     }
     setIsDeleteDialogOpen(false);
     setSelectedUser(null);
@@ -164,7 +167,7 @@ export default function UsersPage() {
           <div className="flex justify-between items-center">
               <div>
                   <CardTitle className="font-headline">Users Directory</CardTitle>
-                  <CardDescription>Manage system users and permissions from Firestore.</CardDescription>
+                  <CardDescription>Manage system users and permissions. (Demo Mode)</CardDescription>
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={fetchData} disabled={loading}>
@@ -217,8 +220,8 @@ export default function UsersPage() {
                             </div>
                         </TableCell>
                         <TableCell>
-                            <Badge variant={user.status === 'Active' ? 'default' : 'secondary'}
-                            className={user.status === 'Active' ? 'bg-green-100 text-green-800' : ''}
+                            <Badge variant={user.status === 'نشط' ? 'default' : 'secondary'}
+                            className={user.status === 'نشط' ? 'bg-green-100 text-green-800' : ''}
                             >
                             {user.status}
                             </Badge>

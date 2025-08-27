@@ -14,7 +14,99 @@ import { PlusCircle, FileDown, Loader2, RefreshCw } from 'lucide-react';
 import { AccountTree, type Account } from '@/components/chart-of-accounts/account-tree';
 import { AccountDialog, AccountFormData } from '@/components/chart-of-accounts/account-dialog';
 import { DeleteAccountDialog } from '@/components/chart-of-accounts/delete-account-dialog';
-import { getAccounts, addAccount, updateAccount, deleteAccount } from '@/lib/firebase/firestore/accounts';
+
+const initialAccountsData: Account[] = [
+  {
+    id: "1",
+    code: "1",
+    name: "الأصول",
+    type: "Debit",
+    group: "Assets",
+    status: "Active",
+    closingType: "Balance Sheet",
+    classifications: [],
+    children: [
+      {
+        id: "11",
+        code: "11",
+        name: "الأصول المتداولة",
+        type: "Debit",
+        group: "Assets",
+        status: "Active",
+        closingType: "Balance Sheet",
+        classifications: [],
+        children: [
+           {
+            id: "111",
+            code: "111",
+            name: "الصندوق",
+            type: "Debit",
+            group: "Assets",
+            status: "Active",
+            closingType: "Balance Sheet",
+            classifications: ['Cashbox'],
+            children: []
+          },
+          {
+            id: "112",
+            code: "112",
+            name: "البنوك",
+            type: "Debit",
+            group: "Assets",
+            status: "Active",
+            closingType: "Balance Sheet",
+            classifications: ['Bank'],
+            children: []
+          }
+        ]
+      }
+    ]
+  },
+   {
+    id: "2",
+    code: "2",
+    name: "الخصوم",
+    type: "Credit",
+    group: "Liabilities",
+    status: "Active",
+    closingType: "Balance Sheet",
+    classifications: [],
+    children: []
+  },
+  {
+    id: "3",
+    code: "3",
+    name: "حقوق الملكية",
+    type: "Credit",
+    group: "Equity",
+    status: "Active",
+    closingType: "Balance Sheet",
+    classifications: [],
+    children: []
+  },
+  {
+    id: "4",
+    code: "4",
+    name: "الإيرادات",
+    type: "Credit",
+    group: "Revenues",
+    status: "Active",
+    closingType: "Income Statement",
+    classifications: ['Revenues'],
+    children: []
+  },
+  {
+    id: "5",
+    code: "5",
+    name: "المصروفات",
+    type: "Debit",
+    group: "Expenses",
+    status: "Active",
+    closingType: "Income Statement",
+    classifications: ['Expenses'],
+    children: []
+  }
+];
 
 
 // Helper function to find an account in the tree
@@ -43,8 +135,8 @@ const findParentOf = (searchAccounts: Account[], accountId: string, parent: Acco
 
 
 export default function ChartOfAccountsPage() {
-    const [accounts, setAccounts] = useState<Account[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [accounts, setAccounts] = useState<Account[]>(initialAccountsData);
+    const [loading, setLoading] = useState(false);
     const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
@@ -52,21 +144,14 @@ export default function ChartOfAccountsPage() {
     const [dialogMode, setDialogMode] = useState<'add' | 'edit' | 'addSub'>('add');
     
     const refreshAccounts = async () => {
+        // In demo mode, we just reset to the initial static data.
         setLoading(true);
-        try {
-            const fetchedAccounts = await getAccounts();
-            setAccounts(fetchedAccounts);
-        } catch (error) {
-            console.error("Failed to fetch accounts:", error);
-            alert("Failed to load accounts. Please check your connection and try again.");
-        } finally {
+        setTimeout(() => {
+            setAccounts(initialAccountsData);
             setLoading(false);
-        }
+            alert("This is a demo. Data is not fetched from a server.");
+        }, 500);
     };
-
-    useEffect(() => {
-        refreshAccounts();
-    }, []);
 
     const handleAddAccount = (parentId: string | null = null) => {
         const pAccount = parentId ? findAccountById(accounts, parentId) : null;
@@ -99,41 +184,17 @@ export default function ChartOfAccountsPage() {
     };
 
     const confirmSave = async (accountData: AccountFormData) => {
-        setLoading(true);
-        try {
-            if (dialogMode === 'add') {
-                await addAccount(accountData, null);
-            } else if (dialogMode === 'addSub' && parentAccount) {
-                 await addAccount(accountData, parentAccount.id);
-            } else if (dialogMode === 'edit' && selectedAccount) {
-                await updateAccount(selectedAccount.id, accountData);
-            }
-            await refreshAccounts();
-        } catch (error) {
-            console.error("Failed to save account:", error);
-            alert("Failed to save account. Please try again.");
-        } finally {
-            setIsAddEditDialogOpen(false);
-            setSelectedAccount(null);
-            setParentAccount(null);
-            setLoading(false);
-        }
+        alert("This is a demo. Your changes will not be saved.");
+        setIsAddEditDialogOpen(false);
+        setSelectedAccount(null);
+        setParentAccount(null);
     };
 
     const confirmDelete = async () => {
         if (!selectedAccount) return;
-        setLoading(true);
-         try {
-            await deleteAccount(selectedAccount.id);
-            await refreshAccounts();
-        } catch (error) {
-            console.error("Failed to delete account:", error);
-            alert((error as Error).message || "Failed to delete account. Please try again.");
-        } finally {
-            setIsDeleteDialogOpen(false);
-            setSelectedAccount(null);
-            setLoading(false);
-        }
+        alert("This is a demo. Your changes will not be saved.");
+        setIsDeleteDialogOpen(false);
+        setSelectedAccount(null);
     };
 
   return (
@@ -143,7 +204,7 @@ export default function ChartOfAccountsPage() {
           <div className="flex justify-between items-center">
               <div>
                   <CardTitle className="font-headline">Chart of Accounts</CardTitle>
-                  <CardDescription>Browse and manage your accounting tree from Firestore.</CardDescription>
+                  <CardDescription>Browse and manage your accounting tree. (Demo Mode)</CardDescription>
               </div>
               <div className='flex gap-2'>
                   <Button variant="outline" onClick={refreshAccounts} disabled={loading}>
