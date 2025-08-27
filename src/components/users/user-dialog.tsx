@@ -29,7 +29,7 @@ import { Checkbox } from '../ui/checkbox';
 import { Account } from '../chart-of-accounts/account-tree';
 import { ScrollArea } from '../ui/scroll-area';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
-import type { Role } from '@/app/(main)/roles/page';
+import type { Role } from '@/lib/firebase/firestore/roles';
 
 const permissionsSchema = z.object({
     pages: z.object({
@@ -102,6 +102,7 @@ interface UserDialogProps {
   user: User | null;
   mode: 'add' | 'edit';
   accounts: Account[];
+  roles: Role[];
 }
 
 const titles = {
@@ -156,16 +157,8 @@ function AccountPermissionsTree({ accounts, control, name }: { accounts: Account
     return <ScrollArea className="h-72 w-full rounded-md border p-4">{renderTree(accounts)}</ScrollArea>;
 }
 
-// Dummy roles data, this would typically come from an API or a shared state management
-const initialRoles: Role[] = [
-    { id: '1', name: 'مدير' },
-    { id: '2', name: 'محاسب' },
-    { id: '3', name: 'كاشير' },
-    { id: '4', name: 'مدخل بيانات' }
-];
 
-export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts }: UserDialogProps) {
-  const [roles, setRoles] = useState<Role[]>(initialRoles); // In a real app, fetch roles
+export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts, roles }: UserDialogProps) {
   const userSchema = useMemo(() => createUserSchema(mode === 'edit', accounts), [mode, accounts]);
   
   const { register, handleSubmit, reset, control, watch, formState: { errors } } = useForm<UserFormData>({
@@ -241,7 +234,7 @@ export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts }: Us
         </Label>
         <div className="col-span-3">
             {children}
-            {error && <p className="text-red-500 text-xs mt-1">{error.message}</p>}
+            {error && <p className="text-red-500 text-xs mt-1">{errors.name?.message || errors.mobile?.message || errors.email?.message || errors.password?.message || errors.confirmPassword?.message || errors.role?.message || errors.type?.message || errors.status?.message}</p>}
         </div>
     </div>
   )
@@ -419,5 +412,3 @@ export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts }: Us
     </Dialog>
   )
 }
-
-    
