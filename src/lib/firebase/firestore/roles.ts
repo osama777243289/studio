@@ -10,6 +10,7 @@ import {
   deleteDoc,
   query,
   orderBy,
+  writeBatch,
 } from 'firebase/firestore';
 
 export interface Role {
@@ -17,14 +18,37 @@ export interface Role {
   name: string;
 }
 
+const defaultRoles: Omit<Role, 'id'>[] = [
+    { name: 'Admin' },
+    { name: 'Accountant' },
+    { name: 'Cashier' },
+    { name: 'Data Entry' },
+];
+
+const seedRoles = async () => {
+    const batch = writeBatch(db);
+    const rolesCol = collection(db, 'roles');
+    defaultRoles.forEach(role => {
+        const newDocRef = doc(rolesCol);
+        batch.set(newDocRef, role);
+    });
+    await batch.commit();
+    console.log("Default roles have been seeded to Firestore.");
+};
+
 // Get all roles
 export const getRoles = async (): Promise<Role[]> => {
   const rolesCol = collection(db, 'roles');
   const q = query(rolesCol, orderBy('name'));
   const roleSnapshot = await getDocs(q);
+
   if (roleSnapshot.empty) {
-    return [];
+    console.log("No roles found. Seeding database...");
+    await seedRoles();
+    const seededSnapshot = await getDocs(q);
+    return seededSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Role));
   }
+  
   return roleSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Role));
 };
 
