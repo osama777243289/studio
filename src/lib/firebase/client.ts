@@ -9,14 +9,12 @@ import { getAnalytics, isSupported } from "firebase/analytics";
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyDwbX9wZtlEmQjuFvkGe7iDofLGXWVvDaU",
-  authDomain: "osama-2020.firebaseapp.com",
-  databaseURL: "https://osama-2020-default-rtdb.firebaseio.com",
-  projectId: "osama-2020",
-  storageBucket: "osama-2020.appspot.com",
-  messagingSenderId: "390287828886",
-  appId: "1:390287828886:web:ce0523224f5de42c7cdfb7",
-  measurementId: "G-SW1C8RELTP"
+  apiKey: "AIzaSyD0fSUx51wV1NHBmGfnR5PLZHU4PSWrwDU",
+  authDomain: "daily-sales-tracker-cr1db.firebaseapp.com",
+  projectId: "daily-sales-tracker-cr1db",
+  storageBucket: "daily-sales-tracker-cr1db.appspot.com",
+  messagingSenderId: "470454086647",
+  appId: "1:470454086647:web:ba1b12afee44694b4c9cf2"
 };
 
 

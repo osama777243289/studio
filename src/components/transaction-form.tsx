@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { transactionSchema } from '@/lib/firebase/firestore/transactions';
+import { addTransaction, transactionSchema } from '@/lib/firebase/firestore/transactions';
 import type { Account } from '@/components/chart-of-accounts/account-tree';
 
 type TransactionFormProps = {
@@ -60,12 +60,22 @@ export function TransactionForm({
   });
 
   async function onSubmit(values: z.infer<typeof transactionSchema>) {
+    try {
+      await addTransaction({ ...values, type: transactionType });
       toast({
-        title: 'Demo Mode',
-        description: `This is a demo. The ${transactionType.toLowerCase()} was not saved.`,
+        title: 'Success',
+        description: `The ${transactionType.toLowerCase()} has been saved successfully.`,
         variant: 'default',
       });
-      console.log({ ...values, type: transactionType });
+      form.reset();
+    } catch (error) {
+       console.error(`Failed to save ${transactionType.toLowerCase()}:`, error);
+       toast({
+        title: 'Error',
+        description: `Failed to save the ${transactionType.toLowerCase()}. Please try again.`,
+        variant: 'destructive',
+      });
+    }
   }
 
   return (
