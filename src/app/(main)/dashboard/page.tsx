@@ -15,49 +15,49 @@ export default function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">إجمالي الدخل</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Income</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">$45,231.89</div>
             <p className="text-xs text-muted-foreground">
-              +20.1% عن الشهر الماضي
+              +20.1% from last month
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">إجمالي المصروفات</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
             <TrendingDown className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">$21,876.33</div>
             <p className="text-xs text-muted-foreground">
-              +12.4% عن الشهر الماضي
+              +12.4% from last month
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">صافي الربح</CardTitle>
+            <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">$23,355.56</div>
             <p className="text-xs text-muted-foreground">
-              +31.3% عن الشهر الماضي
+              +31.3% from last month
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">الرصيد</CardTitle>
+            <CardTitle className="text-sm font-medium">Balance</CardTitle>
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">$102,942.00</div>
             <p className="text-xs text-muted-foreground">
-              في جميع الحسابات
+              In all accounts
             </p>
           </CardContent>
         </Card>
@@ -66,7 +66,7 @@ export default function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="lg:col-span-4">
           <CardHeader>
-            <CardTitle className="font-headline">نظرة عامة</CardTitle>
+            <CardTitle className="font-headline">Overview</CardTitle>
           </CardHeader>
           <CardContent className="pl-2">
             <OverviewChart />
@@ -74,9 +74,9 @@ export default function DashboardPage() {
         </Card>
         <Card className="lg:col-span-3">
           <CardHeader>
-            <CardTitle className="font-headline">المعاملات الأخيرة</CardTitle>
+            <CardTitle className="font-headline">Recent Transactions</CardTitle>
             <CardDescription>
-              لقد قمت بـ 12 معاملة هذا الشهر.
+              You made 12 transactions this month.
             </CardDescription>
           </CardHeader>
           <CardContent>
