@@ -17,7 +17,7 @@ export default function CashierSalesReportPage() {
                 <h1 className="text-3xl font-bold font-headline">تقرير مبيعات الكاشير</h1>
                 <Button onClick={handlePrint}>
                     <Printer className="ml-2 h-4 w-4" />
-                    طباعة التقرير
+                    طباعة أو حفظ PDF
                 </Button>
             </div>
             {/* The ref is no longer needed but we can keep the div for structure */}

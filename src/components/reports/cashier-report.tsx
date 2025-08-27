@@ -18,11 +18,14 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { AlertCircle, Calendar, CheckCircle2, FileText, Gift, Lightbulb, MessageSquare, RefreshCw, Wallet, CreditCard, BookUser, Hash, Loader2 } from "lucide-react";
+import { AlertCircle, Calendar, CheckCircle2, FileText, Gift, Lightbulb, MessageSquare, RefreshCw, Wallet, CreditCard, BookUser, Hash, Loader2, ImageIcon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
-import { SalesRecord } from "@/lib/firebase/firestore/sales";
+import { SalesRecord, CardAccountDetail } from "@/lib/firebase/firestore/sales";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import Image from "next/image";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
+import { Button } from "../ui/button";
 // A placeholder for a function that would fetch a single record by ID
 // You'll need to implement this in your firestore/sales.ts file
 // import { getSaleRecordById } from "@/lib/firebase/firestore/sales";
@@ -38,7 +41,7 @@ const mockReportData: SalesRecord = {
     cashier: "Loading...",
     total: 0,
     cash: { accountId: "", accountName: "كاشير 1", amount: 4000.00 },
-    cards: [{ accountId: "", accountName: "شبكة زهرة جنائن", amount: 1000.00 }],
+    cards: [{ accountId: "", accountName: "شبكة زهرة جنائن", amount: 1000.00, receiptImageUrl: 'https://picsum.photos/seed/receipt1/200/300' }],
     credits: [{ accountId: "", accountName: "التوصيل اسامه", amount: 1000.00 }],
     createdAt: { toDate: () => new Date() } as any,
 };
@@ -71,8 +74,6 @@ export function CashierReport() {
                 const fetchedRecord = {
                     ...mockReportData,
                     id: recordId,
-                    // Simulate a status based on what you'd fetch
-                    // For example, if it's a new record, it might be 'Pending Upload'
                     status: 'Pending Upload' 
                 };
                 setRecord(fetchedRecord);
@@ -87,11 +88,8 @@ export function CashierReport() {
     const isPreliminary = reportData.status === 'Pending Upload';
     const reportStatus = isPreliminary ? "غير مطابق" : (reportData.status === 'Matched' ? "تمت المطابقة" : "قيد المطابقة");
     
-    // Use actuals from record if they exist (i.e., status is 'Matched'), otherwise use 0 for preliminary report
     const getActualAmount = (type: 'cash' | 'card' | 'credit', index: number = 0) => {
         if (isPreliminary) return 0;
-        // In a real scenario, actuals would be stored on the record after matching.
-        // For now, we assume if it's not preliminary, it's matched perfectly.
         if (type === 'cash') return reportData.cash.amount;
         if (type === 'card') return reportData.cards[index]?.amount || 0;
         if (type === 'credit') return reportData.credits[index]?.amount || 0;
@@ -100,9 +98,9 @@ export function CashierReport() {
     
     const getSalesData = () => {
         const sales = [];
-        if (reportData.cash.amount > 0) sales.push({ method: "نقداً", icon: Wallet, original: reportData.cash.amount, actual: getActualAmount('cash'), account: reportData.cash.accountName || '' });
-        reportData.cards.forEach((card, i) => sales.push({ method: "بطاقة/شبكة", icon: CreditCard, original: card.amount, actual: getActualAmount('card', i), account: card.accountName || '' }));
-        reportData.credits.forEach((credit, i) => sales.push({ method: "أجل/ائتمان", icon: BookUser, original: credit.amount, actual: getActualAmount('credit', i), account: credit.accountName || '' }));
+        if (reportData.cash.amount > 0) sales.push({ method: "نقداً", icon: Wallet, original: reportData.cash.amount, actual: getActualAmount('cash'), account: reportData.cash.accountName || '', isCard: false });
+        reportData.cards.forEach((card, i) => sales.push({ method: "بطاقة/شبكة", icon: CreditCard, original: card.amount, actual: getActualAmount('card', i), account: card.accountName || '', isCard: true, receiptImageUrl: card.receiptImageUrl }));
+        reportData.credits.forEach((credit, i) => sales.push({ method: "أجل/ائتمان", icon: BookUser, original: credit.amount, actual: getActualAmount('credit', i), account: credit.accountName || '', isCard: false }));
         return sales;
     }
     const salesData = getSalesData();
@@ -153,16 +151,45 @@ export function CashierReport() {
                              const Icon = item.icon;
                              const difference = item.actual - item.original;
                              return (
-                                <TableRow key={index}>
-                                    <TableCell className="font-medium flex items-center gap-2">
-                                        <Icon className="h-5 w-5 text-muted-foreground"/>
-                                        {item.method}
-                                    </TableCell>
-                                    <TableCell className="text-center">{item.original.toFixed(2)}</TableCell>
-                                    <TableCell className="text-center">{item.actual.toFixed(2)}</TableCell>
-                                    <TableCell className="text-center">{getDifferenceText(difference)}</TableCell>
-                                    <TableCell>{item.account}: {item.original.toFixed(2)}</TableCell>
-                                </TableRow>
+                                <React.Fragment key={index}>
+                                    <TableRow>
+                                        <TableCell className="font-medium flex items-center gap-2">
+                                            <Icon className="h-5 w-5 text-muted-foreground"/>
+                                            {item.method}
+                                            {item.isCard && item.receiptImageUrl && (
+                                                <Dialog>
+                                                    <DialogTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-6 w-6 print:hidden">
+                                                            <ImageIcon className="text-blue-500"/>
+                                                        </Button>
+                                                    </DialogTrigger>
+                                                    <DialogContent>
+                                                        <DialogHeader>
+                                                            <DialogTitle>إيصال الشبكة لـ {item.account}</DialogTitle>
+                                                        </DialogHeader>
+                                                        <div className="relative h-96 w-full">
+                                                            <Image src={item.receiptImageUrl} alt={`إيصال لـ ${item.account}`} layout="fill" objectFit="contain" />
+                                                        </div>
+                                                    </DialogContent>
+                                                </Dialog>
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="text-center">{item.original.toFixed(2)}</TableCell>
+                                        <TableCell className="text-center">{item.actual.toFixed(2)}</TableCell>
+                                        <TableCell className="text-center">{getDifferenceText(difference)}</TableCell>
+                                        <TableCell>{item.account}: {item.original.toFixed(2)}</TableCell>
+                                    </TableRow>
+                                    {item.isCard && item.receiptImageUrl && (
+                                        <TableRow className="hidden print:table-row">
+                                            <TableCell colSpan={5} className="p-2 text-center">
+                                                <div className="mx-auto my-2 border p-2 rounded-md" style={{ maxWidth: '200px' }}>
+                                                    <p className="text-xs font-semibold mb-1">إيصال: {item.account}</p>
+                                                    <Image src={item.receiptImageUrl} alt={`إيصال لـ ${item.account}`} width={200} height={300} style={{ objectFit: 'contain' }} />
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </React.Fragment>
                             )
                         })}
                     </TableBody>
