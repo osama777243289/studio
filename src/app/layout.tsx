@@ -3,8 +3,8 @@ import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Accounter - Your Financial Companion',
-  description: 'An integrated accounting application to manage your finances.',
+  title: 'حسابي - رفيقك المالي',
+  description: 'تطبيق محاسبي متكامل لإدارة أموالك.',
   icons: {
     icon: '/favicon.ico',
   }
@@ -16,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" dir="ltr" suppressHydrationWarning>
+    <html lang="ar" dir="rtl" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

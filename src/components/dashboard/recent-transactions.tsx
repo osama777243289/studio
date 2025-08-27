@@ -5,11 +5,11 @@ import {
 } from "@/components/ui/avatar"
 
 const transactions = [
-    { name: "Olivia Martin", email: "olivia.martin@email.com", amount: "+$1,999.00", avatar: "/avatars/01.png" },
-    { name: "Jackson Lee", email: "jackson.lee@email.com", amount: "+$39.00", avatar: "/avatars/02.png" },
-    { name: "Isabella Nguyen", email: "isabella.nguyen@email.com", amount: "-$299.00", avatar: "/avatars/03.png" },
-    { name: "William Kim", email: "will@email.com", amount: "+$99.00", avatar: "/avatars/04.png" },
-    { name: "Sofia Davis", email: "sofia.davis@email.com", amount: "-$39.00", avatar: "/avatars/05.png" },
+    { name: "أوليفيا مارتن", email: "olivia.martin@email.com", amount: "+$1,999.00", avatar: "/avatars/01.png" },
+    { name: "جاكسون لي", email: "jackson.lee@email.com", amount: "+$39.00", avatar: "/avatars/02.png" },
+    { name: "إيزابيلا نجوين", email: "isabella.nguyen@email.com", amount: "-$299.00", avatar: "/avatars/03.png" },
+    { name: "ويليام كيم", email: "will@email.com", amount: "+$99.00", avatar: "/avatars/04.png" },
+    { name: "صوفيا ديفيس", email: "sofia.davis@email.com", amount: "-$39.00", avatar: "/avatars/05.png" },
 ]
 
 export function RecentTransactions() {
@@ -27,7 +27,7 @@ export function RecentTransactions() {
                     {transaction.email}
                 </p>
                 </div>
-                <div className={`ml-auto font-medium ${transaction.amount.startsWith('+') ? 'text-green-600' : ''}`}>{transaction.amount}</div>
+                <div className={`mr-auto font-medium ${transaction.amount.startsWith('+') ? 'text-green-600' : ''}`}>{transaction.amount}</div>
             </div>
         ))}
     </div>

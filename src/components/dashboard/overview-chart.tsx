@@ -18,11 +18,11 @@ const data = [
 
 const chartConfig = {
   income: {
-    label: "Income",
+    label: "الدخل",
     color: "hsl(var(--chart-1))",
   },
   expenses: {
-    label: "Expenses",
+    label: "المصروفات",
     color: "hsl(var(--chart-2))",
   },
 } satisfies ChartConfig
