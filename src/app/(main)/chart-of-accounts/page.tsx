@@ -14,7 +14,142 @@ import { PlusCircle, FileDown, Loader2, RefreshCw } from 'lucide-react';
 import { AccountTree, type Account } from '@/components/chart-of-accounts/account-tree';
 import { AccountDialog, AccountFormData } from '@/components/chart-of-accounts/account-dialog';
 import { DeleteAccountDialog } from '@/components/chart-of-accounts/delete-account-dialog';
-import { addAccount, deleteAccount, getAccounts, updateAccount } from '@/lib/firebase/firestore/accounts';
+
+const initialAccounts: Account[] = [
+  {
+    id: '1',
+    code: '1',
+    name: 'الأصول',
+    type: 'Debit',
+    group: 'Assets',
+    status: 'Active',
+    closingType: 'Balance Sheet',
+    classifications: [],
+    children: [
+      {
+        id: '11',
+        code: '11',
+        name: 'الأصول المتداولة',
+        type: 'Debit',
+        group: 'Assets',
+        status: 'Active',
+        closingType: 'Balance Sheet',
+        classifications: [],
+        children: [
+           {
+            id: '111',
+            code: '111',
+            name: 'النقدية وما في حكمها',
+            type: 'Debit',
+            group: 'Assets',
+            status: 'Active',
+            closingType: 'Balance Sheet',
+            classifications: [],
+            children: [
+                { id: '11101', code: '11101', name: 'صندوق الفرع الرئيسي', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['Cashbox'] },
+            ]
+           }
+        ]
+      },
+    ],
+  },
+   {
+    id: '2',
+    code: '2',
+    name: 'الخصوم',
+    type: 'Credit',
+    group: 'Liabilities',
+    status: 'Active',
+    closingType: 'Balance Sheet',
+    classifications: [],
+    children: [],
+  },
+  {
+    id: '3',
+    code: '3',
+    name: 'حقوق الملكية',
+    type: 'Credit',
+    group: 'Equity',
+    status: 'Active',
+    closingType: 'Balance Sheet',
+    classifications: [],
+    children: [],
+  },
+  {
+    id: '4',
+    code: '4',
+    name: 'الإيرادات',
+    type: 'Credit',
+    group: 'Revenues',
+    status: 'Active',
+    closingType: 'Income Statement',
+    classifications: [],
+    children: [
+       {
+        id: '41',
+        code: '41',
+        name: 'إيرادات النشاط الرئيسي',
+        type: 'Credit',
+        group: 'Revenues',
+        status: 'Active',
+        closingType: 'Income Statement',
+        classifications: [],
+        children: [
+           {
+            id: '411',
+            code: '411',
+            name: 'مبيعات المنتجات',
+            type: 'Credit',
+            group: 'Revenues',
+            status: 'Active',
+            closingType: 'Income Statement',
+            classifications: [],
+            children: [
+                 { id: '41101', code: '41101', name: 'مبيعات التجزئة', type: 'Credit', group: 'Revenues', status: 'Active', closingType: 'Income Statement', classifications: ['Revenues'] },
+            ]
+           }
+        ]
+      },
+    ],
+  },
+  {
+    id: '5',
+    code: '5',
+    name: 'المصروفات',
+    type: 'Debit',
+    group: 'Expenses',
+    status: 'Active',
+    closingType: 'Income Statement',
+    classifications: [],
+    children: [
+      {
+        id: '51',
+        code: '51',
+        name: 'مصروفات التشغيل',
+        type: 'Debit',
+        group: 'Expenses',
+        status: 'Active',
+        closingType: 'Income Statement',
+        classifications: [],
+        children: [
+           {
+            id: '511',
+            code: '511',
+            name: 'الرواتب والأجور',
+            type: 'Debit',
+            group: 'Expenses',
+            status: 'Active',
+            closingType: 'Income Statement',
+            classifications: [],
+            children: [
+                 { id: '51101', code: '51101', name: 'رواتب الموظفين', type: 'Debit', group: 'Expenses', status: 'Active', closingType: 'Income Statement', classifications: ['Expenses', 'Employee'] },
+            ]
+           }
+        ]
+      },
+    ],
+  },
+];
 
 
 // Helper function to find an account in the tree
@@ -43,33 +178,21 @@ const findParentOf = (searchAccounts: Account[], accountId: string, parent: Acco
 
 
 export default function ChartOfAccountsPage() {
-    const [accounts, setAccounts] = useState<Account[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
+    const [loading, setLoading] = useState(false);
     const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
     const [parentAccount, setParentAccount] = useState<Account | null>(null);
     const [dialogMode, setDialogMode] = useState<'add' | 'edit' | 'addSub'>('add');
     
-    const fetchAccounts = async () => {
+    const refreshAccounts = () => {
+        // This is a placeholder now
         setLoading(true);
-        try {
-            const fetchedAccounts = await getAccounts();
-            setAccounts(fetchedAccounts);
-        } catch (error) {
-            console.error("Failed to fetch accounts:", error);
-            // Optionally, show a toast notification
-        } finally {
+        setTimeout(() => {
+            setAccounts(initialAccounts); // Reset to initial static data
             setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchAccounts();
-    }, []);
-
-    const refreshAccounts = async () => {
-        await fetchAccounts();
+        }, 500);
     };
 
     const handleAddAccount = (parentId: string | null = null, parentLevel: number = 0) => {
@@ -98,34 +221,14 @@ export default function ChartOfAccountsPage() {
     };
 
     const confirmSave = async (accountData: AccountFormData) => {
-        const parentId = (dialogMode === 'addSub' || (dialogMode === 'edit' && parentAccount)) ? parentAccount?.id : null;
-        try {
-            if (dialogMode === 'edit' && selectedAccount) {
-                 await updateAccount(selectedAccount.id, accountData);
-            } else {
-                 await addAccount(accountData, parentId);
-            }
-            await refreshAccounts();
-        } catch (error) {
-            console.error("Failed to save account:", error);
-            alert("Failed to save account. Please try again.");
-        } finally {
-            setIsAddEditDialogOpen(false);
-            setSelectedAccount(null);
-            setParentAccount(null);
-        }
+        alert("This is a demo. Data will not be saved to a database.");
+        setIsAddEditDialogOpen(false);
+        setSelectedAccount(null);
+        setParentAccount(null);
     };
 
     const confirmDelete = async () => {
-        if (selectedAccount) {
-            try {
-                await deleteAccount(selectedAccount.id);
-                await refreshAccounts();
-            } catch (error) {
-                 console.error("Failed to delete account:", error);
-                 alert("Failed to delete account. It may contain sub-accounts.");
-            }
-        }
+        alert("This is a demo. Data will not be deleted from a database.");
         setIsDeleteDialogOpen(false);
         setSelectedAccount(null);
         setParentAccount(null);
@@ -138,7 +241,7 @@ export default function ChartOfAccountsPage() {
           <div className="flex justify-between items-center">
               <div>
                   <CardTitle className="font-headline">Chart of Accounts</CardTitle>
-                  <CardDescription>Browse and manage your accounting tree from Firestore.</CardDescription>
+                  <CardDescription>Browse and manage your accounting tree. (Demo Data)</CardDescription>
               </div>
               <div className='flex gap-2'>
                   <Button variant="outline" onClick={refreshAccounts} disabled={loading}>
@@ -157,7 +260,7 @@ export default function ChartOfAccountsPage() {
             {loading ? (
                 <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <Loader2 className="h-8 w-8 animate-spin" />
-                    <p>Loading accounts from Firestore...</p>
+                    <p>Loading accounts...</p>
                 </div>
             ) : accounts.length > 0 ? (
                 <AccountTree 

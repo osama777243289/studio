@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -30,7 +31,7 @@ import {
 } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { addTransaction, transactionSchema } from '@/lib/firebase/firestore/transactions';
+import { transactionSchema } from '@/lib/firebase/firestore/transactions';
 import type { Account } from '@/components/chart-of-accounts/account-tree';
 
 type TransactionFormProps = {
@@ -59,27 +60,12 @@ export function TransactionForm({
   });
 
   async function onSubmit(values: z.infer<typeof transactionSchema>) {
-    try {
-      await addTransaction({ ...values, type: transactionType });
       toast({
-        title: `${transactionType} Recorded`,
-        description: `Successfully recorded ${transactionType.toLowerCase()} of ${values.amount}.`,
+        title: 'Demo Mode',
+        description: `This is a demo. The ${transactionType.toLowerCase()} was not saved.`,
+        variant: 'default',
       });
-      form.reset({
-        amount: undefined,
-        accountId: '',
-        date: new Date(),
-        description: '',
-        type: transactionType,
-      });
-    } catch (error) {
-      console.error("Failed to add transaction:", error);
-      toast({
-        title: 'An error occurred',
-        description: `Failed to record ${transactionType.toLowerCase()}. Please try again.`,
-        variant: 'destructive',
-      });
-    }
+      console.log({ ...values, type: transactionType });
   }
 
   return (
