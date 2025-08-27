@@ -33,7 +33,7 @@ import { DeleteUserDialog } from '@/components/users/delete-user-dialog';
 import { Account } from '@/components/chart-of-accounts/account-tree';
 import { getAccounts } from '@/lib/firebase/firestore/accounts';
 import { getRoles, Role } from '@/lib/firebase/firestore/roles';
-import { getUsers, addUser, updateUser, deleteUser, seedInitialUsers } from '@/lib/firebase/firestore/users';
+import { getUsers, addUser, updateUser, deleteUser } from '@/lib/firebase/firestore/users';
 
 
 export interface PagePermissions {
@@ -92,15 +92,8 @@ export default function UsersPage() {
             getAccounts(),
             getRoles()
         ]);
-
-        if (fetchedUsers.length === 0) {
-            await seedInitialUsers();
-            const seededUsers = await getUsers();
-            setUsers(seededUsers);
-        } else {
-            setUsers(fetchedUsers);
-        }
         
+        setUsers(fetchedUsers);
         setAccounts(fetchedAccounts);
         setRoles(fetchedRoles);
     } catch (error) {
@@ -142,7 +135,7 @@ export default function UsersPage() {
         await fetchData(); // Refresh data
     } catch (error) {
         console.error("Failed to save user:", error);
-        alert("فشل حفظ المستخدم. يرجى المحاولة مرة أخرى.");
+        alert("Failed to save user. Please try again.");
     } finally {
         setIsDialogOpen(false);
         setSelectedUser(null);
@@ -156,7 +149,7 @@ export default function UsersPage() {
         await fetchData(); // Refresh data
       } catch (error) {
          console.error("Failed to delete user:", error);
-         alert("فشل حذف المستخدم. يرجى المحاولة مرة أخرى.");
+         alert("Failed to delete user. Please try again.");
       }
     }
     setIsDeleteDialogOpen(false);
@@ -170,17 +163,17 @@ export default function UsersPage() {
         <CardHeader>
           <div className="flex justify-between items-center">
               <div>
-                  <CardTitle className="font-headline">دليل المستخدمين</CardTitle>
-                  <CardDescription>إدارة المستخدمين والصلاحيات في النظام من خلال Firestore.</CardDescription>
+                  <CardTitle className="font-headline">Users Directory</CardTitle>
+                  <CardDescription>Manage system users and permissions from Firestore.</CardDescription>
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={fetchData} disabled={loading}>
                     <RefreshCw className="ml-2 h-4 w-4" />
-                    تحديث
+                    Refresh
                 </Button>
                 <Button onClick={handleAddUser}>
                     <PlusCircle className="ml-2 h-4 w-4" />
-                    إضافة مستخدم جديد
+                    Add New User
                 </Button>
               </div>
           </div>
@@ -194,11 +187,11 @@ export default function UsersPage() {
                 <Table>
                     <TableHeader>
                     <TableRow>
-                        <TableHead>المستخدم</TableHead>
-                        <TableHead>الدور</TableHead>
-                        <TableHead>الحالة</TableHead>
+                        <TableHead>User</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Status</TableHead>
                         <TableHead>
-                        <span className="sr-only">الإجراءات</span>
+                        <span className="sr-only">Actions</span>
                         </TableHead>
                     </TableRow>
                     </TableHeader>
@@ -224,8 +217,8 @@ export default function UsersPage() {
                             </div>
                         </TableCell>
                         <TableCell>
-                            <Badge variant={user.status === 'نشط' ? 'default' : 'secondary'}
-                            className={user.status === 'نشط' ? 'bg-green-100 text-green-800' : ''}
+                            <Badge variant={user.status === 'Active' ? 'default' : 'secondary'}
+                            className={user.status === 'Active' ? 'bg-green-100 text-green-800' : ''}
                             >
                             {user.status}
                             </Badge>

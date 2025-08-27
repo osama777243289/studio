@@ -14,7 +14,7 @@ import { PlusCircle, FileDown, Loader2, RefreshCw } from 'lucide-react';
 import { AccountTree, type Account } from '@/components/chart-of-accounts/account-tree';
 import { AccountDialog, AccountFormData } from '@/components/chart-of-accounts/account-dialog';
 import { DeleteAccountDialog } from '@/components/chart-of-accounts/delete-account-dialog';
-import { addAccount, deleteAccount, getAccounts, updateAccount, seedInitialData } from '@/lib/firebase/firestore/accounts';
+import { addAccount, deleteAccount, getAccounts, updateAccount } from '@/lib/firebase/firestore/accounts';
 
 
 // Helper function to find an account in the tree
@@ -54,15 +54,10 @@ export default function ChartOfAccountsPage() {
     const fetchAccounts = async () => {
         setLoading(true);
         try {
-            let fetchedAccounts = await getAccounts();
-            // If no accounts, seed the data
-            if (fetchedAccounts.length === 0) {
-                await seedInitialData();
-                fetchedAccounts = await getAccounts();
-            }
+            const fetchedAccounts = await getAccounts();
             setAccounts(fetchedAccounts);
         } catch (error) {
-            console.error("Failed to fetch or seed accounts:", error);
+            console.error("Failed to fetch accounts:", error);
             // Optionally, show a toast notification
         } finally {
             setLoading(false);
@@ -74,10 +69,7 @@ export default function ChartOfAccountsPage() {
     }, []);
 
     const refreshAccounts = async () => {
-        setLoading(true);
-        const fetchedAccounts = await getAccounts();
-        setAccounts(fetchedAccounts);
-        setLoading(false);
+        await fetchAccounts();
     };
 
     const handleAddAccount = (parentId: string | null = null, parentLevel: number = 0) => {

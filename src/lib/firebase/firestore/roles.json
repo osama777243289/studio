@@ -1,0 +1,22 @@
+{
+    "__collections__": {
+        "roles": [
+            {
+                "__id__": "manager",
+                "name": "Manager"
+            },
+            {
+                "__id__": "accountant",
+                "name": "Accountant"
+            },
+            {
+                "__id__": "cashier",
+                "name": "Cashier"
+            },
+            {
+                "__id__": "data_entry",
+                "name": "Data Entry"
+            }
+        ]
+    }
+}
