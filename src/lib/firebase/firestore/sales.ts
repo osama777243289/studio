@@ -13,6 +13,7 @@ import {
   where,
   writeBatch,
   doc,
+  getDoc,
 } from 'firebase/firestore';
 import { z } from 'zod';
 import { getAccounts } from './accounts';
@@ -290,3 +291,17 @@ export const getSalesRecordsByStatus = async (
     (doc) => ({ id: doc.id, ...doc.data() } as SalesRecord)
   );
 };
+
+// Get a single sales record by its ID
+export const getSaleRecordById = async (id: string): Promise<SalesRecord | null> => {
+  if (!id) return null;
+  const docRef = doc(db, 'salesRecords', id);
+  const docSnap = await getDoc(docRef);
+
+  if (docSnap.exists()) {
+    return { id: docSnap.id, ...docSnap.data() } as SalesRecord;
+  } else {
+    console.log("No such document!");
+    return null;
+  }
+}

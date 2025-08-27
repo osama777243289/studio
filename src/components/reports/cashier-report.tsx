@@ -20,15 +20,12 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { AlertCircle, Calendar, CheckCircle2, FileText, Gift, Lightbulb, MessageSquare, RefreshCw, Wallet, CreditCard, BookUser, Hash, Loader2, ImageIcon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
-import { SalesRecord, CardAccountDetail } from "@/lib/firebase/firestore/sales";
+import { SalesRecord, CardAccountDetail, getSaleRecordById } from "@/lib/firebase/firestore/sales";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
 import { Button } from "../ui/button";
-// A placeholder for a function that would fetch a single record by ID
-// You'll need to implement this in your firestore/sales.ts file
-// import { getSaleRecordById } from "@/lib/firebase/firestore/sales";
 
 
 // Mock data for initial design and when no data is fetched
@@ -40,9 +37,9 @@ const mockReportData: SalesRecord = {
     status: "Pending Upload",
     cashier: "Loading...",
     total: 0,
-    cash: { accountId: "", accountName: "كاشير 1", amount: 4000.00 },
-    cards: [{ accountId: "", accountName: "شبكة زهرة جنائن", amount: 1000.00, receiptImageUrl: 'https://picsum.photos/seed/receipt1/200/300' }],
-    credits: [{ accountId: "", accountName: "التوصيل اسامه", amount: 1000.00 }],
+    cash: { accountId: "", accountName: "كاشير 1", amount: 0.00 },
+    cards: [],
+    credits: [],
     createdAt: { toDate: () => new Date() } as any,
 };
 
@@ -61,26 +58,31 @@ export function CashierReport() {
     const recordId = searchParams.get('id');
     const [record, setRecord] = useState<SalesRecord | null>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (recordId) {
-            // In a real app, you would fetch the record from Firestore here
-            // For now, we'll use mock data and simulate a fetch.
-            console.log("Fetching record for ID:", recordId);
-            setLoading(true);
-            setTimeout(() => { // Simulate network delay
-                // To-do: Replace with actual `getSaleRecordById(recordId)`
-                // For now, we'll just use the mock data and adjust it
-                const fetchedRecord = {
-                    ...mockReportData,
-                    id: recordId,
-                    status: 'Pending Upload' 
-                };
-                setRecord(fetchedRecord);
-                setLoading(false);
-            }, 1000);
+            const fetchRecord = async () => {
+                setLoading(true);
+                setError(null);
+                try {
+                    const fetchedRecord = await getSaleRecordById(recordId);
+                    if(fetchedRecord) {
+                        setRecord(fetchedRecord);
+                    } else {
+                        setError(`لم يتم العثور على تقرير بالمعرّف: ${recordId}`);
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch record:", e);
+                    setError("فشل في تحميل بيانات التقرير.");
+                } finally {
+                    setLoading(false);
+                }
+            };
+            fetchRecord();
         } else {
              setLoading(false);
+             setError("لم يتم توفير معرّف التقرير في الرابط.");
         }
     }, [recordId]);
 
@@ -109,6 +111,18 @@ export function CashierReport() {
 
     if (loading) {
         return <div className="flex justify-center items-center min-h-[400px]"><Loader2 className="h-8 w-8 animate-spin" /></div>
+    }
+
+    if (error) {
+         return (
+            <div className="flex justify-center items-center min-h-[400px]">
+                <Alert variant="destructive" className="max-w-md">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>خطأ</AlertTitle>
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
+            </div>
+         );
     }
     
   return (
