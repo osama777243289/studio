@@ -93,19 +93,19 @@ export default function ReportsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-       <div className="flex items-center justify-between">
+       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
                 <h1 className="text-3xl font-bold font-headline">التقارير المالية</h1>
                 <p className="text-muted-foreground">عرض وتصدير بياناتك المالية.</p>
             </div>
-            <Button onClick={handleExport}>
+            <Button onClick={handleExport} className="w-full sm:w-auto">
                 <Download className="ml-2 h-4 w-4" />
                 تصدير الكل
             </Button>
         </div>
 
       <Tabs defaultValue="p-l" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3">
           <TabsTrigger value="p-l">الأرباح والخسائر</TabsTrigger>
           <TabsTrigger value="balance-sheet">الميزانية العمومية</TabsTrigger>
           <TabsTrigger value="other-reports">تقارير أخرى</TabsTrigger>

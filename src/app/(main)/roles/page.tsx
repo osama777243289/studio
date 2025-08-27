@@ -118,17 +118,17 @@ export default function RolesPage() {
         <>
             <Card>
                 <CardHeader>
-                    <div className="flex justify-between items-center">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div>
                             <CardTitle className="font-headline">إدارة الأدوار</CardTitle>
                             <CardDescription>إضافة وتعديل وحذف أدوار المستخدمين في النظام.</CardDescription>
                         </div>
-                         <div className="flex gap-2">
-                             <Button variant="outline" onClick={fetchRoles} disabled={loading}>
+                         <div className="flex gap-2 w-full sm:w-auto">
+                             <Button variant="outline" onClick={fetchRoles} disabled={loading} className="flex-1 sm:flex-initial">
                                 {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
                                 تحديث
                             </Button>
-                            <Button onClick={handleAddRole}>
+                            <Button onClick={handleAddRole} className="flex-1 sm:flex-initial">
                                 <PlusCircle className="ml-2 h-4 w-4" />
                                 إضافة دور جديد
                             </Button>

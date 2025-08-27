@@ -46,7 +46,7 @@ export default function MainLayout({
               <span className="font-headline text-xl text-primary">Accounter</span>
             </Link>
           </div>
-          <div className="flex-1">
+          <div className="flex-1 overflow-y-auto">
             <Nav links={navLinks} />
           </div>
         </div>
@@ -92,7 +92,7 @@ export default function MainLayout({
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 sm:p-6 md:p-8">
+        <main className="flex flex-1 flex-col gap-4 p-4 sm:p-6 md:p-8 overflow-y-auto">
           {children}
         </main>
       </div>

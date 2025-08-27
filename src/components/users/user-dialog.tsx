@@ -140,7 +140,7 @@ function AccountPermissionsTree({ accounts, control, name }: { accounts: Account
     
     const renderTree = (nodes: Account[], level = 0) => {
         return nodes.map(account => (
-            <div key={account.id} style={{ marginRight: `${level * 20}px` }}>
+            <div key={account.id} style={{ marginLeft: `${level * 20}px` }}>
                 <div className="flex items-center gap-2 my-1">
                     <Checkbox
                         id={`account-${account.id}`}
@@ -229,7 +229,7 @@ export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts, role
   
   const renderRow = (label: string, id: string, children: React.ReactNode, error?: {message?: string} ) => (
       <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor={id} className="text-right pt-2">
+        <Label htmlFor={id} className="text-right pt-2 text-sm md:text-base">
             {label}
         </Label>
         <div className="col-span-3">

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useFormState, useFormStatus } from 'react-dom';
@@ -135,7 +136,7 @@ export default function CashFlowPage() {
                         <AlertDescription>{state.message}</AlertDescription>
                     </Alert>
                 ) : (
-                    <p className="text-muted-foreground">نتائج التوقع ستظهر هنا.</p>
+                    <p className="text-muted-foreground text-center">نتائج التوقع ستظهر هنا.</p>
                 )}
             </CardContent>
          </Card>

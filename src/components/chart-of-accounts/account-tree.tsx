@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -48,7 +49,7 @@ interface AccountItemProps {
 
 export function AccountTree({ accounts, level = 0, onAddSubAccount, onEditAccount, onDeleteAccount }: AccountTreeProps) {
   return (
-    <div className="space-y-1 w-full">
+    <div className="space-y-1 w-full min-w-[800px] md:min-w-full">
       {accounts.map((account) => (
         <AccountItem 
           key={account.id} 
@@ -70,8 +71,8 @@ function AccountItem({ account, level, onAddSubAccount, onEditAccount, onDeleteA
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <div className={cn("flex flex-col gap-2 p-2 rounded-md hover:bg-muted/50 group", `ml-${level * 4}`)}>
-            <div className="flex items-center gap-2">
+        <div className={cn("flex flex-col gap-2 p-2 rounded-md hover:bg-muted/50 group", `pl-${level * 4}`)}>
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                 <div className='w-6'>
                 {hasChildren && (
                     <CollapsibleTrigger asChild>
@@ -107,7 +108,7 @@ function AccountItem({ account, level, onAddSubAccount, onEditAccount, onDeleteA
                 </div>
             </div>
             {account.classifications && account.classifications.length > 0 && (
-                 <div className={cn("flex items-center gap-2 flex-wrap", `ml-8`)}>
+                 <div className={cn("flex items-center gap-2 flex-wrap", `pl-8`)}>
                      {account.classifications.map(c => <Badge key={c} variant="secondary">{c}</Badge>)}
                  </div>
             )}

@@ -171,17 +171,17 @@ export default function UsersPage() {
     <>
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
                   <CardTitle className="font-headline">Users Directory</CardTitle>
                   <CardDescription>Manage system users and permissions.</CardDescription>
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={fetchData} disabled={loading}>
+              <div className="flex gap-2 w-full sm:w-auto">
+                <Button variant="outline" onClick={fetchData} disabled={loading} className="flex-1 sm:flex-initial">
                     {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
                     Refresh
                 </Button>
-                <Button onClick={handleAddUser}>
+                <Button onClick={handleAddUser} className="flex-1 sm:flex-initial">
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Add New User
                 </Button>
@@ -207,8 +207,8 @@ export default function UsersPage() {
                     <TableHeader>
                     <TableRow>
                         <TableHead>User</TableHead>
-                        <TableHead>Role</TableHead>
-                        <TableHead>Status</TableHead>
+                        <TableHead className="hidden md:table-cell">Role</TableHead>
+                        <TableHead className="hidden sm:table-cell">Status</TableHead>
                         <TableHead>
                         <span className="sr-only">Actions</span>
                         </TableHead>
@@ -232,17 +232,17 @@ export default function UsersPage() {
                             </Avatar>
                             <div className="grid gap-1">
                                 <p className="text-sm font-medium leading-none">{user.name}</p>
-                                <p className="text-sm text-muted-foreground ltr">{user.mobile}</p>
-                                <p className="text-sm text-muted-foreground">{user.email}</p>
+                                <p className="text-sm text-muted-foreground ltr hidden sm:block">{user.mobile}</p>
+                                <p className="text-sm text-muted-foreground hidden md:block">{user.email}</p>
                             </div>
                             </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden md:table-cell">
                             <div className='flex flex-wrap gap-1'>
                             {user.role.map(r => <Badge variant="secondary" key={r}>{r}</Badge>)}
                             </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden sm:table-cell">
                             <Badge variant={user.status === 'نشط' ? 'default' : 'secondary'}
                             className={user.status === 'نشط' ? 'bg-green-100 text-green-800' : ''}
                             >

@@ -130,17 +130,17 @@ export default function ChartOfAccountsPage() {
     <>
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
                   <CardTitle className="font-headline">Chart of Accounts</CardTitle>
                   <CardDescription>Browse and manage your accounting tree.</CardDescription>
               </div>
-              <div className='flex gap-2'>
-                  <Button variant="outline" onClick={refreshAccounts} disabled={loading}>
+              <div className='flex gap-2 w-full sm:w-auto'>
+                  <Button variant="outline" onClick={refreshAccounts} disabled={loading} className="flex-1 sm:flex-initial">
                       {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
                       Refresh
                   </Button>
-                  <Button onClick={() => handleAddAccount()}>
+                  <Button onClick={() => handleAddAccount()} className="flex-1 sm:flex-initial">
                       <PlusCircle className="mr-2 h-4 w-4" />
                       Add Main Account
                   </Button>
@@ -157,7 +157,7 @@ export default function ChartOfAccountsPage() {
                 </AlertDescription>
             </Alert>
            )}
-          <div className="border rounded-md p-4 min-h-[400px] flex items-center justify-center">
+          <div className="border rounded-md p-2 sm:p-4 min-h-[400px] flex items-center justify-center overflow-x-auto">
             {loading ? (
                 <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <Loader2 className="h-8 w-8 animate-spin" />
