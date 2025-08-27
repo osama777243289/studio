@@ -53,14 +53,20 @@ export default function ChartOfAccountsPage() {
     
     const fetchAccounts = async () => {
         setLoading(true);
-        let fetchedAccounts = await getAccounts();
-        // If no accounts, seed the data
-        if (fetchedAccounts.length === 0) {
-            await seedInitialData();
-            fetchedAccounts = await getAccounts();
+        try {
+            let fetchedAccounts = await getAccounts();
+            // If no accounts, seed the data
+            if (fetchedAccounts.length === 0) {
+                await seedInitialData();
+                fetchedAccounts = await getAccounts();
+            }
+            setAccounts(fetchedAccounts);
+        } catch (error) {
+            console.error("Failed to fetch or seed accounts:", error);
+            // Optionally, show a toast notification
+        } finally {
+            setLoading(false);
         }
-        setAccounts(fetchedAccounts);
-        setLoading(false);
     };
 
     useEffect(() => {
@@ -68,8 +74,10 @@ export default function ChartOfAccountsPage() {
     }, []);
 
     const refreshAccounts = async () => {
+        setLoading(true);
         const fetchedAccounts = await getAccounts();
         setAccounts(fetchedAccounts);
+        setLoading(false);
     };
 
     const handleAddAccount = (parentId: string | null = null, parentLevel: number = 0) => {
