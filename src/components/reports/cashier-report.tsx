@@ -1,4 +1,5 @@
 
+
 import {
   Card,
   CardContent,
@@ -16,30 +17,31 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { AlertCircle, Calendar, CheckCircle2, FileText, Gift, Lightbulb, MessageSquare, RefreshCw, Wallet, CreditCard, BookUser, Hash } from "lucide-react";
+import { AlertCircle, Calendar, CheckCircle2, FileText, Gift, Lightbulb, MessageSquare, RefreshCw, Wallet, CreditCard, BookUser, Hash, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
+import { SalesRecord } from "@/lib/firebase/firestore/sales";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+// A placeholder for a function that would fetch a single record by ID
+// You'll need to implement this in your firestore/sales.ts file
+// import { getSaleRecordById } from "@/lib/firebase/firestore/sales";
 
 
-const reportData = {
-    id: "REP-20240610-001",
-    postingNumber: "JV-00512",
-    period: "المسائية",
-    date: "يونيو 9, 2025",
-    status: "تمت المطابقة",
-    sales: [
-        { method: "نقداً", icon: Wallet, original: 4000.00, actual: 4000.00, difference: 0, account: "كاشير 1" },
-        { method: "بطاقة/شبكة", icon: CreditCard, original: 1000.00, actual: 1000.00, difference: 0, account: "شبكة زهرة جنائن" },
-        { method: "أجل/ائتمان", icon: BookUser, original: 1000.00, actual: 1000.00, difference: 0, account: "التوصيل اسامه" },
-    ],
-    matchNotes: "مطابقة تلقائية للبيانات الافتراضية المدخلة للفترة المسائية.",
-    matchDate: "يونيو 10, 2025 01:00",
-    anomaly: {
-        found: false,
-        title: "لم يتم اكتشاف أي حالات شاذة",
-        description: "بيانات افتراضية. لا توجد حالات شاذة.",
-        details: "هذا التقرير يستند إلى بيانات الإدخال الأولية للمبيعات."
-    }
-}
+// Mock data for initial design and when no data is fetched
+const mockReportData: SalesRecord = {
+    id: "REP-LOADING-001",
+    postingNumber: "JV-LOADING",
+    period: "Morning",
+    date: { toDate: () => new Date() } as any,
+    status: "Pending Upload",
+    cashier: "Loading...",
+    total: 0,
+    cash: { accountId: "", accountName: "كاشير 1", amount: 4000.00 },
+    cards: [{ accountId: "", accountName: "شبكة زهرة جنائن", amount: 1000.00 }],
+    credits: [{ accountId: "", accountName: "التوصيل اسامه", amount: 1000.00 }],
+    createdAt: { toDate: () => new Date() } as any,
+};
+
 
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR', minimumFractionDigits: 2 }).format(amount);
@@ -51,14 +53,69 @@ const getDifferenceText = (diff: number) => {
 }
 
 export function CashierReport() {
+    const searchParams = useSearchParams();
+    const recordId = searchParams.get('id');
+    const [record, setRecord] = useState<SalesRecord | null>(null);
+    const [loading, setLoading] = useState(true);
 
-    const totalOriginal = reportData.sales.reduce((sum, item) => sum + item.original, 0);
-    const totalActual = reportData.sales.reduce((sum, item) => sum + item.actual, 0);
+    useEffect(() => {
+        if (recordId) {
+            // In a real app, you would fetch the record from Firestore here
+            // For now, we'll use mock data and simulate a fetch.
+            console.log("Fetching record for ID:", recordId);
+            setLoading(true);
+            setTimeout(() => { // Simulate network delay
+                // To-do: Replace with actual `getSaleRecordById(recordId)`
+                // For now, we'll just use the mock data and adjust it
+                const fetchedRecord = {
+                    ...mockReportData,
+                    id: recordId,
+                    // Simulate a status based on what you'd fetch
+                    // For example, if it's a new record, it might be 'Pending Upload'
+                    status: 'Pending Upload' 
+                };
+                setRecord(fetchedRecord);
+                setLoading(false);
+            }, 1000);
+        } else {
+             setLoading(false);
+        }
+    }, [recordId]);
+
+    const reportData = record || mockReportData;
+    const isPreliminary = reportData.status === 'Pending Upload';
+    const reportStatus = isPreliminary ? "غير مطابق" : (reportData.status === 'Matched' ? "تمت المطابقة" : "قيد المطابقة");
+    
+    // Use actuals from record if they exist (i.e., status is 'Matched'), otherwise use 0 for preliminary report
+    const getActualAmount = (type: 'cash' | 'card' | 'credit', index: number = 0) => {
+        if (isPreliminary) return 0;
+        // In a real scenario, actuals would be stored on the record after matching.
+        // For now, we assume if it's not preliminary, it's matched perfectly.
+        if (type === 'cash') return reportData.cash.amount;
+        if (type === 'card') return reportData.cards[index]?.amount || 0;
+        if (type === 'credit') return reportData.credits[index]?.amount || 0;
+        return 0;
+    };
+    
+    const getSalesData = () => {
+        const sales = [];
+        if (reportData.cash.amount > 0) sales.push({ method: "نقداً", icon: Wallet, original: reportData.cash.amount, actual: getActualAmount('cash'), account: reportData.cash.accountName || '' });
+        reportData.cards.forEach((card, i) => sales.push({ method: "بطاقة/شبكة", icon: CreditCard, original: card.amount, actual: getActualAmount('card', i), account: card.accountName || '' }));
+        reportData.credits.forEach((credit, i) => sales.push({ method: "أجل/ائتمان", icon: BookUser, original: credit.amount, actual: getActualAmount('credit', i), account: credit.accountName || '' }));
+        return sales;
+    }
+    const salesData = getSalesData();
+    const totalOriginal = salesData.reduce((sum, item) => sum + item.original, 0);
+    const totalActual = salesData.reduce((sum, item) => sum + item.actual, 0);
+
+    if (loading) {
+        return <div className="flex justify-center items-center min-h-[400px]"><Loader2 className="h-8 w-8 animate-spin" /></div>
+    }
     
   return (
     <div className="bg-background rounded-lg border p-4 sm:p-6 md:p-8 space-y-6 printable-area">
         <div className="text-center">
-            <h1 className="text-2xl font-bold font-headline">تقرير مبيعات الكاشير للفترة: {reportData.period} ليوم: {reportData.date}</h1>
+            <h1 className="text-2xl font-bold font-headline">تقرير مبيعات الكاشير للفترة: {reportData.period === 'Morning' ? 'الصباحية' : 'المسائية'} ليوم: {reportData.date.toDate().toLocaleDateString('ar-SA')}</h1>
             <p className="text-sm text-muted-foreground">رقم التقرير: {reportData.id}</p>
         </div>
 
@@ -66,11 +123,11 @@ export function CashierReport() {
             <CardHeader className="flex-row items-center justify-between">
                 <div className="flex items-center gap-2">
                     <RefreshCw className="h-5 w-5" />
-                    <CardTitle className="text-lg">مبيعات {reportData.period} ليوم: {reportData.date}</CardTitle>
+                    <CardTitle className="text-lg">مبيعات {reportData.period === 'Morning' ? 'الصباحية' : 'المسائية'} ليوم: {reportData.date.toDate().toLocaleDateString('ar-SA')}</CardTitle>
                 </div>
-                 <Badge variant={reportData.status === 'تمت المطابقة' ? 'default' : 'secondary'} className="bg-green-100 text-green-800 border-green-300">
-                    <CheckCircle2 className="ml-1 h-4 w-4" />
-                    {reportData.status}
+                 <Badge variant={reportStatus === 'تمت المطابقة' ? 'default' : 'destructive'} className={reportStatus === 'تمت المطابقة' ? "bg-green-100 text-green-800 border-green-300" : "bg-yellow-100 text-yellow-800 border-yellow-300"}>
+                    {reportStatus === 'تمت المطابقة' ? <CheckCircle2 className="ml-1 h-4 w-4" /> : <AlertCircle className="ml-1 h-4 w-4" />}
+                    {reportStatus}
                 </Badge>
             </CardHeader>
             <CardContent>
@@ -91,8 +148,9 @@ export function CashierReport() {
                         </TableRow>
                     </TableHeader>
                      <TableBody>
-                        {reportData.sales.map((item, index) => {
+                        {salesData.map((item, index) => {
                              const Icon = item.icon;
+                             const difference = item.actual - item.original;
                              return (
                                 <TableRow key={index}>
                                     <TableCell className="font-medium flex items-center gap-2">
@@ -101,7 +159,7 @@ export function CashierReport() {
                                     </TableCell>
                                     <TableCell className="text-center">{item.original.toFixed(2)}</TableCell>
                                     <TableCell className="text-center">{item.actual.toFixed(2)}</TableCell>
-                                    <TableCell className="text-center">{getDifferenceText(item.difference)}</TableCell>
+                                    <TableCell className="text-center">{getDifferenceText(difference)}</TableCell>
                                     <TableCell>{item.account}: {item.original.toFixed(2)}</TableCell>
                                 </TableRow>
                             )
@@ -120,12 +178,12 @@ export function CashierReport() {
             </CardHeader>
             <CardContent className="space-y-2">
                 <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 text-sm">
-                    <p>نقداً (أصلي)</p><Separator className="flex-1" /><p className="font-mono text-left">{reportData.sales.find(s=>s.method==='نقداً')?.original.toFixed(2) || '0.00'} ريال</p>
-                    <p>نقداً (فعلي)</p><Separator className="flex-1" /><p className="font-mono text-left">{reportData.sales.find(s=>s.method==='نقداً')?.actual.toFixed(2) || '0.00'} ريال مطابق</p>
-                    <p>بطاقات (أصلي)</p><Separator className="flex-1" /><p className="font-mono text-left">{reportData.sales.find(s=>s.method==='بطاقة/شبكة')?.original.toFixed(2) || '0.00'} ريال</p>
-                    <p>بطاقات (فعلي)</p><Separator className="flex-1" /><p className="font-mono text-left">{reportData.sales.find(s=>s.method==='بطاقة/شبكة')?.actual.toFixed(2) || '0.00'} ريال مطابق</p>
-                    <p>آجل (أصلي)</p><Separator className="flex-1" /><p className="font-mono text-left">{reportData.sales.find(s=>s.method==='أجل/ائتمان')?.original.toFixed(2) || '0.00'} ريال</p>
-                    <p>آجل (فعلي)</p><Separator className="flex-1" /><p className="font-mono text-left">{reportData.sales.find(s=>s.method==='أجل/ائتمان')?.actual.toFixed(2) || '0.00'} ريال مطابق</p>
+                    {salesData.map((item, index) => (
+                        <React.Fragment key={index}>
+                           <p>{item.method} (أصلي)</p><Separator className="flex-1" /><p className="font-mono text-left">{item.original.toFixed(2)} ريال</p>
+                           <p>{item.method} (فعلي)</p><Separator className="flex-1" /><p className="font-mono text-left">{item.actual.toFixed(2)} ريال {getDifferenceText(item.actual - item.original)}</p>
+                        </React.Fragment>
+                    ))}
                 </div>
                  <div className="bg-muted/50 rounded-md p-3 font-bold text-base flex justify-between items-center">
                     <span>الإجمالي (الأصلي)</span>
@@ -133,7 +191,7 @@ export function CashierReport() {
                 </div>
                 <div className="bg-muted/50 rounded-md p-3 font-bold text-base flex justify-between items-center">
                     <span>الإجمالي (الفعلي)</span>
-                    <span className="font-mono">{totalActual.toFixed(2)} ريال (مطابق)</span>
+                    <span className="font-mono">{totalActual.toFixed(2)} ريال ({getDifferenceText(totalActual - totalOriginal)})</span>
                 </div>
             </CardContent>
         </Card>
@@ -146,20 +204,19 @@ export function CashierReport() {
                 </div>
             </CardHeader>
             <CardContent className="space-y-2">
-                <p className="text-sm text-muted-foreground">{reportData.matchNotes}</p>
+                <p className="text-sm text-muted-foreground">{isPreliminary ? "لم تتم المطابقة بعد." : reportData.matchNotes || "لا توجد ملاحظات."}</p>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Calendar className="h-4 w-4" />
-                    <span>تاريخ المطابقة: {reportData.matchDate}</span>
+                    <span>تاريخ المطابقة: {isPreliminary ? "N/A" : new Date().toLocaleDateString('ar-SA')}</span>
                 </div>
             </CardContent>
         </Card>
         
-        <Alert variant={reportData.anomaly.found ? "destructive" : "default"}>
-            {reportData.anomaly.found ? <AlertCircle className="h-4 w-4" /> : <Lightbulb className="h-4 w-4" />}
-            <AlertTitle>{reportData.anomaly.title}</AlertTitle>
+        <Alert variant={reportStatus !== 'تمت المطابقة' ? "destructive" : "default"}>
+            {reportStatus !== 'تمت المطابقة' ? <AlertCircle className="h-4 w-4" /> : <Lightbulb className="h-4 w-4" />}
+            <AlertTitle>{isPreliminary ? "تقرير مبدئي" : "حالة المطابقة"}</AlertTitle>
             <AlertDescription>
-                {reportData.anomaly.description}
-                <p className="text-xs text-muted-foreground mt-2">{reportData.anomaly.details}</p>
+                {isPreliminary ? "هذا التقرير للإدخال الأولي فقط والمبالغ الفعلية لم تسجل بعد." : "تمت مطابقة هذا التقرير."}
             </AlertDescription>
         </Alert>
 

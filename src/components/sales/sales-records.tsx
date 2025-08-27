@@ -107,20 +107,19 @@ export function SalesRecords() {
                     <TableCell>
                     <Badge variant={getStatusVariant(translateStatus(record.status))} className={
                         record.status === 'Matched' ? 'bg-green-100 text-green-800' : 
-                        record.status === 'Pending Matching' ? 'bg-yellow-100 text-yellow-800' : ''
+                        record.status === 'Pending Matching' ? 'bg-yellow-100 text-yellow-800' : 
+                        record.status === 'Pending Upload' ? 'bg-blue-100 text-blue-800' : ''
                     }>
                         {translateStatus(record.status)}
                     </Badge>
                     </TableCell>
                     <TableCell>
-                        {record.status !== 'Pending Upload' && (
-                            <Button asChild variant="outline" size="sm">
-                                <Link href={`/reports/cashier-sales?id=${record.id}`}>
-                                    <Printer className="ml-2 h-4 w-4"/>
-                                    عرض وطباعة
-                                </Link>
-                            </Button>
-                        )}
+                        <Button asChild variant="outline" size="sm">
+                            <Link href={`/reports/cashier-sales?id=${record.id}`}>
+                                <Printer className="ml-2 h-4 w-4"/>
+                                عرض وطباعة
+                            </Link>
+                        </Button>
                     </TableCell>
                 </TableRow>
                 ))}
