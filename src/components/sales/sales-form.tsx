@@ -106,7 +106,6 @@ export function SalesForm({ accounts }: SalesFormProps) {
   const customerAccounts = useMemo(() => getAccountsByClassification(accounts, ['عملاء']), [accounts]);
 
   const onSubmit = async (data: any) => {
-    form.formState.isSubmitting = true;
     try {
       await addSaleRecord(data);
       toast({
@@ -129,8 +128,6 @@ export function SalesForm({ accounts }: SalesFormProps) {
         description: error.message || 'لا يمكن حفظ سجلات المبيعات. الرجاء مراجعة اتصالك.',
         variant: 'destructive',
       });
-    } finally {
-        form.formState.isSubmitting = false;
     }
   }
   
@@ -320,7 +317,7 @@ export function SalesForm({ accounts }: SalesFormProps) {
                        {form.watch(`cards.${index}.receiptImageFile`) && (
                           <div className="text-xs text-green-600 flex items-center gap-1 mt-1">
                               <Paperclip className="h-3 w-3" />
-                              تم تحديد ملف الصورة. سيتم الرفع عند الحفظ.
+                              تم إرفاق الصورة وجاهزة للرفع عند الحفظ.
                           </div>
                       )}
                   </div>
@@ -384,8 +381,14 @@ export function SalesForm({ accounts }: SalesFormProps) {
       </CardContent>
       <CardFooter>
         <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white" disabled={form.formState.isSubmitting}>
-             {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            إرسال وتحليل المبيعات
+             {form.formState.isSubmitting ? (
+               <>
+                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                 جاري الحفظ...
+               </>
+             ) : (
+                'إرسال وتحليل المبيعات'
+             )}
         </Button>
       </CardFooter>
     </form>
