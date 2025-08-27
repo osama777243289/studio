@@ -161,10 +161,14 @@ export const addSaleRecord = async (
 
   const enrichedCards =
     data.cards?.map((card) => {
-      return {
+      const newCard: any = {
         ...card,
         accountName: accountMap.get(card.accountId) || 'Unknown',
       };
+      if (!card.receiptImageUrl) {
+        delete newCard.receiptImageUrl;
+      }
+      return newCard;
     }) || [];
 
   const enrichedCredits =

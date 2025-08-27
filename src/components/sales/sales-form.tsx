@@ -123,7 +123,15 @@ export function SalesForm({ accounts }: SalesFormProps) {
         title: 'تم حفظ سجل المبيعات',
         description: `تم تسجيل المبيعات بنجاح لـ ${format(data.date, 'PPP')} (${data.period}).`
       });
-      form.reset();
+      form.reset({
+        date: new Date(),
+        period: 'Morning',
+        salesperson: '',
+        postingNumber: '',
+        cash: { accountId: '', amount: 0 },
+        cards: [{ accountId: '', amount: 0, receiptImageUrl: '' }],
+        credits: [{ accountId: '', amount: 0 }],
+      });
     } catch (error) {
        console.error("Failed to add sales record:", error);
       toast({
@@ -134,14 +142,14 @@ export function SalesForm({ accounts }: SalesFormProps) {
     }
   }
   
-  const handleImageUpload = async (file: File, index: number) => {
+  const handleImageUpload = async (file: File | undefined, index: number) => {
     if (file) {
       if (file.size > 1024 * 1024 * 2) { // 2MB limit
         toast({ title: 'خطأ', description: 'حجم الصورة يجب أن يكون أقل من 2 ميجابايت.', variant: 'destructive' });
         return;
       }
       const dataUri = await fileToDataUri(file);
-      form.setValue(`cards.${index}.receiptImageUrl`, dataUri);
+      form.setValue(`cards.${index}.receiptImageUrl`, dataUri, { shouldValidate: true });
     }
   };
 
@@ -282,7 +290,7 @@ export function SalesForm({ accounts }: SalesFormProps) {
                     <div className="flex justify-between items-center">
                         <Label>بطاقة {index + 1}</Label>
                         {cardFields.length > 1 &&
-                        <Button variant="ghost" size="icon" onClick={() => removeCard(index)}>
+                        <Button type="button" variant="ghost" size="icon" onClick={() => removeCard(index)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                         }
@@ -316,11 +324,11 @@ export function SalesForm({ accounts }: SalesFormProps) {
                             type="file"
                             accept="image/*"
                             className="flex-grow"
-                             onChange={(e) => e.target.files && handleImageUpload(e.target.files[0], index)}
+                            onChange={(e) => handleImageUpload(e.target.files?.[0], index)}
                          />
                       </div>
                        {form.watch(`cards.${index}.receiptImageUrl`) && (
-                          <div className="text-xs text-green-600 flex items-center gap-1">
+                          <div className="text-xs text-green-600 flex items-center gap-1 mt-1">
                               <Paperclip className="h-3 w-3" />
                               تم إرفاق الصورة بنجاح.
                           </div>
@@ -348,7 +356,7 @@ export function SalesForm({ accounts }: SalesFormProps) {
                   <div className="flex justify-between items-center">
                     <Label>ذمة {index + 1}</Label>
                      {creditFields.length > 1 &&
-                        <Button variant="ghost" size="icon" onClick={() => removeCredit(index)}>
+                        <Button type="button" variant="ghost" size="icon" onClick={() => removeCredit(index)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                      }
