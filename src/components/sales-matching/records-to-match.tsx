@@ -15,8 +15,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { ListChecks } from 'lucide-react';
-import type { SalesRecord } from './matching-form';
+import { SalesRecord } from '@/lib/firebase/firestore/sales';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 
 interface RecordsToMatchProps {
@@ -32,37 +33,41 @@ export function RecordsToMatch({ records, onSelectRecord, selectedRecord }: Reco
       <CardHeader>
         <div className="flex items-center gap-2">
           <ListChecks className="h-6 w-6" />
-          <CardTitle>السجلات بانتظار المطابقة</CardTitle>
+          <CardTitle>Records Pending Matching</CardTitle>
         </div>
         <CardDescription>
-          اختر سجلاً من القائمة أدناه لبدء عملية المطابقة.
+          Select a record from the list below to start the matching process.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>التاريخ</TableHead>
-              <TableHead>الفترة</TableHead>
-              <TableHead>الكاشير</TableHead>
-              <TableHead>الإجمالي</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {records.map((record, index) => (
-              <TableRow 
-                key={index} 
-                className={cn("cursor-pointer hover:bg-muted/50", selectedRecord?.date === record.date && selectedRecord?.period === record.period && 'bg-primary/10 hover:bg-primary/20')}
-                onClick={() => onSelectRecord(record)}
-              >
-                <TableCell>{record.date}</TableCell>
-                <TableCell>{record.period}</TableCell>
-                <TableCell>{record.cashier}</TableCell>
-                <TableCell>{record.total.toFixed(2)} ريال</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        {records.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">No records are currently pending matching.</p>
+        ) : (
+            <Table>
+            <TableHeader>
+                <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>Period</TableHead>
+                <TableHead>Cashier</TableHead>
+                <TableHead>Total</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {records.map((record, index) => (
+                <TableRow 
+                    key={record.id}
+                    className={cn("cursor-pointer hover:bg-muted/50", selectedRecord?.id === record.id && 'bg-primary/10 hover:bg-primary/20')}
+                    onClick={() => onSelectRecord(record)}
+                >
+                    <TableCell>{format(record.date.toDate(), 'PPP')}</TableCell>
+                    <TableCell>{record.period}</TableCell>
+                    <TableCell>{record.cashier}</TableCell>
+                    <TableCell>${record.total.toFixed(2)}</TableCell>
+                </TableRow>
+                ))}
+            </TableBody>
+            </Table>
+        )}
       </CardContent>
     </Card>
   );

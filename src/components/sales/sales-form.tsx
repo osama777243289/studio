@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -39,9 +39,14 @@ import {
   Trash2,
   BookUser,
   Pencil,
+  Loader2,
 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import type { Account } from '../chart-of-accounts/account-tree';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { addSaleRecord, salesRecordSchema, type SalesRecordFormData } from '@/lib/firebase/firestore/sales';
+import { useToast } from '@/hooks/use-toast';
 
 
 interface SalesFormProps {
@@ -53,8 +58,11 @@ const getAccountsByClassification = (accounts: Account[], classifications: strin
     const flattened: Account[] = [];
     const traverse = (accs: Account[]) => {
         for (const acc of accs) {
-            if (acc.classifications.some(c => classifications.includes(c))) {
-                flattened.push(acc);
+             // A transactional account is one that does not have children.
+            if (!acc.children || acc.children.length === 0) {
+                if (acc.classifications.some(c => classifications.includes(c))) {
+                    flattened.push(acc);
+                }
             }
             if (acc.children) {
                 traverse(acc.children);
@@ -67,116 +75,162 @@ const getAccountsByClassification = (accounts: Account[], classifications: strin
 
 
 export function SalesForm({ accounts }: SalesFormProps) {
-  const [cardAccounts, setCardAccounts] = useState([{ id: 1, accountId: '', amount: '' }]);
-  const [creditAccounts, setCreditAccounts] = useState([{ id: 1, accountId: '', amount: '' }]);
-  
-  const cashAccounts = useMemo(() => getAccountsByClassification(accounts, ['صندوق', 'بنك']), [accounts]);
-  const networkAccounts = useMemo(() => getAccountsByClassification(accounts, ['شبكات']), [accounts]);
-  const customerAccounts = useMemo(() => getAccountsByClassification(accounts, ['عملاء']), [accounts]);
+  const { toast } = useToast();
 
-  const addCardAccount = () => {
-    setCardAccounts([...cardAccounts, { id: Date.now(), accountId: '', amount: '' }]);
-  };
+  const form = useForm<SalesRecordFormData>({
+    resolver: zodResolver(salesRecordSchema),
+    defaultValues: {
+        date: new Date(),
+        period: 'Morning',
+        salesperson: '',
+        cash: { accountId: '', amount: 0 },
+        cards: [{ accountId: '', amount: 0 }],
+        credits: [{ accountId: '', amount: 0 }],
+    }
+  });
 
-  const removeCardAccount = (id: number) => {
-    setCardAccounts(cardAccounts.filter((account) => account.id !== id));
-  };
-  
-  const addCreditAccount = () => {
-    setCreditAccounts([...creditAccounts, { id: Date.now(), accountId: '', amount: '' }]);
-  };
+  const { fields: cardFields, append: appendCard, remove: removeCard } = useFieldArray({
+    control: form.control,
+    name: "cards"
+  });
 
-  const removeCreditAccount = (id: number) => {
-    setCreditAccounts(creditAccounts.filter((account) => account.id !== id));
-  };
+  const { fields: creditFields, append: appendCredit, remove: removeCredit } = useFieldArray({
+    control: form.control,
+    name: "credits"
+  });
+
+  const cashAccounts = useMemo(() => getAccountsByClassification(accounts, ['Cashbox', 'Bank']), [accounts]);
+  const networkAccounts = useMemo(() => getAccountsByClassification(accounts, ['Networks']), [accounts]);
+  const customerAccounts = useMemo(() => getAccountsByClassification(accounts, ['Clients']), [accounts]);
+
+
+  const onSubmit = async (data: SalesRecordFormData) => {
+    try {
+      await addSaleRecord(data);
+      toast({
+        title: 'Sales Record Saved',
+        description: `Successfully recorded sales for ${format(data.date, 'PPP')} (${data.period}).`
+      });
+      form.reset();
+    } catch (error) {
+       console.error("Failed to add sales record:", error);
+      toast({
+        title: 'An error occurred',
+        description: `Failed to record sales. Please try again.`,
+        variant: 'destructive',
+      });
+    }
+  }
 
 
   return (
     <Card>
+     <form onSubmit={form.handleSubmit(onSubmit)}>
       <CardHeader>
         <div className="flex items-center gap-2">
             <Pencil className="h-6 w-6" />
-            <CardTitle>إدخال / تعديل المبيعات اليومية</CardTitle>
+            <CardTitle>Enter / Edit Daily Sales</CardTitle>
         </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
           <Alert>
             <Info className="h-4 w-4" />
-            <AlertTitle>إدخال جديد</AlertTitle>
+            <AlertTitle>New Entry</AlertTitle>
             <AlertDescription>
-              يرجى اختيار تاريخ لبدء إدخال جديد أو تحديد سجل سابق للعرض أو التعديل.
+              Please select a date to start a new entry or select a previous record to view or edit.
             </AlertDescription>
           </Alert>
 
           <div className="space-y-2">
-            <Label htmlFor="date">التاريخ</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={'outline'}
-                  className="w-full justify-start text-left font-normal"
-                >
-                  <CalendarIcon className="ml-2 h-4 w-4" />
-                  <span>اختر تاريخاً</span>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+            <Label htmlFor="date">Date</Label>
+             <Controller
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                    <Popover>
+                        <PopoverTrigger asChild>
+                             <Button
+                                variant={'outline'}
+                                className="w-full justify-start text-left font-normal"
+                                >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
+                )}
+             />
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
-                <Label>الفترة</Label>
+                <Label>Period</Label>
             </div>
-            <RadioGroup defaultValue="morning" className="flex gap-4">
-              <div className="flex items-center space-x-2 space-x-reverse">
-                <RadioGroupItem value="morning" id="morning" />
-                <Label htmlFor="morning">صباح</Label>
-              </div>
-              <div className="flex items-center space-x-2 space-x-reverse">
-                <RadioGroupItem value="evening" id="evening" />
-                <Label htmlFor="evening">مساء</Label>
-              </div>
-            </RadioGroup>
+             <Controller
+                control={form.control}
+                name="period"
+                render={({ field }) => (
+                    <RadioGroup onValueChange={field.onChange} value={field.value} className="flex gap-4">
+                        <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="Morning" id="morning" />
+                            <Label htmlFor="morning">Morning</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="Evening" id="evening" />
+                            <Label htmlFor="evening">Evening</Label>
+                        </div>
+                    </RadioGroup>
+                 )}
+              />
           </div>
 
           <div className="space-y-2">
             <div className='flex items-center gap-2'>
               <User className="h-5 w-5" />
-              <Label htmlFor="salesperson">مسؤول البيع</Label>
+              <Label htmlFor="salesperson">Salesperson</Label>
             </div>
-            <Input id="salesperson" placeholder="يوسف خالد محمد" />
+            <Input id="salesperson" placeholder="e.g. Yousef Khaled" {...form.register('salesperson')} />
+             {form.formState.errors.salesperson && <p className="text-sm font-medium text-destructive">{form.formState.errors.salesperson.message}</p>}
           </div>
 
           <Card className="p-4">
             <CardHeader className="p-2">
                 <div className="flex items-center gap-2">
                     <Wallet className="h-5 w-5" />
-                    <CardTitle className="text-lg">نقداً</CardTitle>
+                    <CardTitle className="text-lg">Cash</CardTitle>
                 </div>
             </CardHeader>
             <CardContent className="p-2 space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="cash-account">الحساب</Label>
-                <Select>
-                  <SelectTrigger id="cash-account">
-                    <SelectValue placeholder="اختر حساب النقدية" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {cashAccounts.map(acc => <SelectItem key={acc.id} value={acc.id}>{acc.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="cash-account">Account</Label>
+                 <Controller
+                    control={form.control}
+                    name="cash.accountId"
+                    render={({ field }) => (
+                         <Select onValueChange={field.onChange} value={field.value}>
+                            <SelectTrigger id="cash-account">
+                                <SelectValue placeholder="Select cash account" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {cashAccounts.map(acc => <SelectItem key={acc.id} value={acc.id}>{acc.name}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    )}
+                />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="cash-amount">المبلغ</Label>
-                <Input id="cash-amount" placeholder="0.00" type="number" />
+                <Label htmlFor="cash-amount">Amount</Label>
+                <Input id="cash-amount" placeholder="0.00" type="number" {...form.register('cash.amount', { valueAsNumber: true })} />
               </div>
             </CardContent>
           </Card>
@@ -185,40 +239,46 @@ export function SalesForm({ accounts }: SalesFormProps) {
             <CardHeader className="p-2">
                 <div className="flex items-center gap-2">
                     <CreditCard className="h-5 w-5" />
-                    <CardTitle className="text-lg">بطاقة/شبكة</CardTitle>
+                    <CardTitle className="text-lg">Card/Network</CardTitle>
                 </div>
             </CardHeader>
             <CardContent className="p-2 space-y-4">
-              {cardAccounts.map((account, index) => (
-                <div key={account.id} className="p-3 border rounded-md space-y-3">
-                  <div className="flex justify-between items-center">
-                    <Label>بطاقة {index + 1}</Label>
-                    {cardAccounts.length > 1 &&
-                      <Button variant="ghost" size="icon" onClick={() => removeCardAccount(account.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    }
-                  </div>
+              {cardFields.map((field, index) => (
+                <div key={field.id} className="p-3 border rounded-md space-y-3 relative">
+                    <div className="flex justify-between items-center">
+                        <Label>Card {index + 1}</Label>
+                        {cardFields.length > 1 &&
+                        <Button variant="ghost" size="icon" onClick={() => removeCard(index)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                        }
+                    </div>
                    <div className="space-y-2">
-                    <Label htmlFor={`card-name-${account.id}`}>حساب البطاقة</Label>
-                     <Select>
-                        <SelectTrigger id={`card-name-${account.id}`}>
-                            <SelectValue placeholder="اختر حساب الشبكة" />
-                        </SelectTrigger>
-                        <SelectContent>
-                           {networkAccounts.map(acc => <SelectItem key={acc.id} value={acc.id}>{acc.name}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
+                    <Label htmlFor={`card-name-${field.id}`}>Card Account</Label>
+                     <Controller
+                        control={form.control}
+                        name={`cards.${index}.accountId`}
+                        render={({ field: selectField }) => (
+                            <Select onValueChange={selectField.onChange} value={selectField.value}>
+                                <SelectTrigger id={`card-name-${field.id}`}>
+                                    <SelectValue placeholder="Select network account" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                {networkAccounts.map(acc => <SelectItem key={acc.id} value={acc.id}>{acc.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        )}
+                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor={`card-amount-${account.id}`}>المبلغ</Label>
-                    <Input id={`card-amount-${account.id}`} placeholder="0.00" type="number" />
+                    <Label htmlFor={`card-amount-${field.id}`}>Amount</Label>
+                    <Input id={`card-amount-${field.id}`} placeholder="0.00" type="number" {...form.register(`cards.${index}.amount`, { valueAsNumber: true })} />
                   </div>
                 </div>
               ))}
-              <Button variant="outline" className="w-full" onClick={addCardAccount}>
-                <PlusCircle className="ml-2 h-4 w-4" />
-                إضافة حساب بطاقة
+              <Button type="button" variant="outline" className="w-full" onClick={() => appendCard({ accountId: '', amount: 0 })}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Add Card Account
               </Button>
             </CardContent>
           </Card>
@@ -227,48 +287,58 @@ export function SalesForm({ accounts }: SalesFormProps) {
             <CardHeader className="p-2">
                  <div className="flex items-center gap-2">
                     <BookUser className="h-5 w-5" />
-                    <CardTitle className="text-lg">أجل/ائتمان</CardTitle>
+                    <CardTitle className="text-lg">Credit/Receivable</CardTitle>
                 </div>
             </CardHeader>
             <CardContent className="p-2 space-y-4">
-              {creditAccounts.map((account, index) => (
-                <div key={account.id} className="p-3 border rounded-md space-y-3">
+              {creditFields.map((field, index) => (
+                <div key={field.id} className="p-3 border rounded-md space-y-3 relative">
                   <div className="flex justify-between items-center">
-                    <Label>أجل {index + 1}</Label>
-                     {creditAccounts.length > 1 &&
-                        <Button variant="ghost" size="icon" onClick={() => removeCreditAccount(account.id)}>
+                    <Label>Credit {index + 1}</Label>
+                     {creditFields.length > 1 &&
+                        <Button variant="ghost" size="icon" onClick={() => removeCredit(index)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                      }
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor={`credit-name-${account.id}`}>حساب العميل</Label>
-                    <Select>
-                        <SelectTrigger id={`credit-name-${account.id}`}>
-                            <SelectValue placeholder="اختر حساب العميل" />
-                        </SelectTrigger>
-                        <SelectContent>
-                           {customerAccounts.map(acc => <SelectItem key={acc.id} value={acc.id}>{acc.name}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
+                    <Label htmlFor={`credit-name-${field.id}`}>Client Account</Label>
+                    <Controller
+                        control={form.control}
+                        name={`credits.${index}.accountId`}
+                        render={({ field: selectField }) => (
+                            <Select onValueChange={selectField.onChange} value={selectField.value}>
+                                <SelectTrigger id={`credit-name-${field.id}`}>
+                                    <SelectValue placeholder="Select client account" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                {customerAccounts.map(acc => <SelectItem key={acc.id} value={acc.id}>{acc.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        )}
+                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor={`credit-amount-${account.id}`}>المبلغ</Label>
-                    <Input id={`credit-amount-${account.id}`} placeholder="0.00" type="number" />
+                    <Label htmlFor={`credit-amount-${field.id}`}>Amount</Label>
+                    <Input id={`credit-amount-${field.id}`} placeholder="0.00" type="number" {...form.register(`credits.${index}.amount`, { valueAsNumber: true })} />
                   </div>
                 </div>
               ))}
-              <Button variant="outline" className="w-full" onClick={addCreditAccount}>
-                <PlusCircle className="ml-2 h-4 w-4" />
-                إضافة حساب أجل
+              <Button type="button" variant="outline" className="w-full" onClick={() => appendCredit({ accountId: '', amount: 0 })}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Add Credit Account
               </Button>
             </CardContent>
           </Card>
         </div>
       </CardContent>
       <CardFooter>
-        <Button className="w-full bg-green-600 hover:bg-green-700 text-white">إرسال وتحليل المبيعات</Button>
+        <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white" disabled={form.formState.isSubmitting}>
+             {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Submit and Analyze Sales
+        </Button>
       </CardFooter>
+    </form>
     </Card>
   );
 }

@@ -1,49 +1,48 @@
 
 'use client';
 
-import { useState } from 'react';
-import { MatchingForm, type SalesRecord } from '@/components/sales-matching/matching-form';
+import { useState, useEffect } from 'react';
+import { MatchingForm } from '@/components/sales-matching/matching-form';
 import { RecordsToMatch } from '@/components/sales-matching/records-to-match';
-
-const initialRecords: SalesRecord[] = [
-  {
-    date: 'يونيو 10, 2025',
-    period: 'الصباحية',
-    cashier: 'يوسف خالد',
-    total: 3500.00,
-    status: 'بانتظار المطابقة',
-    cash: { name: 'صندوق المحل', amount: 1500 },
-    cards: [
-        { name: 'شبكة الراجحي', amount: 1000 },
-        { name: 'شبكة الأهلي', amount: 500 },
-    ],
-    credits: [
-        { name: 'العميل محمد', amount: 500 },
-    ]
-  },
-  {
-    date: 'يونيو 9, 2025',
-    period: 'المسائية',
-    cashier: 'أحمد منصور',
-    total: 4200.00,
-    status: 'بانتظار المطابقة',
-    cash: { name: 'صندوق المحل', amount: 2200 },
-    cards: [
-        { name: 'شبكة الراجحي', amount: 2000 },
-    ],
-    credits: []
-  },
-];
-
+import { getSalesRecordsByStatus, SalesRecord } from '@/lib/firebase/firestore/sales';
+import { Loader2 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function SalesMatchingPage() {
-  const [records, setRecords] = useState<SalesRecord[]>(initialRecords);
-  const [selectedRecord, setSelectedRecord] = useState<SalesRecord | null>(records[0] || null);
+  const [records, setRecords] = useState<SalesRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedRecord, setSelectedRecord] = useState<SalesRecord | null>(null);
+
+  useEffect(() => {
+    const fetchRecords = async () => {
+      setLoading(true);
+      try {
+        const pendingRecords = await getSalesRecordsByStatus('Pending Matching');
+        setRecords(pendingRecords);
+        if (pendingRecords.length > 0) {
+            setSelectedRecord(pendingRecords[0]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch pending sales records:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRecords();
+  }, []);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
       <div className="space-y-8">
-        <RecordsToMatch records={records} onSelectRecord={setSelectedRecord} selectedRecord={selectedRecord}/>
+        {loading ? (
+             <Card>
+                <CardContent className="pt-6 flex justify-center items-center min-h-[200px]">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </CardContent>
+            </Card>
+        ) : (
+             <RecordsToMatch records={records} onSelectRecord={setSelectedRecord} selectedRecord={selectedRecord}/>
+        )}
       </div>
       <div className="space-y-8">
         <MatchingForm record={selectedRecord} />

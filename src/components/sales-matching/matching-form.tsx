@@ -17,22 +17,7 @@ import { FileCheck, Coins, Receipt, Wallet, CreditCard, BookUser, MessageSquare,
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useEffect, useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-
-export interface AccountDetail {
-    name: string;
-    amount: number;
-}
-
-export interface SalesRecord {
-    date: string;
-    period: 'الصباحية' | 'المسائية';
-    cashier: string;
-    total: number;
-    status: string;
-    cash: AccountDetail;
-    cards: AccountDetail[];
-    credits: AccountDetail[];
-}
+import { SalesRecord, AccountDetail } from '@/lib/firebase/firestore/sales';
 
 interface MatchingFormProps {
     record: SalesRecord | null;
@@ -57,15 +42,15 @@ export function MatchingForm({ record }: MatchingFormProps) {
              <CardHeader>
                 <div className="flex items-center gap-2">
                 <FileCheck className="h-6 w-6" />
-                <CardTitle>مطابقة المبيعات</CardTitle>
+                <CardTitle>Match Sales</CardTitle>
                 </div>
             </CardHeader>
             <CardContent>
                 <Alert>
                     <Info className="h-4 w-4" />
-                    <AlertTitle>لا يوجد سجل محدد</AlertTitle>
+                    <AlertTitle>No Record Selected</AlertTitle>
                     <AlertDescription>
-                        يرجى تحديد سجل من قائمة "السجلات بانتظار المطابقة" لبدء العمل.
+                        Please select a record from the "Records Pending Matching" list to begin.
                     </AlertDescription>
                 </Alert>
             </CardContent>
@@ -98,7 +83,7 @@ export function MatchingForm({ record }: MatchingFormProps) {
   const registeredCash = record.cash?.amount || 0;
   const registeredCards = record.cards.reduce((sum, acc) => sum + acc.amount, 0);
   const registeredCredits = record.credits.reduce((sum, acc) => sum + acc.amount, 0);
-  const totalRegistered = registeredCash + registeredCards + registeredCredits;
+  const totalRegistered = record.total;
   
   const actualCash = getNumericValue('cash');
   const actualCards = record.cards.reduce((sum, acc, i) => sum + getNumericValue(`card-${i}`), 0);
@@ -138,10 +123,10 @@ export function MatchingForm({ record }: MatchingFormProps) {
       <CardHeader>
         <div className="flex items-center gap-2">
           <FileCheck className="h-6 w-6" />
-          <CardTitle>مطابقة المبيعات</CardTitle>
+          <CardTitle>Match Sales</CardTitle>
         </div>
         <CardDescription>
-            التاريخ: {record.date} - الفترة: {record.period} - الكاشير: {record.cashier}
+            Date: {record.date.toDateString()} - Period: {record.period} - Cashier: {record.cashier}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -149,13 +134,13 @@ export function MatchingForm({ record }: MatchingFormProps) {
         <div className="grid grid-cols-2 gap-4">
              <Alert variant={totalDifference === 0 ? 'default' : 'destructive'}>
                 <Coins className="h-4 w-4" />
-                <AlertTitle>الإجمالي المسجل: {totalRegistered.toFixed(2)} ريال</AlertTitle>
+                <AlertTitle>Registered Total: ${totalRegistered.toFixed(2)}</AlertTitle>
             </Alert>
             <Alert variant={totalDifference === 0 ? 'default' : (totalDifference > 0 ? 'default' : 'destructive')} className={`${totalDifference > 0 && 'border-green-500 text-green-700'}`}>
                 {totalDifference === 0 ? <CheckCircle2 className="h-4 w-4" /> : <Receipt className="h-4 w-4" />}
-                <AlertTitle>الإجمالي الفعلي: {totalActual.toFixed(2)} ريال</AlertTitle>
+                <AlertTitle>Actual Total: ${totalActual.toFixed(2)}</AlertTitle>
                 <AlertDescription>
-                    الفرق: {totalDifference.toFixed(2)} ريال
+                    Difference: ${totalDifference.toFixed(2)}
                 </AlertDescription>
             </Alert>
         </div>
@@ -163,29 +148,29 @@ export function MatchingForm({ record }: MatchingFormProps) {
         <Table>
             <TableHeader>
                 <TableRow>
-                    <TableHead>الحساب</TableHead>
-                    <TableHead>المسجل</TableHead>
-                    <TableHead>الفعلي</TableHead>
-                    <TableHead>الفرق</TableHead>
+                    <TableHead>Account</TableHead>
+                    <TableHead>Registered</TableHead>
+                    <TableHead>Actual</TableHead>
+                    <TableHead>Difference</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {record.cash && renderMatchingRow(record.cash.name, record.cash.amount, 'cash')}
-                {record.cards.map((card, i) => renderMatchingRow(card.name, card.amount, `card-${i}`))}
-                {record.credits.map((credit, i) => renderMatchingRow(credit.name, credit.amount, `credit-${i}`))}
+                {record.cash && renderMatchingRow(record.cash.accountName || 'Cash', record.cash.amount, 'cash')}
+                {record.cards.map((card, i) => renderMatchingRow(card.accountName || `Card ${i+1}`, card.amount, `card-${i}`))}
+                {record.credits.map((credit, i) => renderMatchingRow(credit.accountName || `Credit ${i+1}`, credit.amount, `credit-${i}`))}
             </TableBody>
         </Table>
 
         <div className="space-y-2">
             <div className='flex items-center gap-2'>
                 <MessageSquare className="h-5 w-5" />
-                <Label htmlFor="notes">ملاحظات المطابقة</Label>
+                <Label htmlFor="notes">Matching Notes</Label>
             </div>
-            <Textarea id="notes" placeholder="اكتب ملاحظاتك هنا..." />
+            <Textarea id="notes" placeholder="Write your notes here..." />
         </div>
 
         <div className="space-y-2">
-            <Label htmlFor="attachment">إرفاق صورة (اختياري)</Label>
+            <Label htmlFor="attachment">Attach Image (Optional)</Label>
             <Input id="attachment" type="file" />
         </div>
 
@@ -193,12 +178,12 @@ export function MatchingForm({ record }: MatchingFormProps) {
       </CardContent>
       <CardFooter className="flex justify-between">
         <Button variant="outline">
-            <Ban className="ml-2 h-4 w-4" />
-             رفض وإعادة للكاشير
+            <Ban className="mr-2 h-4 w-4" />
+             Reject and Return to Cashier
         </Button>
         <Button className="bg-green-600 hover:bg-green-700 text-white">
-            <Save className="ml-2 h-4 w-4" />
-            حفظ واعتماد المطابقة
+            <Save className="mr-2 h-4 w-4" />
+            Save and Approve Match
         </Button>
       </CardFooter>
     </Card>
