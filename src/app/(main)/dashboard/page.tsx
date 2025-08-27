@@ -12,10 +12,12 @@ import {
 import { DollarSign, CreditCard, TrendingUp, TrendingDown, Loader2 } from "lucide-react"
 import { OverviewChart } from "@/components/dashboard/overview-chart"
 import { RecentTransactions } from "@/components/dashboard/recent-transactions"
-import { getRecentTransactions, Transaction } from "@/lib/firebase/firestore/transactions";
-import { getAccounts } from "@/lib/firebase/firestore/accounts";
+import { Transaction } from "@/lib/firebase/firestore/transactions";
+// import { getRecentTransactions } from "@/lib/firebase/firestore/transactions";
+// import { getAccounts } from "@/lib/firebase/firestore/accounts";
 import { Account } from "@/components/chart-of-accounts/account-tree";
 import { Skeleton } from '@/components/ui/skeleton';
+import { Timestamp } from 'firebase/firestore';
 
 // Helper to create a map of account IDs to names
 const createAccountMap = (accounts: Account[]): Map<string, string> => {
@@ -36,6 +38,15 @@ interface TransactionWithAccountName extends Transaction {
     accountName: string;
 }
 
+// --- Demo Data ---
+const sampleTransactions: Transaction[] = [
+    { id: '1', accountId: '401', amount: 5000, date: Timestamp.now(), type: 'Income', description: 'Monthly Revenue', createdAt: Timestamp.now(), accountName: 'إيرادات المبيعات' },
+    { id: '2', accountId: '501', amount: 1500, date: Timestamp.now(), type: 'Expense', description: 'Office Supplies', createdAt: Timestamp.now(), accountName: 'مصروفات الرواتب' },
+    { id: '3', accountId: '401', amount: 2500, date: Timestamp.now(), type: 'Income', description: 'Project ABC', createdAt: Timestamp.now(), accountName: 'إيرادات المبيعات' },
+    { id: '4', accountId: '501', amount: 800, date: Timestamp.now(), type: 'Expense', description: 'Utilities', createdAt: Timestamp.now(), accountName: 'مصروفات الرواتب' },
+];
+// ---
+
 export default function DashboardPage() {
   const [transactions, setTransactions] = useState<TransactionWithAccountName[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,24 +54,9 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchData = async () => {
         setLoading(true);
-        try {
-            const [recentTransactionsData, accountsData] = await Promise.all([
-                getRecentTransactions(5),
-                getAccounts()
-            ]);
-
-            const accountMap = createAccountMap(accountsData);
-            const transactionsWithAccountNames = recentTransactionsData.map(tx => ({
-                ...tx,
-                accountName: accountMap.get(tx.accountId) || 'Unknown Account'
-            }));
-            setTransactions(transactionsWithAccountNames);
-        } catch (error) {
-            console.error("Failed to fetch dashboard data:", error);
-            // Optionally, show a toast notification
-        } finally {
-            setLoading(false);
-        }
+        // Using demo data
+        setTransactions(sampleTransactions);
+        setLoading(false);
     };
 
     fetchData();

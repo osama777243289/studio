@@ -5,9 +5,16 @@ import { SalesForm } from '@/components/sales/sales-form';
 import { SalesRecords } from '@/components/sales/sales-records';
 import { Account } from '@/components/chart-of-accounts/account-tree';
 import { useEffect, useState } from 'react';
-import { getAccounts } from '@/lib/firebase/firestore/accounts';
+// import { getAccounts } from '@/lib/firebase/firestore/accounts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SalesRecord } from '@/lib/firebase/firestore/sales';
+
+const sampleAccounts: Account[] = [
+    { id: '1', code: '1101', name: 'الصندوق الرئيسي', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['Cashbox'] },
+    { id: '2', code: '1103', name: 'شبكة مدى', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['Networks'] },
+    { id: '3', code: '1102', name: 'العميل محمد', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['Clients'] },
+];
+
 
 export default function SalesPage() {
     const [accounts, setAccounts] = useState<Account[]>([]);
@@ -16,14 +23,9 @@ export default function SalesPage() {
     useEffect(() => {
         const fetchAllAccounts = async () => {
             setLoading(true);
-            try {
-                const fetchedAccounts = await getAccounts();
-                setAccounts(fetchedAccounts);
-            } catch (error) {
-                console.error("Failed to fetch accounts:", error);
-            } finally {
-                setLoading(false);
-            }
+            // using sample data
+            setAccounts(sampleAccounts);
+            setLoading(false);
         };
         fetchAllAccounts();
     }, []);

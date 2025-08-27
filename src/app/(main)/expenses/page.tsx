@@ -18,7 +18,7 @@ const sampleAccounts: Account[] = [
 export default function ExpensesPage() {
     const [accounts, setAccounts] = useState<Account[]>(sampleAccounts);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>("This page is in demo mode. Please set up the Firestore connection in 'Chart of Accounts'.");
+    const [error, setError] = useState<string | null>("This page is in demo mode. Your entries will not be saved. Please set up the Firestore connection in your Firebase project.");
 
     return (
         <div className="flex justify-center items-start pt-8">

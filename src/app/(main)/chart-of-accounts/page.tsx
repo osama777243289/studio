@@ -14,38 +14,53 @@ import { PlusCircle, FileDown, Loader2, RefreshCw, AlertCircle } from 'lucide-re
 import { AccountTree, type Account } from '@/components/chart-of-accounts/account-tree';
 import { AccountDialog, AccountFormData } from '@/components/chart-of-accounts/account-dialog';
 import { DeleteAccountDialog } from '@/components/chart-of-accounts/delete-account-dialog';
-import { addAccount, deleteAccount, getAccounts, updateAccount } from '@/lib/firebase/firestore/accounts';
+// Temporarily disable direct DB calls
+// import { addAccount, deleteAccount, getAccounts, updateAccount } from '@/lib/firebase/firestore/accounts';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-// Helper function to find an account in the tree
-const findAccountById = (searchAccounts: Account[], id: string): Account | null => {
-    for (const account of searchAccounts) {
-        if (account.id === id) return account;
-        if (account.children) {
-            const found = findAccountById(account.children, id);
-            if (found) return found;
-        }
+// --- Start of Demo Data ---
+const sampleAccounts: Account[] = [
+    {
+        id: '1', code: '1', name: 'الأصول', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: [],
+        children: [
+            {
+                id: '101', code: '11', name: 'الأصول المتداولة', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: [],
+                children: [
+                    { id: '10101', code: '1101', name: 'النقدية', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['Cashbox', 'Bank'], children: [] },
+                    { id: '10102', code: '1102', name: 'العملاء', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['Clients'], children: [] },
+                ]
+            },
+            {
+                id: '102', code: '12', name: 'الأصول الثابتة', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['Fixed Assets'], children: []
+            }
+        ]
+    },
+    {
+        id: '2', code: '2', name: 'الخصوم', type: 'Credit', group: 'Liabilities', status: 'Active', closingType: 'Balance Sheet', classifications: [],
+        children: [
+            { id: '201', code: '21', name: 'الموردون', type: 'Credit', group: 'Liabilities', status: 'Active', closingType: 'Balance Sheet', classifications: ['Suppliers'], children: [] }
+        ]
+    },
+    {
+        id: '4', code: '4', name: 'الإيرادات', type: 'Credit', group: 'Revenues', status: 'Active', closingType: 'Income Statement', classifications: ['Revenues'],
+        children: [
+             { id: '401', code: '401', name: 'إيرادات المبيعات', type: 'Credit', group: 'Revenues', status: 'Active', closingType: 'Income Statement', classifications: ['Revenues'], children: [] }
+        ]
+    },
+    {
+        id: '5', code: '5', name: 'المصروفات', type: 'Debit', group: 'Expenses', status: 'Active', closingType: 'Income Statement', classifications: ['Expenses'],
+        children: [
+            { id: '501', code: '501', name: 'مصروفات الرواتب', type: 'Debit', group: 'Expenses', status: 'Active', closingType: 'Income Statement', classifications: ['Expenses', 'Employee'], children: [] }
+        ]
     }
-    return null;
-}
-
-// Helper function to find the parent of an account
-const findParentOf = (searchAccounts: Account[], accountId: string, parent: Account | null = null): Account | null => {
-    for(const account of searchAccounts){
-        if(account.id === accountId) return parent;
-        if(account.children){
-            const found = findParentOf(account.children, accountId, account);
-            if(found) return found;
-        }
-    }
-    return null;
-}
+];
+// --- End of Demo Data ---
 
 
 export default function ChartOfAccountsPage() {
     const [accounts, setAccounts] = useState<Account[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -56,20 +71,17 @@ export default function ChartOfAccountsPage() {
     
     const refreshAccounts = async () => {
         setLoading(true);
-        setError(null);
-        try {
-            const fetchedAccounts = await getAccounts();
-            setAccounts(fetchedAccounts);
-            toast({
-                title: "Accounts Refreshed",
-                description: "The chart of accounts has been updated.",
-            });
-        } catch (e: any) {
-            console.error("Failed to fetch accounts:", e);
-            setError(`Connection Error - Demo Mode: Failed to connect to Firestore. The app is currently running in offline demo mode. Your entries will not be saved. Please check your Firebase project setup to enable database functionality. Original error: ${e.message}`);
-        } finally {
+        setError("Failed to connect to Firestore. The app is currently running in offline demo mode with sample data. Your entries will not be saved. Please check your Firebase project setup to enable database functionality.");
+        // Simulate fetching data
+        setTimeout(() => {
+            setAccounts(sampleAccounts);
             setLoading(false);
-        }
+            toast({
+                title: "Demo Mode Active",
+                description: "Displaying sample account data.",
+                variant: "default",
+            });
+        }, 500);
     };
 
     useEffect(() => {
@@ -77,82 +89,25 @@ export default function ChartOfAccountsPage() {
     }, []);
 
     const handleAddAccount = (parentId: string | null = null) => {
-        if (error) {
-            toast({ title: "Demo Mode Active", description: "Cannot add accounts while in demo mode. Please resolve the connection error.", variant: "destructive"});
-            return;
-        }
-        const pAccount = parentId ? findAccountById(accounts, parentId) : null;
-        const level = pAccount ? (pAccount.code.length === 1 ? 2 : (pAccount.code.length === 2 ? 3 : 4)) : 1;
-        if (level > 4) {
-            toast({
-                title: "Cannot Add Account",
-                description: "Cannot add a sub-account deeper than the fourth level.",
-                variant: "destructive",
-            });
-            return;
-        }
-        setDialogMode(parentId ? 'addSub' : 'add');
-        setParentAccount(pAccount)
-        setSelectedAccount(null);
-        setIsAddEditDialogOpen(true);
+        toast({ title: "Demo Mode Active", description: "Cannot add accounts in demo mode.", variant: "destructive"});
     };
 
     const handleEditAccount = (account: Account) => {
-        setDialogMode('edit');
-        setSelectedAccount(account);
-        const pAccount = findParentOf(accounts, account.id);
-        setParentAccount(pAccount);
-        setIsAddEditDialogOpen(true);
+        toast({ title: "Demo Mode Active", description: "Cannot edit accounts in demo mode.", variant: "destructive"});
     };
 
     const handleDeleteAccount = (account: Account) => {
-        if (account.children && account.children.length > 0) {
-            toast({
-                title: "Deletion Failed",
-                description: "Cannot delete an account that has sub-accounts. Please delete the sub-accounts first.",
-                variant: "destructive",
-            });
-            return;
-        }
-        setSelectedAccount(account);
-        setIsDeleteDialogOpen(true);
+        toast({ title: "Demo Mode Active", description: "Cannot delete accounts in demo mode.", variant: "destructive"});
     };
 
     const confirmSave = async (accountData: AccountFormData) => {
-       try {
-            if (dialogMode === 'edit' && selectedAccount) {
-                await updateAccount(selectedAccount.id, accountData);
-                toast({ title: "Account Updated", description: `Account "${accountData.name}" has been successfully updated.` });
-            } else {
-                const parentId = parentAccount ? parentAccount.id : null;
-                await addAccount(accountData, parentId);
-                toast({ title: "Account Added", description: `Account "${accountData.name}" has been successfully created.` });
-            }
-            refreshAccounts();
-        } catch (e) {
-            console.error("Failed to save account:", e);
-            toast({ title: "Save Failed", description: `An error occurred while saving the account. ${error}`, variant: "destructive" });
-        } finally {
-            setIsAddEditDialogOpen(false);
-            setSelectedAccount(null);
-            setParentAccount(null);
-        }
+        toast({ title: "Demo Mode Active", description: "Cannot save accounts in demo mode.", variant: "destructive"});
+        setIsAddEditDialogOpen(false);
     };
 
     const confirmDelete = async () => {
-        if (!selectedAccount) return;
-        try {
-            await deleteAccount(selectedAccount.id);
-            toast({ title: "Account Deleted", description: `Account "${selectedAccount.name}" has been deleted.` });
-            refreshAccounts();
-        } catch (e) {
-            console.error("Failed to delete account:", e);
-            const errorMessage = (e as Error).message || "An unexpected error occurred.";
-            toast({ title: "Deletion Failed", description: errorMessage, variant: "destructive" });
-        } finally {
-            setIsDeleteDialogOpen(false);
-            setSelectedAccount(null);
-        }
+        toast({ title: "Demo Mode Active", description: "Cannot delete accounts in demo mode.", variant: "destructive"});
+        setIsDeleteDialogOpen(false);
     };
 
   return (
@@ -190,9 +145,9 @@ export default function ChartOfAccountsPage() {
             {loading ? (
                 <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <Loader2 className="h-8 w-8 animate-spin" />
-                    <p>Connecting to Firestore...</p>
+                    <p>Loading Demo Data...</p>
                 </div>
-            ) : accounts.length > 0 && !error ? (
+            ) : accounts.length > 0 ? (
                 <AccountTree 
                     accounts={accounts} 
                     onAddSubAccount={(parentId) => handleAddAccount(parentId)}

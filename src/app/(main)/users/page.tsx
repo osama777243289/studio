@@ -20,7 +20,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { PlusCircle, MoreHorizontal, Loader2, RefreshCw, Pencil, Trash2 } from "lucide-react"
+import { PlusCircle, MoreHorizontal, Loader2, RefreshCw, Pencil, Trash2, AlertCircle } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,10 +31,12 @@ import {
 import { UserDialog, type UserFormData } from '@/components/users/user-dialog';
 import { DeleteUserDialog } from '@/components/users/delete-user-dialog';
 import { Account } from '@/components/chart-of-accounts/account-tree';
-import { Role, getRoles } from '@/lib/firebase/firestore/roles';
-import { getUsers, addUser, updateUser, deleteUser } from '@/lib/firebase/firestore/users';
-import { getAccounts } from '@/lib/firebase/firestore/accounts';
+import { Role } from '@/lib/firebase/firestore/roles';
+// import { getUsers, addUser, updateUser, deleteUser } from '@/lib/firebase/firestore/users';
+// import { getAccounts } from '@/lib/firebase/firestore/accounts';
+// import { getRoles } from '@/lib/firebase/firestore/roles';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export interface PagePermissions {
     view?: boolean;
@@ -74,6 +76,21 @@ export interface User {
     employeeAccountId?: string;
 }
 
+// --- Start of Demo Data ---
+const sampleUsers: User[] = [
+    { id: '1', name: 'مدير النظام', mobile: '0500000001', email: 'admin@example.com', type: 'regular', role: ['المدير العام'], status: 'نشط', permissions: { pages: {}, accounts: ['*'] } },
+    { id: '2', name: 'المحاسب', mobile: '0500000002', email: 'accountant@example.com', type: 'regular', role: ['محاسب'], status: 'نشط', permissions: { pages: {}, accounts: ['*'] } },
+    { id: '3', name: 'يوسف خالد', mobile: '0500000003', type: 'employee', role: ['كاشير'], status: 'نشط', permissions: { pages: {}, accounts: [] } }
+];
+const sampleRoles: Role[] = [
+    { id: '1', name: 'المدير العام' },
+    { id: '2', name: 'محاسب' },
+    { id: '3', name: 'كاشير' },
+];
+const sampleAccounts: Account[] = [];
+// --- End of Demo Data ---
+
+
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -83,29 +100,19 @@ export default function UsersPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   
   const fetchData = async () => {
     setLoading(true);
-    try {
-        const [usersData, accountsData, rolesData] = await Promise.all([
-            getUsers(),
-            getAccounts(),
-            getRoles()
-        ]);
-        setUsers(usersData);
-        setAccounts(accountsData);
-        setRoles(rolesData);
-    } catch (error) {
-        console.error("Failed to fetch data:", error);
-        toast({
-            title: "Error",
-            description: "Failed to load data from the server. Please check your connection and try again.",
-            variant: "destructive",
-        });
-    } finally {
+    setError("Failed to connect to Firestore. The app is currently running in offline demo mode. Your entries will not be saved.");
+    setTimeout(() => {
+        setUsers(sampleUsers);
+        setAccounts(sampleAccounts);
+        setRoles(sampleRoles);
         setLoading(false);
-    }
+        toast({ title: "Demo Mode Active", description: "Displaying sample user data." });
+    }, 500);
   };
 
   useEffect(() => {
@@ -113,54 +120,25 @@ export default function UsersPage() {
   }, []);
 
   const handleAddUser = () => {
-    setDialogMode('add');
-    setSelectedUser(null);
-    setIsDialogOpen(true);
+    toast({ title: "Demo Mode Active", description: "Cannot add users in demo mode.", variant: "destructive"});
   };
 
   const handleEditUser = (user: User) => {
-    setDialogMode('edit');
-    setSelectedUser(user);
-    setIsDialogOpen(true);
+    toast({ title: "Demo Mode Active", description: "Cannot edit users in demo mode.", variant: "destructive"});
   };
 
   const handleDeleteUser = (user: User) => {
-    setSelectedUser(user);
-    setIsDeleteDialogOpen(true);
+     toast({ title: "Demo Mode Active", description: "Cannot delete users in demo mode.", variant: "destructive"});
   };
 
   const confirmSave = async (userData: UserFormData) => {
-     try {
-      if (dialogMode === 'edit' && selectedUser) {
-        await updateUser(selectedUser.id, userData);
-        toast({ title: "User Updated", description: `User "${userData.name}" has been successfully updated.` });
-      } else {
-        await addUser(userData);
-        toast({ title: "User Added", description: `User "${userData.name}" has been successfully created.` });
-      }
-      fetchData();
-    } catch (error) {
-      console.error("Failed to save user:", error);
-      toast({ title: "Save Failed", description: "An error occurred while saving the user.", variant: "destructive" });
-    } finally {
-      setIsDialogOpen(false);
-      setSelectedUser(null);
-    }
+    toast({ title: "Demo Mode Active", description: "Cannot save users in demo mode.", variant: "destructive"});
+    setIsDialogOpen(false);
   };
 
   const confirmDelete = async () => {
-    if (!selectedUser) return;
-    try {
-      await deleteUser(selectedUser.id);
-      toast({ title: "User Deleted", description: `User "${selectedUser.name}" has been deleted.` });
-      fetchData();
-    } catch (error) {
-      console.error("Failed to delete user:", error);
-      toast({ title: "Delete Failed", description: "An error occurred while deleting the user.", variant: "destructive" });
-    } finally {
-        setIsDeleteDialogOpen(false);
-        setSelectedUser(null);
-    }
+    toast({ title: "Demo Mode Active", description: "Cannot delete users in demo mode.", variant: "destructive"});
+    setIsDeleteDialogOpen(false);
   };
 
 
@@ -186,6 +164,15 @@ export default function UsersPage() {
           </div>
         </CardHeader>
         <CardContent>
+            {error && (
+             <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Connection Error - Demo Mode</AlertTitle>
+                <AlertDescription>
+                    {error}
+                </AlertDescription>
+            </Alert>
+           )}
            {loading ? (
                 <div className="flex justify-center items-center min-h-[300px]">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -215,7 +202,7 @@ export default function UsersPage() {
                         <TableCell>
                             <div className="flex items-center gap-4">
                             <Avatar className="h-9 w-9">
-                                <AvatarImage data-ai-hint="person avatar" src={user.avatarUrl} alt="Avatar" />
+                                <AvatarImage data-ai-hint="person avatar" src={user.avatarUrl || `https://picsum.photos/seed/${user.id}/40/40`} alt="Avatar" />
                                 <AvatarFallback>{user.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                             </Avatar>
                             <div className="grid gap-1">

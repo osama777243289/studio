@@ -106,6 +106,7 @@ export function SalesForm({ accounts }: SalesFormProps) {
 
   const onSubmit = async (data: SalesRecordFormData) => {
     try {
+      // This will throw an error in demo mode
       await addSaleRecord(data);
       toast({
         title: 'Sales Record Saved',
@@ -115,8 +116,8 @@ export function SalesForm({ accounts }: SalesFormProps) {
     } catch (error) {
        console.error("Failed to add sales record:", error);
       toast({
-        title: 'An error occurred',
-        description: `Failed to record sales. Please try again.`,
+        title: 'Demo Mode Active',
+        description: `Cannot save sales records. Please configure your Firebase connection.`,
         variant: 'destructive',
       });
     }
