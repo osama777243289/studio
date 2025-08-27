@@ -111,43 +111,34 @@ function flattenAccounts(accounts: Account[]): { label: string; value: string; c
 
 
 export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount, mode, allAccounts }: AccountDialogProps) {
-
-  const parentCode = watch('parentId') ? flattenAccounts(allAccounts).find(a => a.value === watch('parentId'))?.code : undefined;
   
-  const accountSchema = useMemo(() => {
-     const pAcc = allAccounts.flatMap(flattenAccounts).find(a => a.value === parentAccount?.id);
-     let codeForSchema: string | undefined;
-
-     if (mode === 'edit' && account?.parentId) {
-         codeForSchema = flattenAccounts(allAccounts).find(a => a.value === account.parentId)?.code;
-     } else if (mode === 'addSub' && parentAccount) {
-         codeForSchema = parentAccount.code;
-     } else {
-         codeForSchema = parentCode
-     }
-     return createAccountSchema(codeForSchema);
-  }, [mode, parentAccount, account, allAccounts, parentCode]);
-
+  const flattenedAccountsForSelect = useMemo(() => flattenAccounts(allAccounts), [allAccounts]);
 
   const { register, handleSubmit, reset, control, formState: { errors }, watch, setValue } = useForm<AccountFormData>({
-    resolver: zodResolver(accountSchema),
+    resolver: (data, context, options) => {
+      const parentId = data.parentId;
+      const parentCode = parentId ? flattenedAccountsForSelect.find(a => a.value === parentId)?.code : undefined;
+      const schema = createAccountSchema(parentCode);
+      return zodResolver(schema)(data, context, options);
+    },
     defaultValues: {
         classifications: [],
         parentId: '',
-    }
+    },
+    context: { allAccounts }
   });
 
   const watchedParentId = watch('parentId');
 
   useEffect(() => {
-    const selectedParent = flattenAccounts(allAccounts).find(a => a.value === watchedParentId);
+    const selectedParent = flattenedAccountsForSelect.find(a => a.value === watchedParentId);
     if(selectedParent) {
         const parentLvl = selectedParent.code.length === 1 ? 1 : selectedParent.code.length === 2 ? 2 : selectedParent.code.length === 4 ? 3 : 4;
         if (parentLvl >= 4) {
              setValue('parentId', ''); // Reset if invalid parent is selected
         }
     }
-  }, [watchedParentId, allAccounts, setValue]);
+  }, [watchedParentId, allAccounts, setValue, flattenedAccountsForSelect]);
 
 
   useEffect(() => {
@@ -206,8 +197,6 @@ export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount,
     </div>
   )
   
-  const flattenedAccountsForSelect = useMemo(() => flattenAccounts(allAccounts), [allAccounts]);
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
@@ -227,7 +216,7 @@ export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount,
                                     variant="outline"
                                     role="combobox"
                                     className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
-                                    disabled={mode === 'addSub' || mode === 'edit'}
+                                    disabled={mode === 'addSub' || (mode === 'edit' && !!account?.parentId)}
                                 >
                                     {field.value
                                     ? flattenedAccountsForSelect.find(
@@ -249,7 +238,7 @@ export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount,
                                                             value={acc.label}
                                                             key={acc.value}
                                                             onSelect={() => {
-                                                                setValue("parentId", acc.value)
+                                                                setValue("parentId", acc.value, { shouldValidate: true })
                                                             }}
                                                          >
                                                              <CheckIcon
@@ -390,3 +379,5 @@ export function AccountDialog({ isOpen, onClose, onSave, account, parentAccount,
     </Dialog>
   )
 }
+
+    
