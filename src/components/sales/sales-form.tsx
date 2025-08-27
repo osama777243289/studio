@@ -99,9 +99,9 @@ export function SalesForm({ accounts }: SalesFormProps) {
     name: "credits"
   });
 
-  const cashAccounts = useMemo(() => getAccountsByClassification(accounts, ['Cashbox', 'Bank', 'Cashiers']), [accounts]);
-  const networkAccounts = useMemo(() => getAccountsByClassification(accounts, ['Networks']), [accounts]);
-  const customerAccounts = useMemo(() => getAccountsByClassification(accounts, ['Clients']), [accounts]);
+  const cashAccounts = useMemo(() => getAccountsByClassification(accounts, ['كاشير']), [accounts]);
+  const networkAccounts = useMemo(() => getAccountsByClassification(accounts, ['شبكات']), [accounts]);
+  const customerAccounts = useMemo(() => getAccountsByClassification(accounts, ['عملاء']), [accounts]);
 
 
   const onSubmit = async (data: any) => {
