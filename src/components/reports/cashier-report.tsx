@@ -1,5 +1,4 @@
 
-
 import React from "react";
 import {
   Card,
@@ -87,14 +86,14 @@ export function CashierReport() {
     }, [recordId]);
 
     const reportData = record || mockReportData;
-    const isPreliminary = reportData.status === 'Pending Upload';
-    const reportStatus = isPreliminary ? "غير مطابق" : (reportData.status === 'Matched' ? "تمت المطابقة" : "قيد المطابقة");
+    const isPreliminary = reportData.status === 'Pending Upload' || reportData.status === 'Pending Matching';
+    const reportStatus = reportData.status === 'Matched' ? "تمت المطابقة" : (reportData.status === 'Pending Matching' ? "قيد المطابقة" : "قيد الرفع");
     
     const getActualAmount = (type: 'cash' | 'card' | 'credit', index: number = 0) => {
         if (isPreliminary) return 0;
-        if (type === 'cash') return reportData.cash.amount;
-        if (type === 'card') return reportData.cards[index]?.amount || 0;
-        if (type === 'credit') return reportData.credits[index]?.amount || 0;
+        if (type === 'cash') return reportData.actuals?.['cash'] ?? reportData.cash.amount;
+        if (type === 'card') return reportData.actuals?.[`card-${index}`] ?? reportData.cards[index]?.amount || 0;
+        if (type === 'credit') return reportData.actuals?.[`credit-${index}`] ?? reportData.credits[index]?.amount || 0;
         return 0;
     };
     
@@ -138,7 +137,7 @@ export function CashierReport() {
                     <RefreshCw className="h-5 w-5" />
                     <CardTitle className="text-lg">مبيعات {reportData.period === 'Morning' ? 'الصباحية' : 'المسائية'} ليوم: {reportData.date.toDate().toLocaleDateString('ar-SA')}</CardTitle>
                 </div>
-                 <Badge variant={reportStatus === 'تمت المطابقة' ? 'default' : 'destructive'} className={reportStatus === 'تمت المطابقة' ? "bg-green-100 text-green-800 border-green-300" : "bg-yellow-100 text-yellow-800 border-yellow-300"}>
+                 <Badge variant={reportStatus === 'تمت المطابقة' ? 'default' : 'destructive'} className={reportStatus === 'تمت المطابقة' ? "bg-green-100 text-green-800 border-green-300" : (reportStatus === 'قيد المطابقة' ? "bg-yellow-100 text-yellow-800 border-yellow-300" : "bg-blue-100 text-blue-800 border-blue-300")}>
                     {reportStatus === 'تمت المطابقة' ? <CheckCircle2 className="ml-1 h-4 w-4" /> : <AlertCircle className="ml-1 h-4 w-4" />}
                     {reportStatus}
                 </Badge>
