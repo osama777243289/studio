@@ -1,33 +1,36 @@
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
+import { Transaction } from "@/lib/firebase/firestore/transactions"
+import { formatDistanceToNow } from 'date-fns';
+import { ar } from 'date-fns/locale';
 
-const transactions = [
-    { name: "أوليفيا مارتن", email: "olivia.martin@email.com", amount: "+$1,999.00", avatar: "/avatars/01.png" },
-    { name: "جاكسون لي", email: "jackson.lee@email.com", amount: "+$39.00", avatar: "/avatars/02.png" },
-    { name: "إيزابيلا نجوين", email: "isabella.nguyen@email.com", amount: "-$299.00", avatar: "/avatars/03.png" },
-    { name: "ويليام كيم", email: "will@email.com", amount: "+$99.00", avatar: "/avatars/04.png" },
-    { name: "صوفيا ديفيس", email: "sofia.davis@email.com", amount: "-$39.00", avatar: "/avatars/05.png" },
-]
+interface RecentTransactionsProps {
+    transactions: Transaction[];
+}
 
-export function RecentTransactions() {
+export function RecentTransactions({ transactions }: RecentTransactionsProps) {
+  if (transactions.length === 0) {
+      return (
+          <div className="flex items-center justify-center h-full text-muted-foreground">
+              <p>لا توجد معاملات مسجلة حتى الآن.</p>
+          </div>
+      )
+  }
+
   return (
-    <div className="space-y-8">
-        {transactions.map((transaction, index) => (
-             <div key={index} className="flex items-center">
-                <Avatar className="h-9 w-9">
-                <AvatarImage data-ai-hint="person avatar" src={`https://picsum.photos/id/${10 + index}/40/40`} alt="Avatar" />
-                <AvatarFallback>{transaction.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                </Avatar>
+    <div className="space-y-6">
+        {transactions.map((transaction) => (
+             <div key={transaction.id} className="flex items-center">
                 <div className="ml-4 space-y-1">
-                <p className="text-sm font-medium leading-none">{transaction.name}</p>
+                <p className="text-sm font-medium leading-none">{transaction.accountName}</p>
                 <p className="text-sm text-muted-foreground">
-                    {transaction.email}
+                    {/* Check if date is a Firebase Timestamp */}
+                    {transaction.date && typeof transaction.date.toDate === 'function' 
+                        ? formatDistanceToNow(transaction.date.toDate(), { addSuffix: true, locale: ar })
+                        : 'تاريخ غير صالح'}
                 </p>
                 </div>
-                <div className={`mr-auto font-medium ${transaction.amount.startsWith('+') ? 'text-green-600' : ''}`}>{transaction.amount}</div>
+                <div className={`mr-auto font-medium text-lg ${transaction.type === 'Income' ? 'text-green-600' : 'text-destructive'}`}>
+                    {transaction.type === 'Income' ? '+' : '-'}${transaction.amount.toFixed(2)}
+                </div>
             </div>
         ))}
     </div>

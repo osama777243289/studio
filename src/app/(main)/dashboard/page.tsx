@@ -1,3 +1,7 @@
+
+'use client';
+
+import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -5,11 +9,63 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { DollarSign, CreditCard, TrendingUp, TrendingDown } from "lucide-react"
+import { DollarSign, CreditCard, TrendingUp, TrendingDown, Loader2 } from "lucide-react"
 import { OverviewChart } from "@/components/dashboard/overview-chart"
 import { RecentTransactions } from "@/components/dashboard/recent-transactions"
+import { getRecentTransactions, Transaction } from "@/lib/firebase/firestore/transactions";
+import { getAccounts } from "@/lib/firebase/firestore/accounts";
+import { Account } from "@/components/chart-of-accounts/account-tree";
+import { Skeleton } from '@/components/ui/skeleton';
+
+// Helper to create a map of account IDs to names
+const createAccountMap = (accounts: Account[]): Map<string, string> => {
+    const accountMap = new Map<string, string>();
+    const traverse = (accs: Account[]) => {
+        for (const acc of accs) {
+            accountMap.set(acc.id, acc.name);
+            if (acc.children) {
+                traverse(acc.children);
+            }
+        }
+    };
+    traverse(accounts);
+    return accountMap;
+};
+
+interface TransactionWithAccountName extends Transaction {
+    accountName: string;
+}
 
 export default function DashboardPage() {
+  const [transactions, setTransactions] = useState<TransactionWithAccountName[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            const [recentTransactionsData, accountsData] = await Promise.all([
+                getRecentTransactions(5),
+                getAccounts()
+            ]);
+
+            const accountMap = createAccountMap(accountsData);
+            const transactionsWithAccountNames = recentTransactionsData.map(tx => ({
+                ...tx,
+                accountName: accountMap.get(tx.accountId) || 'حساب غير معروف'
+            }));
+            setTransactions(transactionsWithAccountNames);
+        } catch (error) {
+            console.error("Failed to fetch dashboard data:", error);
+            // Optionally, show a toast notification
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    fetchData();
+  }, []);
+
   return (
     <div className="flex flex-col gap-6">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -76,11 +132,27 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle className="font-headline">المعاملات الأخيرة</CardTitle>
             <CardDescription>
-              لقد قمت بـ 12 معاملة هذا الشهر.
+              {loading ? 'جاري تحميل المعاملات...' : `آخر ${transactions.length} معاملات مسجلة.`}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <RecentTransactions />
+            {loading ? (
+                <div className="space-y-6">
+                    {[...Array(5)].map((_, i) => (
+                        <div key={i} className="flex items-center">
+                            <div className="ml-4 space-y-2">
+                                <Skeleton className="h-4 w-[150px]" />
+                                <Skeleton className="h-3 w-[100px]" />
+                            </div>
+                            <div className="mr-auto">
+                                <Skeleton className="h-6 w-[80px]" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <RecentTransactions transactions={transactions} />
+            )}
           </CardContent>
         </Card>
       </div>

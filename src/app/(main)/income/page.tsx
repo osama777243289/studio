@@ -2,28 +2,79 @@
 
 import { TransactionForm } from '@/components/transaction-form';
 import { Card, CardContent } from '@/components/ui/card';
+import { getAccounts } from '@/lib/firebase/firestore/accounts';
+import { Account } from '@/components/chart-of-accounts/account-tree';
+import { useEffect, useState, useMemo } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
-const incomeCategories = [
-  { value: 'salary', label: 'راتب' },
-  { value: 'sales', label: 'مبيعات' },
-  { value: 'freelance', label: 'عمل حر' },
-  { value: 'investment', label: 'استثمار' },
-  { value: 'other', label: 'أخرى' },
-];
+// Helper to flatten the account tree and filter by classification and group
+const getTransactionalAccounts = (accounts: Account[], group: string): Account[] => {
+    const flattened: Account[] = [];
+    const traverse = (accs: Account[]) => {
+        for (const acc of accs) {
+            // A transactional account is one that does not have children.
+            if (!acc.children || acc.children.length === 0) {
+                 if (acc.group === group) {
+                    flattened.push(acc);
+                }
+            }
+            if (acc.children) {
+                traverse(acc.children);
+            }
+        }
+    };
+    traverse(accounts);
+    return flattened;
+};
+
 
 export default function IncomePage() {
-  return (
-    <div className="flex justify-center items-start pt-8">
-      <Card className="w-full max-w-lg">
-        <CardContent className="pt-6">
-          <TransactionForm
-            formTitle="تسجيل دخل جديد"
-            formButtonText="إضافة الدخل"
-            categories={incomeCategories}
-            transactionType="Income"
-          />
-        </CardContent>
-      </Card>
-    </div>
-  );
+    const [accounts, setAccounts] = useState<Account[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchAccounts = async () => {
+            setLoading(true);
+            const fetchedAccounts = await getAccounts();
+            setAccounts(fetchedAccounts);
+            setLoading(false);
+        };
+        fetchAccounts();
+    }, []);
+
+    const incomeAccounts = useMemo(() => getTransactionalAccounts(accounts, 'الإيرادات'), [accounts]);
+
+    return (
+        <div className="flex justify-center items-start pt-8">
+            <Card className="w-full max-w-lg">
+                <CardContent className="pt-6">
+                    {loading ? (
+                        <div className="space-y-8">
+                            <Skeleton className="h-8 w-1/2" />
+                            <div className="space-y-4">
+                                <Skeleton className="h-6 w-1/4" />
+                                <Skeleton className="h-10 w-full" />
+                            </div>
+                             <div className="space-y-4">
+                                <Skeleton className="h-6 w-1/4" />
+                                <Skeleton className="h-10 w-full" />
+                            </div>
+                             <div className="space-y-4">
+                                <Skeleton className="h-6 w-1/4" />
+                                <Skeleton className="h-10 w-full" />
+                            </div>
+                            <Skeleton className="h-10 w-full" />
+                        </div>
+                    ) : (
+                        <TransactionForm
+                            formTitle="تسجيل دخل جديد"
+                            formButtonText="إضافة الدخل"
+                            accounts={incomeAccounts}
+                            transactionType="Income"
+                        />
+                    )}
+                </CardContent>
+            </Card>
+        </div>
+    );
 }

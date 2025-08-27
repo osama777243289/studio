@@ -2,16 +2,13 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
-
+import { CalendarIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -33,45 +30,56 @@ import {
 } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-
-const formSchema = z.object({
-  amount: z.coerce.number().positive('يجب أن يكون المبلغ أكبر من صفر'),
-  category: z.string().min(1, 'الفئة مطلوبة'),
-  date: z.date(),
-  description: z.string().optional(),
-});
+import { addTransaction, transactionSchema } from '@/lib/firebase/firestore/transactions';
+import type { Account } from '@/components/chart-of-accounts/account-tree';
 
 type TransactionFormProps = {
   formTitle: string;
   formButtonText: string;
-  categories: { value: string; label: string }[];
+  accounts: Account[];
   transactionType: 'Income' | 'Expense';
 };
 
 export function TransactionForm({
   formTitle,
   formButtonText,
-  categories,
+  accounts,
   transactionType,
 }: TransactionFormProps) {
   const { toast } = useToast();
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof transactionSchema>>({
+    resolver: zodResolver(transactionSchema),
     defaultValues: {
-      amount: 0,
-      category: '',
+      amount: undefined,
+      accountId: '',
       date: new Date(),
       description: '',
+      type: transactionType,
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    toast({
-      title: `تم تسجيل ${transactionType === 'Income' ? 'الدخل' : 'المصروف'}`,
-      description: `تم تسجيل ${transactionType === 'Income' ? 'دخل' : 'مصروف'} بقيمة ${values.amount} بنجاح.`,
-    });
-    console.log(values);
-    form.reset();
+  async function onSubmit(values: z.infer<typeof transactionSchema>) {
+    try {
+      await addTransaction({ ...values, type: transactionType });
+      toast({
+        title: `تم تسجيل ${transactionType === 'Income' ? 'الدخل' : 'المصروف'}`,
+        description: `تم تسجيل ${transactionType === 'Income' ? 'دخل' : 'مصروف'} بقيمة ${values.amount} بنجاح.`,
+      });
+      form.reset({
+        amount: undefined,
+        accountId: '',
+        date: new Date(),
+        description: '',
+        type: transactionType,
+      });
+    } catch (error) {
+      console.error("Failed to add transaction:", error);
+      toast({
+        title: 'حدث خطأ',
+        description: `فشل تسجيل ${transactionType === 'Income' ? 'الدخل' : 'المصروف'}. يرجى المحاولة مرة أخرى.`,
+        variant: 'destructive',
+      });
+    }
   }
 
   return (
@@ -85,7 +93,7 @@ export function TransactionForm({
             <FormItem>
               <FormLabel>المبلغ</FormLabel>
               <FormControl>
-                <Input type="number" placeholder="0.00" {...field} />
+                <Input type="number" placeholder="0.00" {...field} onChange={event => field.onChange(+event.target.value)} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -93,20 +101,20 @@ export function TransactionForm({
         />
         <FormField
           control={form.control}
-          name="category"
+          name="accountId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>الفئة</FormLabel>
+              <FormLabel>الحساب</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="اختر فئة" />
+                    <SelectValue placeholder="اختر الحساب" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.value} value={cat.value}>
-                      {cat.label}
+                  {accounts.map((acc) => (
+                    <SelectItem key={acc.id} value={acc.id}>
+                      {acc.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -169,7 +177,8 @@ export function TransactionForm({
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full">
+        <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+           {form.formState.isSubmitting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
           {formButtonText}
         </Button>
       </form>
