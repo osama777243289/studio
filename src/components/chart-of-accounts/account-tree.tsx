@@ -67,7 +67,11 @@ export function AccountTree({ accounts, level = 0, onAddSubAccount, onEditAccoun
 function AccountItem({ account, level, onAddSubAccount, onEditAccount, onDeleteAccount }: AccountItemProps) {
   const [isOpen, setIsOpen] = React.useState(level < 2);
   const hasChildren = account.children && account.children.length > 0;
-  const isTransactional = !hasChildren;
+  
+  // Level is determined by code length. L1=1, L2=2, L3=4, L4=7
+  const currentLevel = account.code.length === 1 ? 1 : account.code.length === 2 ? 2 : account.code.length === 4 ? 3 : 4;
+  const isTransactional = currentLevel === 4;
+  const canHaveChildren = currentLevel < 4;
 
   const translateGroup = (group: string) => {
     switch (group) {
@@ -110,10 +114,12 @@ function AccountItem({ account, level, onAddSubAccount, onEditAccount, onDeleteA
                         <Pencil className="h-4 w-4 text-blue-500"/>
                         <span className="sr-only">تعديل</span>
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onAddSubAccount(account.id)}>
-                        <Plus className="h-4 w-4 text-green-500"/>
-                        <span className="sr-only">إضافة حساب فرعي</span>
-                    </Button>
+                    {canHaveChildren && (
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onAddSubAccount(account.id)}>
+                          <Plus className="h-4 w-4 text-green-500"/>
+                          <span className="sr-only">إضافة حساب فرعي</span>
+                      </Button>
+                    )}
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDeleteAccount(account)}>
                         <Trash2 className="h-4 w-4 text-red-500"/>
                         <span className="sr-only">حذف</span>

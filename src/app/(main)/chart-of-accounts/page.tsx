@@ -61,9 +61,22 @@ export default function ChartOfAccountsPage() {
     };
 
     const handleAddAccount = (parentId: string | null = null) => {
+        const parent = parentId ? findAccount(parentId, accounts) : null;
+
+        if (parent) {
+            const level = parent.code.length === 1 ? 2 : parent.code.length === 2 ? 3 : 4;
+            if (level >= 4) {
+                 toast({
+                    title: "لا يمكن الإضافة",
+                    description: "لا يمكن إضافة حساب فرعي تحت حساب من المستوى الرابع (تحليلي).",
+                    variant: "destructive"
+                });
+                return;
+            }
+        }
+        
         setDialogMode(parentId ? 'addSub' : 'add');
         setSelectedAccount(null);
-        const parent = parentId ? findAccount(parentId, accounts) : null;
         setParentAccount(parent || null);
         setIsAddEditDialogOpen(true);
     };

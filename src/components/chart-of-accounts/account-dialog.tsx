@@ -36,20 +36,23 @@ import { ScrollArea } from '../ui/scroll-area';
 const createAccountSchema = (parentCode?: string) => {
     let level = 0;
     if (parentCode) {
-        if (parentCode.length === 1) level = 1;
-        else if (parentCode.length === 2) level = 2;
-        else if (parentCode.length === 4) level = 3;
+        const len = parentCode.length;
+        if (len === 1) level = 1; // Parent is L1, creating L2
+        else if (len === 2) level = 2; // Parent is L2, creating L3
+        else if (len === 4) level = 3; // Parent is L3, creating L4
     }
     
-    const levelLengths = [1, 2, 4, 7];
-    const expectedLength = level < 4 ? levelLengths[level + 1] : -1;
-    const currentLength = levelLengths[level];
-
+    // Define the code length for each level
+    const levelLengths = [1, 2, 4, 7]; 
+    const expectedLength = level < 4 ? levelLengths[level] : -1;
+    
     let codeSchema = z.string().regex(/^\d+$/, { message: "يجب أن يحتوي الرمز على أرقام فقط."});
 
     if (parentCode) {
-        codeSchema = codeSchema.min(expectedLength, { message: `يجب أن يتكون الرمز من ${expectedLength} أرقام.` })
-            .max(expectedLength, { message: `يجب أن يتكون الرمز من ${expectedLength} أرقام.` })
+        const nextLevelIndex = level;
+        const nextLevelLength = levelLengths[nextLevelIndex];
+        codeSchema = codeSchema.min(nextLevelLength, { message: `يجب أن يتكون الرمز من ${nextLevelLength} أرقام.` })
+            .max(nextLevelLength, { message: `يجب أن يتكون الرمز من ${nextLevelLength} أرقام.` })
             .refine(code => code.startsWith(parentCode), { message: `يجب أن يبدأ الرمز برمز الحساب الأصلي (${parentCode})` });
     } else {
         // This is a root account (Level 1)
