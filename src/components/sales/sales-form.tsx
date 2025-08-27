@@ -40,6 +40,7 @@ import {
   BookUser,
   Pencil,
   Loader2,
+  Hash,
 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import type { Account } from '../chart-of-accounts/account-tree';
@@ -83,6 +84,7 @@ export function SalesForm({ accounts }: SalesFormProps) {
         date: new Date(),
         period: 'Morning',
         salesperson: '',
+        postingNumber: '',
         cash: { accountId: '', amount: 0 },
         cards: [{ accountId: '', amount: 0 }],
         credits: [{ accountId: '', amount: 0 }],
@@ -142,66 +144,77 @@ export function SalesForm({ accounts }: SalesFormProps) {
             </AlertDescription>
           </Alert>
 
-          <div className="space-y-2">
-            <Label htmlFor="date">التاريخ</Label>
-             <Controller
-                control={form.control}
-                name="date"
-                render={({ field }) => (
-                    <Popover>
-                        <PopoverTrigger asChild>
-                             <Button
-                                variant={'outline'}
-                                className="w-full justify-start text-right font-normal"
-                                >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {field.value ? format(field.value, 'PPP') : <span>اختر تاريخًا</span>}
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            initialFocus
-                            />
-                        </PopoverContent>
-                    </Popover>
-                )}
-             />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+                <Label htmlFor="date">التاريخ</Label>
+                <Controller
+                    control={form.control}
+                    name="date"
+                    render={({ field }) => (
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant={'outline'}
+                                    className="w-full justify-start text-right font-normal"
+                                    >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {field.value ? format(field.value, 'PPP') : <span>اختر تاريخًا</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
+                    )}
+                />
+            </div>
+             <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                    <Clock className="h-5 w-5" />
+                    <Label>الفترة</Label>
+                </div>
+                <Controller
+                    control={form.control}
+                    name="period"
+                    render={({ field }) => (
+                        <RadioGroup onValueChange={field.onChange} value={field.value} className="flex gap-4 pt-2">
+                            <div className="flex items-center space-x-2 space-x-reverse">
+                                <RadioGroupItem value="Morning" id="morning" />
+                                <Label htmlFor="morning">صباحية</Label>
+                            </div>
+                            <div className="flex items-center space-x-2 space-x-reverse">
+                                <RadioGroupItem value="Evening" id="evening" />
+                                <Label htmlFor="evening">مسائية</Label>
+                            </div>
+                        </RadioGroup>
+                    )}
+                />
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                <Label>الفترة</Label>
-            </div>
-             <Controller
-                control={form.control}
-                name="period"
-                render={({ field }) => (
-                    <RadioGroup onValueChange={field.onChange} value={field.value} className="flex gap-4">
-                        <div className="flex items-center space-x-2 space-x-reverse">
-                            <RadioGroupItem value="Morning" id="morning" />
-                            <Label htmlFor="morning">صباحية</Label>
-                        </div>
-                        <div className="flex items-center space-x-2 space-x-reverse">
-                            <RadioGroupItem value="Evening" id="evening" />
-                            <Label htmlFor="evening">مسائية</Label>
-                        </div>
-                    </RadioGroup>
-                 )}
-              />
-          </div>
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className='flex items-center gap-2'>
+                  <User className="h-5 w-5" />
+                  <Label htmlFor="salesperson">مندوب المبيعات</Label>
+                </div>
+                <Input id="salesperson" placeholder="مثال: يوسف خالد" {...form.register('salesperson')} />
+                {form.formState.errors.salesperson && <p className="text-sm font-medium text-destructive">{form.formState.errors.salesperson.message as string}</p>}
+              </div>
+               <div className="space-y-2">
+                <div className='flex items-center gap-2'>
+                  <Hash className="h-5 w-5" />
+                  <Label htmlFor="postingNumber">رقم الترحيل (اختياري)</Label>
+                </div>
+                <Input id="postingNumber" placeholder="مثال: JV-00123" {...form.register('postingNumber')} />
+              </div>
+           </div>
 
-          <div className="space-y-2">
-            <div className='flex items-center gap-2'>
-              <User className="h-5 w-5" />
-              <Label htmlFor="salesperson">مندوب المبيعات</Label>
-            </div>
-            <Input id="salesperson" placeholder="مثال: يوسف خالد" {...form.register('salesperson')} />
-             {form.formState.errors.salesperson && <p className="text-sm font-medium text-destructive">{form.formState.errors.salesperson.message}</p>}
-          </div>
 
           <Card className="p-4">
             <CardHeader className="p-2">

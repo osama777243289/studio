@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { FileCheck, Coins, Receipt, Wallet, CreditCard, BookUser, MessageSquare, Ban, Save, Info, MinusCircle, CheckCircle2 } from 'lucide-react';
+import { FileCheck, Coins, Receipt, Wallet, CreditCard, BookUser, MessageSquare, Ban, Save, Info, MinusCircle, CheckCircle2, Hash } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useEffect, useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
@@ -121,9 +121,17 @@ export function MatchingForm({ record }: MatchingFormProps) {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center gap-2">
-          <FileCheck className="h-6 w-6" />
-          <CardTitle>مطابقة المبيعات</CardTitle>
+        <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+                <FileCheck className="h-6 w-6" />
+                <CardTitle>مطابقة المبيعات</CardTitle>
+            </div>
+             {record.postingNumber && (
+                <div className="text-sm text-muted-foreground flex items-center gap-1">
+                    <Hash className="h-4 w-4"/>
+                    <span>{record.postingNumber}</span>
+                </div>
+            )}
         </div>
         <CardDescription>
             التاريخ: {record.date.toDateString()} - الفترة: {record.period === 'Morning' ? 'صباحية' : 'مسائية'} - الكاشير: {record.cashier}

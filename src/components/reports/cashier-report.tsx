@@ -16,11 +16,13 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { AlertCircle, Calendar, CheckCircle2, FileText, Gift, Lightbulb, MessageSquare, RefreshCw, Wallet, CreditCard, BookUser } from "lucide-react";
+import { AlertCircle, Calendar, CheckCircle2, FileText, Gift, Lightbulb, MessageSquare, RefreshCw, Wallet, CreditCard, BookUser, Hash } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 
 
 const reportData = {
+    id: "REP-20240610-001",
+    postingNumber: "JV-00512",
     period: "المسائية",
     date: "يونيو 9, 2025",
     status: "تمت المطابقة",
@@ -57,6 +59,7 @@ export function CashierReport() {
     <div className="bg-background rounded-lg border p-4 sm:p-6 md:p-8 space-y-6 printable-area">
         <div className="text-center">
             <h1 className="text-2xl font-bold font-headline">تقرير مبيعات الكاشير للفترة: {reportData.period} ليوم: {reportData.date}</h1>
+            <p className="text-sm text-muted-foreground">رقم التقرير: {reportData.id}</p>
         </div>
 
         <Card>
@@ -71,6 +74,12 @@ export function CashierReport() {
                 </Badge>
             </CardHeader>
             <CardContent>
+                {reportData.postingNumber && (
+                    <div className="text-sm text-muted-foreground mb-4 flex items-center gap-2">
+                        <Hash className="h-4 w-4"/>
+                        <span>رقم الترحيل: {reportData.postingNumber}</span>
+                    </div>
+                )}
                 <Table>
                     <TableHeader>
                         <TableRow>

@@ -26,6 +26,7 @@ export const salesRecordSchema = z.object({
   date: z.date(),
   period: z.enum(['Morning', 'Evening']),
   salesperson: z.string().min(2, "Salesperson name is required."),
+  postingNumber: z.string().optional(),
   cash: accountDetailSchema,
   cards: z.array(accountDetailSchema).optional(),
   credits: z.array(accountDetailSchema).optional(),
@@ -44,6 +45,7 @@ export interface SalesRecord {
     date: Timestamp;
     period: 'Morning' | 'Evening';
     cashier: string;
+    postingNumber?: string;
     total: number;
     status: 'Pending Upload' | 'Pending Matching' | 'Matched';
     cash: AccountDetail;
@@ -72,6 +74,7 @@ const seedSalesRecords = async () => {
             date: Timestamp.fromDate(new Date()),
             period: 'Morning',
             cashier: 'Yousef Khaled',
+            postingNumber: 'PO-001',
             total: 650,
             status: 'Pending Matching',
             cash: { accountId: cashAccount, accountName: accountMap.get(cashAccount), amount: 500 },
@@ -83,6 +86,7 @@ const seedSalesRecords = async () => {
             date: Timestamp.fromDate(new Date()),
             period: 'Evening',
             cashier: 'Ahmad Ali',
+            postingNumber: 'PO-002',
             total: 1200,
             status: 'Matched',
             cash: { accountId: cashAccount, accountName: accountMap.get(cashAccount), amount: 800 },
@@ -132,6 +136,7 @@ export const addSaleRecord = async (data: SalesRecordFormData): Promise<string> 
         date: Timestamp.fromDate(data.date),
         period: data.period,
         cashier: data.salesperson,
+        postingNumber: data.postingNumber || null,
         total: total,
         status: 'Pending Matching',
         cash: enrichedCash,
