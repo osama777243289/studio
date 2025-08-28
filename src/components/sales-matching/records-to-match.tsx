@@ -24,6 +24,9 @@ import { Badge } from '../ui/badge';
 
 
 interface RecordsToMatchProps {
+    title: string;
+    description: string;
+    icon: React.ReactNode;
     records: SalesRecord[];
     onSelectRecord: (record: SalesRecord) => void;
     selectedRecord: SalesRecord | null;
@@ -49,21 +52,22 @@ const translateStatus = (status: string) => {
     }
 }
 
-export function RecordsToMatch({ records, onSelectRecord, selectedRecord }: RecordsToMatchProps) {
+export function RecordsToMatch({ title, description, icon, records, onSelectRecord, selectedRecord }: RecordsToMatchProps) {
+  const isSelectable = records.some(r => r.status === 'Pending Matching');
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center gap-2">
-          <ListChecks className="h-6 w-6" />
-          <CardTitle>سجلات المبيعات</CardTitle>
+          {icon}
+          <CardTitle>{title}</CardTitle>
         </div>
         <CardDescription>
-          اختر سجلاً من القائمة أدناه لعرضه أو لبدء عملية المطابقة.
+          {description}
         </CardDescription>
       </CardHeader>
       <CardContent>
         {records.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">لم يتم العثور على سجلات مبيعات.</p>
+            <p className="text-center text-muted-foreground py-8">لم يتم العثور على سجلات.</p>
         ) : (
             <div className='overflow-x-auto'>
             <Table>
@@ -81,7 +85,7 @@ export function RecordsToMatch({ records, onSelectRecord, selectedRecord }: Reco
                     return (
                         <TableRow 
                             key={record.id}
-                            className={cn("cursor-pointer hover:bg-muted/50", selectedRecord?.id === record.id && 'bg-primary/10 hover:bg-primary/20')}
+                            className={cn(isSelectable && "cursor-pointer hover:bg-muted/50", selectedRecord?.id === record.id && 'bg-primary/10 hover:bg-primary/20')}
                             onClick={() => onSelectRecord(record)}
                         >
                             <TableCell>{format(record.date.toDate(), 'yyyy/MM/dd')} - {record.period === 'Morning' ? 'صباحية' : 'مسائية'}</TableCell>
