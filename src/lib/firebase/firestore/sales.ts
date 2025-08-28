@@ -180,22 +180,11 @@ export const addSaleRecord = async (
   const allAccounts = await getAccounts();
   const accountMap = createAccountMap(allAccounts);
 
-  let enrichedCash: AccountDetail = { accountId: '', amount: 0, accountName: ''};
-  if (data.cash && data.cash.accountId && data.cash.amount > 0) {
-      enrichedCash = {
-        accountId: data.cash.accountId,
-        amount: data.cash.amount,
-        accountName: accountMap.get(data.cash.accountId) || 'Unknown',
-      };
-  }
-  
-  const validCards = (data.cards || []).filter(card => card.accountId && card.amount > 0);
-  const validCredits = (data.credits || []).filter(credit => credit.accountId && credit.amount > 0);
-  
-  const enrichedCards = await Promise.all(
-    validCards.map(async (card) => {
+  // Process card payments and upload images
+  const processedCards = await Promise.all(
+    (data.cards || []).map(async (card) => {
       let imageUrl = '';
-      if (card.receiptImageFile) {
+      if (card.receiptImageFile instanceof File) {
         const file = card.receiptImageFile;
         const storageRef = ref(storage, `receipts/${Date.now()}-${file.name}`);
         const snapshot = await uploadBytes(storageRef, file);
@@ -204,11 +193,24 @@ export const addSaleRecord = async (
       return {
         accountId: card.accountId,
         amount: card.amount,
-        accountName: accountMap.get(card.accountId) || 'Unknown',
+        accountName: accountMap.get(card.accountId) || '',
         receiptImageUrl: imageUrl,
       };
     })
   );
+
+  // Filter out entries that are not valid for saving (no account or amount)
+  const validCards = processedCards.filter(c => c.accountId && c.amount > 0);
+  const validCredits = (data.credits || []).filter(c => c.accountId && c.amount > 0);
+  
+  let enrichedCash: AccountDetail = { accountId: '', amount: 0, accountName: ''};
+  if (data.cash && data.cash.accountId && data.cash.amount > 0) {
+      enrichedCash = {
+        accountId: data.cash.accountId,
+        amount: data.cash.amount,
+        accountName: accountMap.get(data.cash.accountId) || 'Unknown',
+      };
+  }
 
   const enrichedCredits = validCredits.map((credit) => ({
       accountId: credit.accountId,
@@ -218,7 +220,7 @@ export const addSaleRecord = async (
 
   const total =
     (enrichedCash.amount || 0) +
-    (enrichedCards?.reduce((sum, item) => sum + item.amount, 0) || 0) +
+    (validCards?.reduce((sum, item) => sum + item.amount, 0) || 0) +
     (enrichedCredits?.reduce((sum, item) => sum + item.amount, 0) || 0);
 
   const dataToSave = {
@@ -229,7 +231,7 @@ export const addSaleRecord = async (
     total: total,
     status: 'Pending Upload',
     cash: enrichedCash,
-    cards: enrichedCards,
+    cards: validCards,
     credits: enrichedCredits,
     createdAt: Timestamp.now(),
   };
@@ -334,3 +336,5 @@ export const getSaleRecordById = async (id: string): Promise<SalesRecord | null>
     return null;
   }
 }
+
+    
