@@ -87,8 +87,8 @@ export function SalesForm({ accounts }: SalesFormProps) {
         salesperson: '',
         postingNumber: '',
         cash: { accountId: '', amount: 0 },
-        cards: [{ accountId: '', amount: 0, receiptImageFile: undefined }],
-        credits: [{ accountId: '', amount: 0 }],
+        cards: [],
+        credits: [],
     }
   });
 
@@ -119,8 +119,8 @@ export function SalesForm({ accounts }: SalesFormProps) {
         salesperson: '',
         postingNumber: '',
         cash: { accountId: '', amount: 0 },
-        cards: [{ accountId: '', amount: 0, receiptImageFile: undefined }],
-        credits: [{ accountId: '', amount: 0 }],
+        cards: [],
+        credits: [],
       });
     } catch (error: any) {
        console.error("Failed to add sales record:", error);
@@ -277,11 +277,11 @@ export function SalesForm({ accounts }: SalesFormProps) {
                 <div key={field.id} className="p-3 border rounded-md space-y-3 relative">
                     <div className="flex justify-between items-center">
                         <Label>بطاقة {index + 1}</Label>
-                        {cardFields.length > 1 &&
+                        
                         <Button type="button" variant="ghost" size="icon" onClick={() => removeCard(index)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
-                        }
+                        
                     </div>
                    <div className="space-y-2">
                     <Label htmlFor={`card-name-${field.id}`}>حساب البطاقة</Label>
@@ -324,7 +324,7 @@ export function SalesForm({ accounts }: SalesFormProps) {
                   </div>
                 </div>
               ))}
-              <Button type="button" variant="outline" className="w-full" onClick={() => appendCard({ accountId: '', amount: 0, receiptImageFile: undefined })}>
+              <Button type="button" variant="outline" className="w-full" onClick={() => appendCard({ accountId: '', amount: 0, receiptImageFile: null })}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 إضافة حساب بطاقة
               </Button>
@@ -343,11 +343,11 @@ export function SalesForm({ accounts }: SalesFormProps) {
                 <div key={field.id} className="p-3 border rounded-md space-y-3 relative">
                   <div className="flex justify-between items-center">
                     <Label>ذمة {index + 1}</Label>
-                     {creditFields.length > 1 &&
+                     
                         <Button type="button" variant="ghost" size="icon" onClick={() => removeCredit(index)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
-                     }
+                     
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor={`credit-name-${field.id}`}>حساب العميل</Label>
@@ -396,3 +396,5 @@ export function SalesForm({ accounts }: SalesFormProps) {
     </Card>
   );
 }
+
+    
