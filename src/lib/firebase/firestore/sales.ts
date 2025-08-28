@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { db, storage } from '@/lib/firebase/client';
@@ -55,7 +56,7 @@ export const salesRecordSchema = z.object({
   salesperson: z.string().min(2, 'Salesperson name is required.'),
   postingNumber: z.string().optional(),
   cash: z.object({
-    accountId: z.string(),
+    accountId: z.string().min(1, 'يجب تحديد حساب نقدي.'),
     amount: z.coerce.number().min(0, 'Amount must be positive.'),
   }).optional(),
   cards: z.array(cardAccountDetailSchema).optional(),
@@ -158,7 +159,7 @@ const seedSalesRecords = async () => {
     },
   ];
 
-  const batch = writeBatch(db, 'salesRecords');
+  const batch = writeBatch(db);
   const salesCol = collection(db, 'salesRecords');
   defaultRecords.forEach((rec) => {
     const newDocRef = doc(salesCol);
@@ -188,31 +189,25 @@ export const addSaleRecord = async (
 
  const processedCards = await Promise.all(
     (data.cards || []).map(async (card) => {
-      // Start building the card object to save
       const processedCard: CardAccountDetail = {
         accountId: card.accountId,
         amount: card.amount,
         accountName: accountMap.get(card.accountId) || 'Unknown',
       };
-
-      // Safely check for receiptImage and upload it
       if (card.receiptImage) {
         try {
           const imageBuffer = dataUrlToBuffer(card.receiptImage);
           const storageRef = ref(storage, `receipts/${Date.now()}-${card.accountId}.jpg`);
           const snapshot = await uploadBytes(storageRef, imageBuffer, { contentType: 'image/jpeg' });
-          // Add the URL to the object ONLY after successful upload
           processedCard.receiptImageUrl = await getDownloadURL(snapshot.ref);
         } catch (error) {
            console.error("Error uploading image for card:", card.accountId, error);
-           // Continue without image URL if upload fails
         }
       }
       return processedCard;
     })
   );
   
-  // NOW filter for valid cards AFTER processing images
   const validCards = processedCards.filter(c => c.accountId && c.amount > 0);
   
   let enrichedCash: AccountDetail = { accountId: '', amount: 0, accountName: ''};
@@ -325,13 +320,7 @@ export const getSalesRecordsByStatus = async (
     orderBy('createdAt', 'desc')
   );
   const snapshot = await getDocs(q);
-
-  if (snapshot.empty && status === 'Pending Matching') {
-    // Let's not seed here anymore to avoid unexpected behavior.
-    // If it's empty, it's empty.
-    return [];
-  }
-
+  
   return snapshot.docs.map(
     (doc) => ({ id: doc.id, ...doc.data() } as SalesRecord)
   );
