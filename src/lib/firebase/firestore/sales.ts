@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { db, storage } from '@/lib/firebase/client';
@@ -15,6 +14,7 @@ import {
   writeBatch,
   doc,
   getDoc,
+  updateDoc,
 } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { z } from 'zod';
@@ -188,7 +188,7 @@ export const addSaleRecord = async (
   const allAccounts = await getAccounts();
   const accountMap = createAccountMap(allAccounts);
 
-  const processedCards = await Promise.all(
+ const processedCards = await Promise.all(
     (data.cards || []).map(async (card) => {
       const processedCard: CardAccountDetail = {
         accountId: card.accountId,
@@ -196,6 +196,7 @@ export const addSaleRecord = async (
         accountName: accountMap.get(card.accountId) || 'Unknown',
       };
 
+      // Only upload if there's an image data URL
       if (card.receiptImage) {
         try {
           const imageBuffer = dataUrlToBuffer(card.receiptImage);
@@ -210,9 +211,9 @@ export const addSaleRecord = async (
       return processedCard;
     })
   );
-
+  
   const validCards = processedCards.filter(c => c.accountId && c.amount > 0);
-
+  
   let enrichedCash: AccountDetail = { accountId: '', amount: 0, accountName: ''};
   if (data.cash && data.cash.accountId && data.cash.amount > 0) {
       enrichedCash = {
@@ -350,4 +351,17 @@ export const getSaleRecordById = async (id: string): Promise<SalesRecord | null>
   }
 }
 
-    
+// Update a sales record's status and actuals
+export const updateSaleRecordStatus = async (
+  recordId: string,
+  status: 'Matched' | 'Rejected',
+  actuals: { [key: string]: number },
+  notes: string
+): Promise<void> => {
+  const recordRef = doc(db, 'salesRecords', recordId);
+  await updateDoc(recordRef, {
+    status,
+    actuals,
+    matchNotes: notes,
+  });
+};
