@@ -17,20 +17,13 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { AlertCircle, Calendar, CheckCircle2, FileText, Gift, Lightbulb, MessageSquare, RefreshCw, Wallet, CreditCard, BookUser, Hash, Loader2, ImageIcon } from "lucide-react";
+import { AlertCircle, Calendar, CheckCircle2, FileText, Gift, Lightbulb, MessageSquare, RefreshCw, Wallet, CreditCard, BookUser, Hash, Loader2, ImageIcon, Paperclip } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { SalesRecord, getSaleRecordById } from "@/lib/firebase/firestore/sales";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import Image from "next/image";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
 
 
 // Mock data for initial design and when no data is fetched
@@ -181,23 +174,6 @@ export function CashierReport() {
                                     <TableCell>
                                        <div className="flex items-center gap-2">
                                            <span>{item.account}: {item.original.toFixed(2)}</span>
-                                           {item.receiptImageUrl && (
-                                               <Dialog>
-                                                   <DialogTrigger asChild>
-                                                       <Button variant="ghost" size="icon" className="h-6 w-6">
-                                                           <ImageIcon className="text-blue-500"/>
-                                                       </Button>
-                                                   </DialogTrigger>
-                                                   <DialogContent>
-                                                       <DialogHeader>
-                                                           <DialogTitle>إيصال الشبكة لـ {item.account}</DialogTitle>
-                                                       </DialogHeader>
-                                                       <div className="relative h-96 w-full mt-4">
-                                                           <Image src={item.receiptImageUrl} alt={`إيصال لـ ${item.account}`} layout="fill" objectFit="contain" />
-                                                       </div>
-                                                   </DialogContent>
-                                               </Dialog>
-                                           )}
                                        </div>
                                     </TableCell>
                                 </TableRow>
@@ -234,6 +210,31 @@ export function CashierReport() {
                 </div>
             </CardContent>
         </Card>
+        
+         <Card>
+            <CardHeader>
+                <div className="flex items-center gap-2">
+                    <Paperclip className="h-5 w-5" />
+                    <CardTitle className="text-lg">المرفقات</CardTitle>
+                </div>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {salesData.filter(item => !!item.receiptImageUrl).length > 0 ? (
+                    salesData.map((item, index) => (
+                        item.receiptImageUrl && (
+                            <div key={`img-${index}`} className="border rounded-md p-2 space-y-2">
+                                <p className="text-sm font-medium">إيصال لـ: {item.account}</p>
+                                <div className="relative h-96 w-full bg-muted rounded-md overflow-hidden">
+                                    <Image src={item.receiptImageUrl} alt={`إيصال لـ ${item.account}`} layout="fill" objectFit="contain" />
+                                </div>
+                            </div>
+                        )
+                    ))
+                ) : (
+                    <p className="text-sm text-muted-foreground col-span-full">لا توجد مرفقات لهذا التقرير.</p>
+                )}
+            </CardContent>
+        </Card>
 
          <Card>
             <CardHeader>
@@ -262,3 +263,5 @@ export function CashierReport() {
     </div>
   )
 }
+
+    
