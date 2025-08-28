@@ -180,9 +180,13 @@ export const addSaleRecord = async (
   const allAccounts = await getAccounts();
   const accountMap = createAccountMap(allAccounts);
 
-  // Process card payments and upload images
+  // Filter out entries that are not valid for saving (no account or amount)
+  const validCards = (data.cards || []).filter(c => c.accountId && c.amount > 0);
+  const validCredits = (data.credits || []).filter(c => c.accountId && c.amount > 0);
+
+  // Process card payments and upload images for valid cards only
   const processedCards = await Promise.all(
-    (data.cards || []).map(async (card) => {
+    validCards.map(async (card) => {
       let imageUrl = '';
       if (card.receiptImageFile instanceof File) {
         const file = card.receiptImageFile;
@@ -198,10 +202,6 @@ export const addSaleRecord = async (
       };
     })
   );
-
-  // Filter out entries that are not valid for saving (no account or amount)
-  const validCards = processedCards.filter(c => c.accountId && c.amount > 0);
-  const validCredits = (data.credits || []).filter(c => c.accountId && c.amount > 0);
   
   let enrichedCash: AccountDetail = { accountId: '', amount: 0, accountName: ''};
   if (data.cash && data.cash.accountId && data.cash.amount > 0) {
@@ -220,7 +220,7 @@ export const addSaleRecord = async (
 
   const total =
     (enrichedCash.amount || 0) +
-    (validCards?.reduce((sum, item) => sum + item.amount, 0) || 0) +
+    (processedCards?.reduce((sum, item) => sum + item.amount, 0) || 0) +
     (enrichedCredits?.reduce((sum, item) => sum + item.amount, 0) || 0);
 
   const dataToSave = {
@@ -231,7 +231,7 @@ export const addSaleRecord = async (
     total: total,
     status: 'Pending Upload',
     cash: enrichedCash,
-    cards: validCards,
+    cards: processedCards,
     credits: enrichedCredits,
     createdAt: Timestamp.now(),
   };
