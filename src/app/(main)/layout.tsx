@@ -5,25 +5,11 @@ import React from 'react';
 import Link from 'next/link';
 import {
   Menu,
-  CircleUser,
   Landmark,
-  LogOut,
 } from 'lucide-react';
 import { Nav, type NavLink } from '@/components/nav';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { useAuth } from '@/hooks/use-auth';
-import { auth } from '@/lib/firebase/client';
-import { useRouter } from 'next/navigation';
-import { Skeleton } from '@/components/ui/skeleton';
 
 const navLinks: NavLink[] = [
   { title: 'لوحة التحكم', href: '/dashboard', icon: 'LayoutDashboard' },
@@ -39,12 +25,7 @@ const navLinks: NavLink[] = [
   { title: 'إعدادات البيانات', href: '/data-settings', icon: 'Database' },
 ];
 
-function AuthLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-  const handleLogout = async () => {
-    await auth.signOut();
-    router.push('/login');
-  };
+export default function MainLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
@@ -86,25 +67,6 @@ function AuthLayout({ children }: { children: React.ReactNode }) {
             </SheetContent>
           </Sheet>
           <div className="w-full flex-1" />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="secondary" size="icon" className="rounded-full">
-                <CircleUser className="h-5 w-5" />
-                <span className="sr-only">تبديل قائمة المستخدم</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>حسابي</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>الإعدادات</DropdownMenuItem>
-              <DropdownMenuItem>الدعم</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout} className="text-destructive">
-                <LogOut className="ml-2 h-4 w-4" />
-                تسجيل الخروج
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 sm:p-6 md:p-8 overflow-y-auto">
           {children}
@@ -112,31 +74,4 @@ function AuthLayout({ children }: { children: React.ReactNode }) {
       </div>
     </div>
   )
-}
-
-function LoadingSkeleton() {
-  return (
-    <div className="flex items-center justify-center h-screen">
-      <Loader2 className="h-12 w-12 animate-spin text-primary" />
-    </div>
-  );
-}
-
-
-export default function MainLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const { user, loading } = useAuth();
-  
-  if (loading) {
-    return <LoadingSkeleton />;
-  }
-
-  if (!user) {
-    return null; // The useAuth hook will handle the redirect
-  }
-  
-  return <AuthLayout>{children}</AuthLayout>;
 }
