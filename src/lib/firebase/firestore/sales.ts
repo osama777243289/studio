@@ -35,7 +35,7 @@ export const salesRecordSchema = z.object({
   period: z.enum(['Morning', 'Evening']),
   salesperson: z.string().min(2, 'Salesperson name is required.'),
   postingNumber: z.string().optional(),
-  cash: accountDetailSchema,
+  cash: accountDetailSchema.optional(),
   cards: z.array(cardAccountDetailSchema).optional(),
   credits: z.array(accountDetailSchema).optional(),
 });
@@ -156,13 +156,15 @@ export const addSaleRecord = async (
   const allAccounts = await getAccounts();
   const accountMap = createAccountMap(allAccounts);
 
-  const enrichedCash = {
-    accountId: data.cash.accountId,
-    amount: data.cash.amount,
-    accountName: accountMap.get(data.cash.accountId) || 'Unknown',
-  };
+  let enrichedCash: AccountDetail = { accountId: '', amount: 0, accountName: ''};
+  if (data.cash && data.cash.accountId && data.cash.amount > 0) {
+      enrichedCash = {
+        accountId: data.cash.accountId,
+        amount: data.cash.amount,
+        accountName: accountMap.get(data.cash.accountId) || 'Unknown',
+      };
+  }
   
-  // Filter out invalid card/credit entries first
   const validCards = (data.cards || []).filter(card => card.accountId && card.amount > 0);
   const validCredits = (data.credits || []).filter(credit => credit.accountId && credit.amount > 0);
   
@@ -184,7 +186,6 @@ export const addSaleRecord = async (
     })
   );
 
-
   const enrichedCredits = validCredits.map((credit) => ({
       accountId: credit.accountId,
       amount: credit.amount,
@@ -192,9 +193,9 @@ export const addSaleRecord = async (
     }));
 
   const total =
-    (data.cash?.amount || 0) +
-    (validCards?.reduce((sum, item) => sum + item.amount, 0) || 0) +
-    (validCredits?.reduce((sum, item) => sum + item.amount, 0) || 0);
+    (enrichedCash.amount || 0) +
+    (enrichedCards?.reduce((sum, item) => sum + item.amount, 0) || 0) +
+    (enrichedCredits?.reduce((sum, item) => sum + item.amount, 0) || 0);
 
   const dataToSave = {
     date: Timestamp.fromDate(data.date),
