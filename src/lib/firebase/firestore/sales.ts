@@ -28,8 +28,7 @@ const accountDetailSchema = z.object({
 const cardAccountDetailSchema = z.object({
     accountId: z.string(),
     amount: z.coerce.number().min(0, 'Amount must be positive.'),
-    receiptImageFile: z.any().optional(),
-    receiptImageUrl: z.string().optional(),
+    receiptImageFile: z.instanceof(File).optional(),
 }).superRefine((data, ctx) => {
     if (data.amount > 0 && !data.accountId) {
         ctx.addIssue({
@@ -180,11 +179,8 @@ export const addSaleRecord = async (
   const allAccounts = await getAccounts();
   const accountMap = createAccountMap(allAccounts);
 
-  // Filter out entries that are not valid for saving (no account or amount)
   const validCards = (data.cards || []).filter(c => c.accountId && c.amount > 0);
-  const validCredits = (data.credits || []).filter(c => c.accountId && c.amount > 0);
-
-  // Process card payments and upload images for valid cards only
+  
   const processedCards = await Promise.all(
     validCards.map(async (card) => {
       let imageUrl = '';
@@ -202,7 +198,7 @@ export const addSaleRecord = async (
       };
     })
   );
-  
+
   let enrichedCash: AccountDetail = { accountId: '', amount: 0, accountName: ''};
   if (data.cash && data.cash.accountId && data.cash.amount > 0) {
       enrichedCash = {
@@ -212,6 +208,7 @@ export const addSaleRecord = async (
       };
   }
 
+  const validCredits = (data.credits || []).filter(c => c.accountId && c.amount > 0);
   const enrichedCredits = validCredits.map((credit) => ({
       accountId: credit.accountId,
       amount: credit.amount,
