@@ -21,13 +21,37 @@ import { getAccounts } from './accounts';
 import { Account } from '@/components/chart-of-accounts/account-tree';
 
 const accountDetailSchema = z.object({
-  accountId: z.string().min(1, 'Account is required.'),
+  accountId: z.string(),
   amount: z.coerce.number().min(0, 'Amount must be positive.'),
 });
 
-const cardAccountDetailSchema = accountDetailSchema.extend({
-  receiptImageFile: z.instanceof(File).optional(),
-  receiptImageUrl: z.string().optional(),
+const cardAccountDetailSchema = z.object({
+    accountId: z.string(),
+    amount: z.coerce.number().min(0, 'Amount must be positive.'),
+    receiptImageFile: z.instanceof(File).optional(),
+    receiptImageUrl: z.string().optional(),
+}).superRefine((data, ctx) => {
+    if (data.amount > 0 && !data.accountId) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "يجب تحديد حساب للبطاقة طالما أن المبلغ أكبر من صفر.",
+            path: ['accountId'],
+        });
+    }
+});
+
+
+const creditAccountDetailSchema = z.object({
+    accountId: z.string(),
+    amount: z.coerce.number().min(0, 'Amount must be positive.'),
+}).superRefine((data, ctx) => {
+    if (data.amount > 0 && !data.accountId) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "يجب تحديد حساب العميل طالما أن المبلغ أكبر من صفر.",
+            path: ['accountId'],
+        });
+    }
 });
 
 export const salesRecordSchema = z.object({
@@ -37,7 +61,7 @@ export const salesRecordSchema = z.object({
   postingNumber: z.string().optional(),
   cash: accountDetailSchema.optional(),
   cards: z.array(cardAccountDetailSchema).optional(),
-  credits: z.array(accountDetailSchema).optional(),
+  credits: z.array(creditAccountDetailSchema).optional(),
 });
 
 export type SalesRecordFormData = z.infer<typeof salesRecordSchema>;
