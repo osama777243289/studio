@@ -18,14 +18,16 @@ export default function SalesMatchingPage() {
     try {
       const fetchedRecords = await getSalesRecordsByStatus('Pending Matching');
       setRecords(fetchedRecords);
+      // Automatically select the first record if the list is not empty and no record is currently selected.
       if (fetchedRecords.length > 0 && !selectedRecord) {
           setSelectedRecord(fetchedRecords[0]);
       } else if (fetchedRecords.length === 0) {
+          // Clear selection if no records are returned
           setSelectedRecord(null);
       }
     } catch (error) {
         console.error("Failed to fetch records for matching:", error);
-        setRecords([]);
+        setRecords([]); // Clear records on error
     } finally {
         setLoading(false);
     }
@@ -37,9 +39,9 @@ export default function SalesMatchingPage() {
   }, []);
 
   const handleMatchSuccess = () => {
-      // Refresh the list after a successful match
-      fetchRecords();
+      // Clear the selected record and refresh the list from firestore
       setSelectedRecord(null);
+      fetchRecords();
   }
 
   return (

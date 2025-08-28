@@ -45,7 +45,7 @@ export function MatchingForm({ record, onMatchSuccess }: MatchingFormProps) {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Reset values when record changes
+    // Reset form when the selected record changes
     setActuals({});
     setNotes('');
   }, [record]);
@@ -74,7 +74,7 @@ export function MatchingForm({ record, onMatchSuccess }: MatchingFormProps) {
   }
 
   const handleActualChange = (key: string, value: string) => {
-    // Allow only numbers and a single decimal point
+    // Allow only numbers and a single decimal point for input
     if (/^\d*\.?\d*$/.test(value)) {
         setActuals(prev => ({...prev, [key]: value}));
     }
