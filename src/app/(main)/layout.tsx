@@ -1,10 +1,13 @@
 
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
 import {
   Menu,
   CircleUser,
   Landmark,
+  LogOut,
 } from 'lucide-react';
 import { Nav, type NavLink } from '@/components/nav';
 import { Button } from '@/components/ui/button';
@@ -17,6 +20,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { useAuth } from '@/hooks/use-auth';
+import { auth } from '@/lib/firebase/client';
+import { useRouter } from 'next/navigation';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const navLinks: NavLink[] = [
   { title: 'لوحة التحكم', href: '/dashboard', icon: 'LayoutDashboard' },
@@ -32,11 +39,13 @@ const navLinks: NavLink[] = [
   { title: 'إعدادات البيانات', href: '/data-settings', icon: 'Database' },
 ];
 
-export default function MainLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function AuthLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const handleLogout = async () => {
+    await auth.signOut();
+    router.push('/login');
+  };
+
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <div className="hidden border-l bg-card md:block">
@@ -90,7 +99,10 @@ export default function MainLayout({
               <DropdownMenuItem>الإعدادات</DropdownMenuItem>
               <DropdownMenuItem>الدعم</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>تسجيل الخروج</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+                <LogOut className="ml-2 h-4 w-4" />
+                تسجيل الخروج
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
@@ -99,5 +111,32 @@ export default function MainLayout({
         </main>
       </div>
     </div>
+  )
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="flex items-center justify-center h-screen">
+      <Loader2 className="h-12 w-12 animate-spin text-primary" />
+    </div>
   );
+}
+
+
+export default function MainLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return <LoadingSkeleton />;
+  }
+
+  if (!user) {
+    return null; // The useAuth hook will handle the redirect
+  }
+  
+  return <AuthLayout>{children}</AuthLayout>;
 }
