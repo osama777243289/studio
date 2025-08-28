@@ -37,6 +37,28 @@ const defaultUsers: Omit<User, 'id'>[] = [
             accounts: ['*']
         },
         avatarUrl: `https://picsum.photos/seed/admin/40/40`,
+    },
+    {
+        name: 'Osama',
+        email: 'alkhteebosama211@gmail.com',
+        mobile: '00967777243289',
+        type: 'regular',
+        role: ['Admin'],
+        status: 'نشط',
+        permissions: {
+             pages: {
+                dashboard: { view: true },
+                income: { view: true, create: true, edit: true, delete: true },
+                expenses: { view: true, create: true, edit: true, delete: true },
+                sales: { view: true, create: true, edit: true, delete: true },
+                chartOfAccounts: { view: true, create: true, edit: true, delete: true },
+                cashFlow: { view: true, create: true },
+                reports: { view: true, export: true },
+                users: { view: true, create: true, edit: true, delete: true, managePermissions: true },
+            },
+            accounts: ['*']
+        },
+        avatarUrl: `https://picsum.photos/seed/osama/40/40`,
     }
 ];
 

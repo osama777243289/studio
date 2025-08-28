@@ -21,7 +21,7 @@ import { auth, db } from "@/lib/firebase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, doc, setDoc } from "firebase/firestore"; 
 
 const signupSchema = z.object({
   name: z.string().min(2, { message: "الاسم مطلوب." }),
@@ -52,7 +52,9 @@ export default function SignupPage() {
             const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
             const user = userCredential.user;
 
-            // Step 2: Create user document in Firestore 'users' collection
+            // Step 2: Create user document in Firestore 'users' collection with the same UID
+            const newUserDocRef = doc(db, "users", user.uid);
+            
             const newUser = {
                 id: user.uid,
                 name: data.name,
@@ -65,7 +67,7 @@ export default function SignupPage() {
                 avatarUrl: `https://picsum.photos/seed/${user.uid}/40/40`,
             };
             
-            await addDoc(collection(db, "users"), newUser);
+            await setDoc(newUserDocRef, newUser);
 
             toast({
                 title: "تم إنشاء الحساب بنجاح",
