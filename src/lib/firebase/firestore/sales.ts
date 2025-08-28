@@ -29,7 +29,7 @@ const accountDetailSchema = z.object({
 const cardAccountDetailSchema = z.object({
     accountId: z.string(),
     amount: z.coerce.number().min(0, 'Amount must be positive.'),
-    receiptImage: z.string().optional(), // Now expects a base64 string
+    receiptImage: z.string().optional(),
 }).superRefine((data, ctx) => {
     if (data.amount > 0 && !data.accountId) {
         ctx.addIssue({
@@ -188,39 +188,30 @@ export const addSaleRecord = async (
   const allAccounts = await getAccounts();
   const accountMap = createAccountMap(allAccounts);
 
-  const cardsWithImages = (data.cards || []).filter(c => c.receiptImage);
-  
   const processedCards = await Promise.all(
-    cardsWithImages.map(async (card) => {
-      let imageUrl = '';
+    (data.cards || []).map(async (card) => {
+      const processedCard: CardAccountDetail = {
+        accountId: card.accountId,
+        amount: card.amount,
+        accountName: accountMap.get(card.accountId) || 'Unknown',
+      };
+
       if (card.receiptImage) {
         try {
           const imageBuffer = dataUrlToBuffer(card.receiptImage);
           const storageRef = ref(storage, `receipts/${Date.now()}-${card.accountId}.jpg`);
           const snapshot = await uploadBytes(storageRef, imageBuffer, { contentType: 'image/jpeg' });
-          imageUrl = await getDownloadURL(snapshot.ref);
+          processedCard.receiptImageUrl = await getDownloadURL(snapshot.ref);
         } catch (error) {
-           console.error("Error uploading image: ", error);
-           throw new Error("Failed to upload image to storage.");
+           console.error("Error uploading image for card:", card.accountId, error);
+           // Continue without image URL if upload fails
         }
       }
-      return {
-        accountId: card.accountId,
-        amount: card.amount,
-        accountName: accountMap.get(card.accountId) || '',
-        receiptImageUrl: imageUrl,
-      };
+      return processedCard;
     })
   );
 
-  const validCardsWithoutImages = (data.cards || []).filter(c => !c.receiptImage && c.accountId && c.amount > 0).map(c => ({
-      accountId: c.accountId,
-      amount: c.amount,
-      accountName: accountMap.get(c.accountId) || 'Unknown',
-      receiptImageUrl: '',
-  }));
-  
-  const allProcessedCards = [...processedCards, ...validCardsWithoutImages];
+  const validCards = processedCards.filter(c => c.accountId && c.amount > 0);
 
   let enrichedCash: AccountDetail = { accountId: '', amount: 0, accountName: ''};
   if (data.cash && data.cash.accountId && data.cash.amount > 0) {
@@ -240,7 +231,7 @@ export const addSaleRecord = async (
 
   const total =
     (enrichedCash.amount || 0) +
-    (allProcessedCards?.reduce((sum, item) => sum + item.amount, 0) || 0) +
+    (validCards?.reduce((sum, item) => sum + item.amount, 0) || 0) +
     (enrichedCredits?.reduce((sum, item) => sum + item.amount, 0) || 0);
 
   const dataToSave = {
@@ -249,9 +240,9 @@ export const addSaleRecord = async (
     cashier: data.salesperson,
     postingNumber: data.postingNumber || null,
     total: total,
-    status: 'Pending Upload',
+    status: 'Pending Matching',
     cash: enrichedCash,
-    cards: allProcessedCards,
+    cards: validCards,
     credits: enrichedCredits,
     createdAt: Timestamp.now(),
   };
@@ -334,7 +325,8 @@ export const getSalesRecordsByStatus = async (
   const snapshot = await getDocs(q);
 
   if (snapshot.empty && status === 'Pending Matching') {
-    console.log('No pending matching records found, trying to seed...');
+    // Let's not seed here anymore to avoid unexpected behavior.
+    // If it's empty, it's empty.
     return [];
   }
 
@@ -342,6 +334,7 @@ export const getSalesRecordsByStatus = async (
     (doc) => ({ id: doc.id, ...doc.data() } as SalesRecord)
   );
 };
+
 
 // Get a single sales record by its ID
 export const getSaleRecordById = async (id: string): Promise<SalesRecord | null> => {

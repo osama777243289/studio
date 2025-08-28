@@ -331,7 +331,7 @@ export function SalesForm({ accounts }: SalesFormProps) {
                   </div>
                 </div>
               ))}
-              <Button type="button" variant="outline" className="w-full" onClick={() => appendCard({ accountId: '', amount: 0, receiptImage: null })}>
+              <Button type="button" variant="outline" className="w-full" onClick={() => appendCard({ accountId: '', amount: 0, receiptImage: '' })}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 إضافة حساب بطاقة
               </Button>

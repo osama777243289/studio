@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -13,11 +14,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { FileCheck, Coins, Receipt, Wallet, CreditCard, BookUser, MessageSquare, Ban, Save, Info, MinusCircle, CheckCircle2, Hash, Image as ImageIcon } from 'lucide-react';
+import { FileCheck, Coins, Receipt, Wallet, CreditCard, BookUser, MessageSquare, Ban, Save, Info, MinusCircle, CheckCircle2, Hash, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useEffect, useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import { SalesRecord, CardAccountDetail } from '@/lib/firebase/firestore/sales';
+import { SalesRecord, CardAccountDetail, updateSaleRecordStatus } from '@/lib/firebase/firestore/sales';
 import Image from 'next/image';
 import {
   Dialog,
@@ -26,21 +27,27 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { useToast } from '@/hooks/use-toast';
 
 interface MatchingFormProps {
     record: SalesRecord | null;
+    onMatchSuccess: () => void;
 }
 
 interface ActualAmounts {
     [key: string]: number | string;
 }
 
-export function MatchingForm({ record }: MatchingFormProps) {
+export function MatchingForm({ record, onMatchSuccess }: MatchingFormProps) {
   const [actuals, setActuals] = useState<ActualAmounts>({});
+  const [notes, setNotes] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Reset values when record changes
     setActuals({});
+    setNotes('');
   }, [record]);
 
 
@@ -80,8 +87,11 @@ export function MatchingForm({ record }: MatchingFormProps) {
     }
   }
   
-  const getNumericValue = (key: string) => {
+  const getNumericValue = (key: string, defaultValue: number) => {
       const value = actuals[key];
+       if (value === undefined || value === '') {
+        return defaultValue;
+      }
       if (typeof value === 'string' && value.endsWith('.')) {
         return parseFloat(value.slice(0, -1)) || 0;
       }
@@ -93,15 +103,47 @@ export function MatchingForm({ record }: MatchingFormProps) {
   const registeredCredits = record.credits.reduce((sum, acc) => sum + acc.amount, 0);
   const totalRegistered = record.total;
   
-  const actualCash = getNumericValue('cash');
-  const actualCards = record.cards.reduce((sum, acc, i) => sum + getNumericValue(`card-${i}`), 0);
-  const actualCredits = record.credits.reduce((sum, acc, i) => sum + getNumericValue(`credit-${i}`), 0);
+  const actualCash = getNumericValue('cash', registeredCash);
+  const actualCards = record.cards.reduce((sum, acc, i) => sum + getNumericValue(`card-${i}`, acc.amount), 0);
+  const actualCredits = record.credits.reduce((sum, acc, i) => sum + getNumericValue(`credit-${i}`, acc.amount), 0);
   const totalActual = actualCash + actualCards + actualCredits;
 
   const totalDifference = totalActual - totalRegistered;
+
+  const handleConfirmMatch = async () => {
+      setIsSubmitting(true);
+      try {
+          const actualsToSave: { [key: string]: number } = {};
+          actualsToSave['cash'] = getNumericValue('cash', registeredCash);
+          record.cards.forEach((card, i) => {
+              actualsToSave[`card-${i}`] = getNumericValue(`card-${i}`, card.amount);
+          });
+          record.credits.forEach((credit, i) => {
+              actualsToSave[`credit-${i}`] = getNumericValue(`credit-${i}`, credit.amount);
+          });
+          
+          await updateSaleRecordStatus(record.id, 'Matched', actualsToSave, notes);
+
+          toast({
+              title: 'نجاح',
+              description: 'تم اعتماد المطابقة بنجاح.',
+          });
+          onMatchSuccess();
+
+      } catch (error) {
+           console.error("Failed to match record:", error);
+           toast({
+               title: 'خطأ',
+               description: 'فشل اعتماد المطابقة. يرجى المحاولة مرة أخرى.',
+               variant: 'destructive',
+           });
+      } finally {
+          setIsSubmitting(false);
+      }
+  };
   
   const renderMatchingRow = (label: string, registeredAmount: number, actualKey: string, card?: CardAccountDetail) => {
-    const actualAmount = getNumericValue(actualKey);
+    const actualAmount = getNumericValue(actualKey, registeredAmount);
     const difference = actualAmount - registeredAmount;
     return (
       <TableRow>
@@ -130,8 +172,8 @@ export function MatchingForm({ record }: MatchingFormProps) {
            <Input 
              type="text" 
              inputMode="decimal"
-             placeholder="0.00" 
-             value={actuals[actualKey] ?? '0'}
+             placeholder={registeredAmount.toFixed(2)} 
+             value={actuals[actualKey] ?? ''}
              onChange={e => handleActualChange(actualKey, e.target.value)}
              onFocus={() => handleFocus(actualKey)}
              className="w-32"
@@ -161,7 +203,7 @@ export function MatchingForm({ record }: MatchingFormProps) {
             )}
         </div>
         <CardDescription>
-            التاريخ: {record.date.toDateString()} - الفترة: {record.period === 'Morning' ? 'صباحية' : 'مسائية'} - الكاشير: {record.cashier}
+            التاريخ: {new Date(record.date.seconds * 1000).toLocaleDateString('ar-EG')} - الفترة: {record.period === 'Morning' ? 'صباحية' : 'مسائية'} - الكاشير: {record.cashier}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -190,7 +232,7 @@ export function MatchingForm({ record }: MatchingFormProps) {
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {record.cash && renderMatchingRow(record.cash.accountName || 'نقدي', record.cash.amount, 'cash')}
+                {record.cash && record.cash.amount > 0 && renderMatchingRow(record.cash.accountName || 'نقدي', record.cash.amount, 'cash')}
                 {record.cards.map((card, i) => renderMatchingRow(card.accountName || `بطاقة ${i+1}`, card.amount, `card-${i}`, card))}
                 {record.credits.map((credit, i) => renderMatchingRow(credit.accountName || `آجل ${i+1}`, credit.amount, `credit-${i}`))}
             </TableBody>
@@ -201,17 +243,17 @@ export function MatchingForm({ record }: MatchingFormProps) {
                 <MessageSquare className="h-5 w-5" />
                 <Label htmlFor="notes">ملاحظات المطابقة</Label>
             </div>
-            <Textarea id="notes" placeholder="اكتب ملاحظاتك هنا..." />
+            <Textarea id="notes" placeholder="اكتب ملاحظاتك هنا..." value={notes} onChange={(e) => setNotes(e.target.value)} />
         </div>
       </CardContent>
       <CardFooter className="flex justify-between">
-        <Button variant="outline">
+        <Button variant="outline" disabled={isSubmitting}>
             <Ban className="ml-2 h-4 w-4" />
              رفض وإعادة للكاشير
         </Button>
-        <Button className="bg-green-600 hover:bg-green-700 text-white">
-            <Save className="ml-2 h-4 w-4" />
-            حفظ واعتماد المطابقة
+        <Button onClick={handleConfirmMatch} className="bg-green-600 hover:bg-green-700 text-white" disabled={isSubmitting}>
+            {isSubmitting ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <Save className="ml-2 h-4 w-4" />}
+            {isSubmitting ? 'جاري الحفظ...' : 'حفظ واعتماد المطابقة'}
         </Button>
       </CardFooter>
     </Card>

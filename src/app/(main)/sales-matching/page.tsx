@@ -13,24 +13,34 @@ export default function SalesMatchingPage() {
   const [loading, setLoading] = useState(true);
   const [selectedRecord, setSelectedRecord] = useState<SalesRecord | null>(null);
 
-  useEffect(() => {
-    const fetchRecords = async () => {
-      setLoading(true);
-      try {
-        const fetchedRecords = await getSalesRecordsByStatus('Pending Matching');
-        setRecords(fetchedRecords);
-        if (fetchedRecords.length > 0) {
-            setSelectedRecord(fetchedRecords[0]);
-        }
-      } catch (error) {
-          console.error("Failed to fetch records for matching:", error);
-          setRecords([]);
-      } finally {
-          setLoading(false);
+  const fetchRecords = async () => {
+    setLoading(true);
+    try {
+      const fetchedRecords = await getSalesRecordsByStatus('Pending Matching');
+      setRecords(fetchedRecords);
+      if (fetchedRecords.length > 0 && !selectedRecord) {
+          setSelectedRecord(fetchedRecords[0]);
+      } else if (fetchedRecords.length === 0) {
+          setSelectedRecord(null);
       }
-    };
+    } catch (error) {
+        console.error("Failed to fetch records for matching:", error);
+        setRecords([]);
+    } finally {
+        setLoading(false);
+    }
+  };
+
+
+  useEffect(() => {
     fetchRecords();
   }, []);
+
+  const handleMatchSuccess = () => {
+      // Refresh the list after a successful match
+      fetchRecords();
+      setSelectedRecord(null);
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
@@ -46,7 +56,7 @@ export default function SalesMatchingPage() {
         )}
       </div>
       <div className="space-y-8">
-        <MatchingForm record={selectedRecord} />
+        <MatchingForm record={selectedRecord} onMatchSuccess={handleMatchSuccess} />
       </div>
     </div>
   );
