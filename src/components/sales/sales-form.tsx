@@ -132,15 +132,22 @@ export function SalesForm({ accounts }: SalesFormProps) {
     }
   }
   
-  const handleImageUpload = async (file: File | undefined, index: number) => {
-    if (file) {
-      if (file.size > 1024 * 1024 * 5) { // 5MB limit
-        toast({ title: 'خطأ', description: 'حجم الصورة يجب أن يكون أقل من 5 ميجابايت.', variant: 'destructive' });
-        return;
-      }
-      form.setValue(`cards.${index}.receiptImageFile`, file, { shouldValidate: true });
-       toast({ title: 'نجاح', description: 'تم إرفاق الصورة بنجاح وجاهزة للرفع عند الحفظ.'});
+ const handleImageUpload = async (file: File | undefined, index: number) => {
+    if (!file) return;
+
+    if (file.size > 1024 * 1024 * 5) { // 5MB limit
+      toast({ title: 'خطأ', description: 'حجم الصورة يجب أن يكون أقل من 5 ميجابايت.', variant: 'destructive' });
+      return;
     }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      // result contains the base64 data URL
+      const dataUrl = reader.result as string;
+      form.setValue(`cards.${index}.receiptImage`, dataUrl, { shouldValidate: true });
+      toast({ title: 'نجاح', description: 'تم إرفاق الصورة بنجاح وجاهزة للرفع عند الحفظ.' });
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -315,7 +322,7 @@ export function SalesForm({ accounts }: SalesFormProps) {
                             onChange={(e) => handleImageUpload(e.target.files?.[0], index)}
                          />
                       </div>
-                       {form.watch(`cards.${index}.receiptImageFile`) && (
+                       {form.watch(`cards.${index}.receiptImage`) && (
                           <div className="text-xs text-green-600 flex items-center gap-1 mt-1">
                               <Paperclip className="h-3 w-3" />
                               تم إرفاق الصورة وجاهزة للرفع عند الحفظ.
@@ -324,7 +331,7 @@ export function SalesForm({ accounts }: SalesFormProps) {
                   </div>
                 </div>
               ))}
-              <Button type="button" variant="outline" className="w-full" onClick={() => appendCard({ accountId: '', amount: 0, receiptImageFile: null })}>
+              <Button type="button" variant="outline" className="w-full" onClick={() => appendCard({ accountId: '', amount: 0, receiptImage: null })}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 إضافة حساب بطاقة
               </Button>

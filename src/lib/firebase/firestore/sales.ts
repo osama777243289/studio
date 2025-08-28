@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { db, storage } from '@/lib/firebase/client';
@@ -28,7 +29,7 @@ const accountDetailSchema = z.object({
 const cardAccountDetailSchema = z.object({
     accountId: z.string(),
     amount: z.coerce.number().min(0, 'Amount must be positive.'),
-    receiptImageFile: z.instanceof(File).optional(),
+    receiptImage: z.string().optional(), // Now expects a base64 string
 }).superRefine((data, ctx) => {
     if (data.amount > 0 && !data.accountId) {
         ctx.addIssue({
@@ -72,7 +73,6 @@ export interface AccountDetail {
 }
 
 export interface CardAccountDetail extends AccountDetail {
-  receiptImageFile?: File;
   receiptImageUrl?: string; 
 }
 
@@ -170,6 +170,15 @@ const seedSalesRecords = async () => {
   console.log('Default sales records have been seeded.');
 };
 
+// Function to convert data URL to a Buffer
+const dataUrlToBuffer = (dataUrl: string): Buffer => {
+  const base64 = dataUrl.split(',')[1];
+  if (!base64) {
+    throw new Error('Invalid data URL');
+  }
+  return Buffer.from(base64, 'base64');
+};
+
 
 // Add a new sales record
 export const addSaleRecord = async (
@@ -179,16 +188,21 @@ export const addSaleRecord = async (
   const allAccounts = await getAccounts();
   const accountMap = createAccountMap(allAccounts);
 
-  const validCards = (data.cards || []).filter(c => c.accountId && c.amount > 0);
+  const cardsWithImages = (data.cards || []).filter(c => c.receiptImage);
   
   const processedCards = await Promise.all(
-    validCards.map(async (card) => {
+    cardsWithImages.map(async (card) => {
       let imageUrl = '';
-      if (card.receiptImageFile instanceof File) {
-        const file = card.receiptImageFile;
-        const storageRef = ref(storage, `receipts/${Date.now()}-${file.name}`);
-        const snapshot = await uploadBytes(storageRef, file);
-        imageUrl = await getDownloadURL(snapshot.ref);
+      if (card.receiptImage) {
+        try {
+          const imageBuffer = dataUrlToBuffer(card.receiptImage);
+          const storageRef = ref(storage, `receipts/${Date.now()}-${card.accountId}.jpg`);
+          const snapshot = await uploadBytes(storageRef, imageBuffer, { contentType: 'image/jpeg' });
+          imageUrl = await getDownloadURL(snapshot.ref);
+        } catch (error) {
+           console.error("Error uploading image: ", error);
+           throw new Error("Failed to upload image to storage.");
+        }
       }
       return {
         accountId: card.accountId,
@@ -198,6 +212,15 @@ export const addSaleRecord = async (
       };
     })
   );
+
+  const validCardsWithoutImages = (data.cards || []).filter(c => !c.receiptImage && c.accountId && c.amount > 0).map(c => ({
+      accountId: c.accountId,
+      amount: c.amount,
+      accountName: accountMap.get(c.accountId) || 'Unknown',
+      receiptImageUrl: '',
+  }));
+  
+  const allProcessedCards = [...processedCards, ...validCardsWithoutImages];
 
   let enrichedCash: AccountDetail = { accountId: '', amount: 0, accountName: ''};
   if (data.cash && data.cash.accountId && data.cash.amount > 0) {
@@ -217,7 +240,7 @@ export const addSaleRecord = async (
 
   const total =
     (enrichedCash.amount || 0) +
-    (processedCards?.reduce((sum, item) => sum + item.amount, 0) || 0) +
+    (allProcessedCards?.reduce((sum, item) => sum + item.amount, 0) || 0) +
     (enrichedCredits?.reduce((sum, item) => sum + item.amount, 0) || 0);
 
   const dataToSave = {
@@ -228,7 +251,7 @@ export const addSaleRecord = async (
     total: total,
     status: 'Pending Upload',
     cash: enrichedCash,
-    cards: processedCards,
+    cards: allProcessedCards,
     credits: enrichedCredits,
     createdAt: Timestamp.now(),
   };
