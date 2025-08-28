@@ -28,7 +28,7 @@ const accountDetailSchema = z.object({
 const cardAccountDetailSchema = z.object({
     accountId: z.string(),
     amount: z.coerce.number().min(0, 'Amount must be positive.'),
-    receiptImageFile: z.instanceof(File).optional(),
+    receiptImageFile: z.any().optional(),
     receiptImageUrl: z.string().optional(),
 }).superRefine((data, ctx) => {
     if (data.amount > 0 && !data.accountId) {
