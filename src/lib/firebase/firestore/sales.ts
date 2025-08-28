@@ -158,7 +158,7 @@ const seedSalesRecords = async () => {
     },
   ];
 
-  const batch = writeBatch(db);
+  const batch = writeBatch(db, 'salesRecords');
   const salesCol = collection(db, 'salesRecords');
   defaultRecords.forEach((rec) => {
     const newDocRef = doc(salesCol);
@@ -188,6 +188,7 @@ export const addSaleRecord = async (
 
  const processedCards = await Promise.all(
     (data.cards || []).map(async (card) => {
+      // Start building the card object to save
       const processedCard: CardAccountDetail = {
         accountId: card.accountId,
         amount: card.amount,
@@ -200,6 +201,7 @@ export const addSaleRecord = async (
           const imageBuffer = dataUrlToBuffer(card.receiptImage);
           const storageRef = ref(storage, `receipts/${Date.now()}-${card.accountId}.jpg`);
           const snapshot = await uploadBytes(storageRef, imageBuffer, { contentType: 'image/jpeg' });
+          // Add the URL to the object ONLY after successful upload
           processedCard.receiptImageUrl = await getDownloadURL(snapshot.ref);
         } catch (error) {
            console.error("Error uploading image for card:", card.accountId, error);
@@ -210,6 +212,7 @@ export const addSaleRecord = async (
     })
   );
   
+  // NOW filter for valid cards AFTER processing images
   const validCards = processedCards.filter(c => c.accountId && c.amount > 0);
   
   let enrichedCash: AccountDetail = { accountId: '', amount: 0, accountName: ''};
