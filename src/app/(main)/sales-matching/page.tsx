@@ -36,6 +36,8 @@ export default function SalesMatchingPage() {
 
   useEffect(() => {
     fetchRecords();
+    // The dependency array is intentionally empty to only run once on mount.
+    // Refreshing is handled by onMatchSuccess.
   }, []);
 
   const handleMatchSuccess = () => {
