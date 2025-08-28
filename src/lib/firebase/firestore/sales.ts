@@ -49,6 +49,7 @@ export interface AccountDetail {
 }
 
 export interface CardAccountDetail extends AccountDetail {
+  receiptImageFile?: File;
   receiptImageUrl?: string; 
 }
 
@@ -156,43 +157,44 @@ export const addSaleRecord = async (
   const accountMap = createAccountMap(allAccounts);
 
   const enrichedCash = {
-    ...data.cash,
+    accountId: data.cash.accountId,
+    amount: data.cash.amount,
     accountName: accountMap.get(data.cash.accountId) || 'Unknown',
   };
   
+  // Filter out invalid card/credit entries first
+  const validCards = (data.cards || []).filter(card => card.accountId && card.amount > 0);
+  const validCredits = (data.credits || []).filter(credit => credit.accountId && credit.amount > 0);
+  
   const enrichedCards = await Promise.all(
-    (data.cards || [])
-      .filter(card => card.accountId && card.amount > 0) // Process only if account and amount are provided
-      .map(async (card) => {
-          let imageUrl = '';
-          if (card.receiptImageFile) {
-              const file = card.receiptImageFile;
-              const storageRef = ref(storage, `receipts/${Date.now()}-${file.name}`);
-              const snapshot = await uploadBytes(storageRef, file);
-              imageUrl = await getDownloadURL(snapshot.ref);
-          }
-          return {
-              accountId: card.accountId,
-              amount: card.amount,
-              accountName: accountMap.get(card.accountId) || 'Unknown',
-              receiptImageUrl: imageUrl,
-          };
-      })
+    validCards.map(async (card) => {
+      let imageUrl = '';
+      if (card.receiptImageFile) {
+        const file = card.receiptImageFile;
+        const storageRef = ref(storage, `receipts/${Date.now()}-${file.name}`);
+        const snapshot = await uploadBytes(storageRef, file);
+        imageUrl = await getDownloadURL(snapshot.ref);
+      }
+      return {
+        accountId: card.accountId,
+        amount: card.amount,
+        accountName: accountMap.get(card.accountId) || 'Unknown',
+        receiptImageUrl: imageUrl,
+      };
+    })
   );
 
 
-  const enrichedCredits =
-    (data.credits || [])
-    .filter(credit => credit.accountId && credit.amount > 0)
-    .map((credit) => ({
-      ...credit,
+  const enrichedCredits = validCredits.map((credit) => ({
+      accountId: credit.accountId,
+      amount: credit.amount,
       accountName: accountMap.get(credit.accountId) || 'Unknown',
     }));
 
   const total =
     (data.cash?.amount || 0) +
-    (data.cards?.reduce((sum, item) => sum + item.amount, 0) || 0) +
-    (data.credits?.reduce((sum, item) => sum + item.amount, 0) || 0);
+    (validCards?.reduce((sum, item) => sum + item.amount, 0) || 0) +
+    (validCredits?.reduce((sum, item) => sum + item.amount, 0) || 0);
 
   const dataToSave = {
     date: Timestamp.fromDate(data.date),
