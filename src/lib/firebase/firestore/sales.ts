@@ -21,15 +21,10 @@ import { z } from 'zod';
 import { getAccounts } from './accounts';
 import { Account } from '@/components/chart-of-accounts/account-tree';
 
-const accountDetailSchema = z.object({
-  accountId: z.string(),
-  amount: z.coerce.number().min(0, 'Amount must be positive.'),
-});
-
 const cardAccountDetailSchema = z.object({
     accountId: z.string(),
     amount: z.coerce.number().min(0, 'Amount must be positive.'),
-    receiptImage: z.string().optional(),
+    receiptImage: z.string().optional(), // Expecting a base64 data URL
 }).superRefine((data, ctx) => {
     if (data.amount > 0 && !data.accountId) {
         ctx.addIssue({
@@ -59,7 +54,10 @@ export const salesRecordSchema = z.object({
   period: z.enum(['Morning', 'Evening']),
   salesperson: z.string().min(2, 'Salesperson name is required.'),
   postingNumber: z.string().optional(),
-  cash: accountDetailSchema.optional(),
+  cash: z.object({
+    accountId: z.string(),
+    amount: z.coerce.number().min(0, 'Amount must be positive.'),
+  }).optional(),
   cards: z.array(cardAccountDetailSchema).optional(),
   credits: z.array(creditAccountDetailSchema).optional(),
 });
@@ -196,7 +194,7 @@ export const addSaleRecord = async (
         accountName: accountMap.get(card.accountId) || 'Unknown',
       };
 
-      // Only upload if there's an image data URL
+      // Safely check for receiptImage and upload it
       if (card.receiptImage) {
         try {
           const imageBuffer = dataUrlToBuffer(card.receiptImage);
@@ -365,3 +363,5 @@ export const updateSaleRecordStatus = async (
     matchNotes: notes,
   });
 };
+
+    
