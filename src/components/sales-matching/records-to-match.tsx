@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -36,18 +37,21 @@ const getStatusVariant = (status: string) => {
     switch (status) {
         case 'قيد المطابقة':
             return 'destructive';
-        case 'مطابق':
-            return 'default';
+        case 'جاهز للترحيل':
+             return 'default'
+        case 'مُرحّل':
+            return 'secondary'
         default:
             return 'secondary';
     }
 }
 
-const translateStatus = (status: string) => {
+const translateStatus = (status: 'Pending Upload' | 'Pending Matching' | 'Ready for Posting' | 'Posted') => {
     switch (status) {
         case 'Pending Upload': return 'قيد الرفع';
         case 'Pending Matching': return 'قيد المطابقة';
-        case 'Matched': return 'مطابق';
+        case 'Ready for Posting': return 'جاهز للترحيل';
+        case 'Posted': return 'مُرحّل';
         default: return status;
     }
 }
@@ -93,9 +97,9 @@ export function RecordsToMatch({ title, description, icon, records, onSelectReco
                             <TableCell>${record.total.toFixed(2)}</TableCell>
                              <TableCell>
                                 <Badge variant={getStatusVariant(statusText)} className={
-                                    record.status === 'Matched' ? 'bg-green-100 text-green-800' : 
-                                    record.status === 'Pending Matching' ? 'bg-yellow-100 text-yellow-800' : 
-                                    'bg-blue-100 text-blue-800'
+                                    record.status === 'Ready for Posting' ? 'bg-green-100 text-green-800' : 
+                                    record.status === 'Pending Matching' ? 'bg-yellow-100 text-yellow-800' :
+                                    record.status === 'Posted' ? 'bg-blue-100 text-blue-800' : ''
                                 }>
                                     {statusText}
                                 </Badge>

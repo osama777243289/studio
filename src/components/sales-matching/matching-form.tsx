@@ -122,11 +122,11 @@ export function MatchingForm({ record, onMatchSuccess }: MatchingFormProps) {
               actualsToSave[`credit-${i}`] = getNumericValue(`credit-${i}`, credit.amount);
           });
           
-          await updateSaleRecordStatus(record.id, 'Matched', actualsToSave, notes);
+          await updateSaleRecordStatus(record.id, 'Ready for Posting', actualsToSave, notes);
 
           toast({
               title: 'نجاح',
-              description: 'تم اعتماد المطابقة بنجاح.',
+              description: 'تم اعتماد المطابقة بنجاح. السجل جاهز للترحيل.',
           });
           onMatchSuccess();
 

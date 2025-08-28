@@ -82,7 +82,7 @@ export interface SalesRecord {
   cashier: string;
   postingNumber?: string;
   total: number;
-  status: 'Pending Upload' | 'Pending Matching' | 'Matched';
+  status: 'Pending Upload' | 'Pending Matching' | 'Ready for Posting' | 'Posted';
   cash: AccountDetail;
   cards: CardAccountDetail[];
   credits: AccountDetail[];
@@ -141,11 +141,33 @@ const seedSalesRecords = async () => {
       cashier: 'Ahmad Ali',
       postingNumber: 'PO-002',
       total: 1200,
-      status: 'Matched',
+      status: 'Ready for Posting',
       cash: {
         accountId: cashAccount,
         accountName: accountMap.get(cashAccount),
         amount: 800,
+      },
+      cards: [],
+      credits: [
+        {
+          accountId: clientAccount,
+          accountName: accountMap.get(clientAccount),
+          amount: 400,
+        },
+      ],
+      createdAt: Timestamp.now(),
+    },
+     {
+      date: Timestamp.fromDate(new Date()),
+      period: 'Evening',
+      cashier: 'Sara Khalid',
+      postingNumber: 'PO-003',
+      total: 1800,
+      status: 'Posted',
+      cash: {
+        accountId: cashAccount,
+        accountName: accountMap.get(cashAccount),
+        amount: 1400,
       },
       cards: [],
       credits: [
@@ -187,8 +209,9 @@ export const addSaleRecord = async (
   const allAccounts = await getAccounts();
   const accountMap = createAccountMap(allAccounts);
 
- const processedCards = await Promise.all(
-    (data.cards || []).map(async (card) => {
+ const processedCards: CardAccountDetail[] = [];
+  if (data.cards) {
+    for (const card of data.cards) {
       const processedCard: CardAccountDetail = {
         accountId: card.accountId,
         amount: card.amount,
@@ -204,10 +227,10 @@ export const addSaleRecord = async (
            console.error("Error uploading image for card:", card.accountId, error);
         }
       }
-      return processedCard;
-    })
-  );
-  
+      processedCards.push(processedCard);
+    }
+  }
+
   const validCards = processedCards.filter(c => c.accountId && c.amount > 0);
   
   let enrichedCash: AccountDetail = { accountId: '', amount: 0, accountName: ''};
@@ -311,7 +334,7 @@ export const getSalesRecords = async (
 
 // Get sales records by status
 export const getSalesRecordsByStatus = async (
-  status: 'Pending Matching' | 'Matched' | 'Pending Upload'
+  status: 'Pending Matching' | 'Ready for Posting' | 'Posted'
 ): Promise<SalesRecord[]> => {
   const salesCol = collection(db, 'salesRecords');
   const q = query(
@@ -344,7 +367,7 @@ export const getSaleRecordById = async (id: string): Promise<SalesRecord | null>
 // Update a sales record's status and actuals
 export const updateSaleRecordStatus = async (
   recordId: string,
-  status: 'Matched' | 'Rejected',
+  status: 'Ready for Posting' | 'Rejected',
   actuals: { [key: string]: number },
   notes: string
 ): Promise<void> => {
@@ -356,4 +379,12 @@ export const updateSaleRecordStatus = async (
   });
 };
 
-    
+// Update a sales record's status to 'Posted'
+export const postSaleRecord = async (recordId: string): Promise<void> => {
+    const recordRef = doc(db, 'salesRecords', recordId);
+    await updateDoc(recordRef, {
+        status: 'Posted',
+    });
+    // Here you would also create the actual journal entries.
+    // This part is to be implemented.
+}
