@@ -20,6 +20,7 @@ import { ListChecks } from 'lucide-react';
 import { SalesRecord } from '@/lib/firebase/firestore/sales';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { Badge } from '../ui/badge';
 
 
 interface RecordsToMatchProps {
@@ -28,6 +29,25 @@ interface RecordsToMatchProps {
     selectedRecord: SalesRecord | null;
 }
 
+const getStatusVariant = (status: string) => {
+    switch (status) {
+        case 'قيد المطابقة':
+            return 'destructive';
+        case 'مطابق':
+            return 'default';
+        default:
+            return 'secondary';
+    }
+}
+
+const translateStatus = (status: string) => {
+    switch (status) {
+        case 'Pending Upload': return 'قيد الرفع';
+        case 'Pending Matching': return 'قيد المطابقة';
+        case 'Matched': return 'مطابق';
+        default: return status;
+    }
+}
 
 export function RecordsToMatch({ records, onSelectRecord, selectedRecord }: RecordsToMatchProps) {
   return (
@@ -35,39 +55,50 @@ export function RecordsToMatch({ records, onSelectRecord, selectedRecord }: Reco
       <CardHeader>
         <div className="flex items-center gap-2">
           <ListChecks className="h-6 w-6" />
-          <CardTitle>السجلات قيد المطابقة</CardTitle>
+          <CardTitle>سجلات المبيعات</CardTitle>
         </div>
         <CardDescription>
-          اختر سجلاً من القائمة أدناه لبدء عملية المطابقة.
+          اختر سجلاً من القائمة أدناه لعرضه أو لبدء عملية المطابقة.
         </CardDescription>
       </CardHeader>
       <CardContent>
         {records.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">لا توجد سجلات قيد المطابقة حاليًا.</p>
+            <p className="text-center text-muted-foreground py-8">لم يتم العثور على سجلات مبيعات.</p>
         ) : (
             <div className='overflow-x-auto'>
             <Table>
             <TableHeader>
                 <TableRow>
                 <TableHead>التاريخ</TableHead>
-                <TableHead>الفترة</TableHead>
                 <TableHead>الكاشير</TableHead>
                 <TableHead>الإجمالي</TableHead>
+                <TableHead>الحالة</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {records.map((record) => (
-                <TableRow 
-                    key={record.id}
-                    className={cn("cursor-pointer hover:bg-muted/50", selectedRecord?.id === record.id && 'bg-primary/10 hover:bg-primary/20')}
-                    onClick={() => onSelectRecord(record)}
-                >
-                    <TableCell>{format(record.date.toDate(), 'PPP')}</TableCell>
-                    <TableCell>{record.period === 'Morning' ? 'صباحية' : 'مسائية'}</TableCell>
-                    <TableCell>{record.cashier}</TableCell>
-                    <TableCell>${record.total.toFixed(2)}</TableCell>
-                </TableRow>
-                ))}
+                {records.map((record) => {
+                    const statusText = translateStatus(record.status);
+                    return (
+                        <TableRow 
+                            key={record.id}
+                            className={cn("cursor-pointer hover:bg-muted/50", selectedRecord?.id === record.id && 'bg-primary/10 hover:bg-primary/20')}
+                            onClick={() => onSelectRecord(record)}
+                        >
+                            <TableCell>{format(record.date.toDate(), 'yyyy/MM/dd')} - {record.period === 'Morning' ? 'صباحية' : 'مسائية'}</TableCell>
+                            <TableCell>{record.cashier}</TableCell>
+                            <TableCell>${record.total.toFixed(2)}</TableCell>
+                             <TableCell>
+                                <Badge variant={getStatusVariant(statusText)} className={
+                                    record.status === 'Matched' ? 'bg-green-100 text-green-800' : 
+                                    record.status === 'Pending Matching' ? 'bg-yellow-100 text-yellow-800' : 
+                                    'bg-blue-100 text-blue-800'
+                                }>
+                                    {statusText}
+                                </Badge>
+                            </TableCell>
+                        </TableRow>
+                    )
+                })}
             </TableBody>
             </Table>
             </div>

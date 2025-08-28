@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { MatchingForm } from '@/components/sales-matching/matching-form';
 import { RecordsToMatch } from '@/components/sales-matching/records-to-match';
-import { getSalesRecordsByStatus, SalesRecord } from '@/lib/firebase/firestore/sales';
+import { getSalesRecords, SalesRecord } from '@/lib/firebase/firestore/sales';
 import { Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -16,7 +16,7 @@ export default function SalesMatchingPage() {
   const fetchRecords = async () => {
     setLoading(true);
     try {
-      const fetchedRecords = await getSalesRecordsByStatus('Pending Matching');
+      const fetchedRecords = await getSalesRecords();
       setRecords(fetchedRecords);
       // Automatically select the first record if the list is not empty and no record is currently selected.
       if (fetchedRecords.length > 0 && !selectedRecord) {
