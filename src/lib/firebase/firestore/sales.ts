@@ -161,8 +161,10 @@ export const addSaleRecord = async (
   };
   
   const enrichedCards = await Promise.all(
-      (data.cards || []).map(async (card) => {
-          let imageUrl = card.receiptImageUrl || '';
+    (data.cards || [])
+      .filter(card => card.accountId && card.amount > 0) // Process only if account and amount are provided
+      .map(async (card) => {
+          let imageUrl = '';
           if (card.receiptImageFile) {
               const file = card.receiptImageFile;
               const storageRef = ref(storage, `receipts/${Date.now()}-${file.name}`);
@@ -180,10 +182,12 @@ export const addSaleRecord = async (
 
 
   const enrichedCredits =
-    data.credits?.map((credit) => ({
+    (data.credits || [])
+    .filter(credit => credit.accountId && credit.amount > 0)
+    .map((credit) => ({
       ...credit,
       accountName: accountMap.get(credit.accountId) || 'Unknown',
-    })) || [];
+    }));
 
   const total =
     (data.cash?.amount || 0) +
