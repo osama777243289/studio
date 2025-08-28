@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -151,24 +150,18 @@ export function SalesForm({ accounts }: SalesFormProps) {
   };
 
   return (
-    <Card>
      <form onSubmit={form.handleSubmit(onSubmit)}>
       <CardHeader>
         <div className="flex items-center gap-2">
             <Pencil className="h-6 w-6" />
-            <CardTitle>إدخال / تعديل المبيعات اليومية</CardTitle>
+            <CardTitle>إدخال المبيعات اليومية</CardTitle>
         </div>
+         <CardDescription>
+              الرجاء تحديد تاريخ وفترة لبدء إدخال بيانات المبيعات.
+            </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          <Alert>
-            <Info className="h-4 w-4" />
-            <AlertTitle>إدخال جديد</AlertTitle>
-            <AlertDescription>
-              الرجاء تحديد تاريخ لبدء إدخال جديد أو تحديد سجل سابق لعرضه أو تعديله.
-            </AlertDescription>
-          </Alert>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
                 <Label htmlFor="date">التاريخ</Label>
@@ -400,8 +393,5 @@ export function SalesForm({ accounts }: SalesFormProps) {
         </Button>
       </CardFooter>
     </form>
-    </Card>
   );
 }
-
-    

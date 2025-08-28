@@ -2,12 +2,12 @@
 'use client';
 
 import { SalesForm } from '@/components/sales/sales-form';
-import { SalesRecords } from '@/components/sales/sales-records';
 import { Account } from '@/components/chart-of-accounts/account-tree';
 import { useEffect, useState } from 'react';
 import { getAccounts } from '@/lib/firebase/firestore/accounts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SalesRecord } from '@/lib/firebase/firestore/sales';
+import { Card } from '@/components/ui/card';
 
 export default function SalesPage() {
     const [accounts, setAccounts] = useState<Account[]>([]);
@@ -31,10 +31,10 @@ export default function SalesPage() {
 
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-      <div className="space-y-8">
+    <div className="flex justify-center items-start pt-8">
+      <Card className="w-full max-w-2xl">
         {loading ? (
-             <div className="space-y-8 p-4 border rounded-lg">
+             <div className="space-y-8 p-6">
                 <Skeleton className="h-8 w-1/2" />
                 <div className="space-y-4">
                     <Skeleton className="h-6 w-1/4" />
@@ -53,10 +53,7 @@ export default function SalesPage() {
         ) : (
              <SalesForm accounts={accounts}/>
         )}
-      </div>
-      <div className="space-y-8">
-        <SalesRecords />
-      </div>
+      </Card>
     </div>
   );
 }
