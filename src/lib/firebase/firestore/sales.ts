@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { db, storage } from '@/lib/firebase/client';
@@ -21,6 +20,7 @@ import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { z } from 'zod';
 import { getAccounts } from './accounts';
 import { Account } from '@/components/chart-of-accounts/account-tree';
+import { addTransaction } from './transactions';
 
 const cardAccountDetailSchema = z.object({
     accountId: z.string(),
@@ -92,11 +92,11 @@ export interface SalesRecord {
   costOfSales?: number;
 }
 
-const createAccountMap = (accounts: Account[]): Map<string, string> => {
-  const accountMap = new Map<string, string>();
+const createAccountMap = (accounts: Account[]): Map<string, Account> => {
+  const accountMap = new Map<string, Account>();
   const traverse = (accs: Account[]) => {
     for (const acc of accs) {
-      accountMap.set(acc.id, acc.name);
+      accountMap.set(acc.id, acc);
       if (acc.children) {
         traverse(acc.children);
       }
@@ -108,17 +108,19 @@ const createAccountMap = (accounts: Account[]): Map<string, string> => {
 
 const seedSalesRecords = async () => {
   const allAccounts = await getAccounts();
-  const accountMap = createAccountMap(allAccounts);
+  const flatAccounts: Account[] = [];
+  const flatten = (accs: Account[]) => {
+      for (const acc of accs) {
+          flatAccounts.push(acc);
+          if (acc.children) flatten(acc.children);
+      }
+  }
+  flatten(allAccounts);
 
-  const cashAccount = [...accountMap.entries()].find(([id, name]) =>
-    name.includes('كاشير')
-  )?.[0];
-  const networkAccount = [...accountMap.entries()].find(([id, name]) =>
-    name.includes('شبكة')
-  )?.[0];
-  const clientAccount = [...accountMap.entries()].find(([id, name]) =>
-    name.includes('اسامه')
-  )?.[0];
+  const cashAccount = flatAccounts.find(a => a.classifications?.includes('كاشير'));
+  const networkAccount = flatAccounts.find(a => a.classifications?.includes('شبكات'));
+  const clientAccount = flatAccounts.find(a => a.classifications?.includes('عملاء'));
+
 
   if (!cashAccount || !networkAccount || !clientAccount) {
     console.log(
@@ -136,14 +138,14 @@ const seedSalesRecords = async () => {
       total: 650,
       status: 'Pending Matching',
       cash: {
-        accountId: cashAccount,
-        accountName: accountMap.get(cashAccount),
+        accountId: cashAccount.id,
+        accountName: cashAccount.name,
         amount: 500,
       },
       cards: [
         {
-          accountId: networkAccount,
-          accountName: accountMap.get(networkAccount),
+          accountId: networkAccount.id,
+          accountName: networkAccount.name,
           amount: 150,
         },
       ],
@@ -163,15 +165,15 @@ const seedSalesRecords = async () => {
         'credit-0': 400
       },
       cash: {
-        accountId: cashAccount,
-        accountName: accountMap.get(cashAccount),
+        accountId: cashAccount.id,
+        accountName: cashAccount.name,
         amount: 800,
       },
       cards: [],
       credits: [
         {
-          accountId: clientAccount,
-          accountName: accountMap.get(clientAccount),
+          accountId: clientAccount.id,
+          accountName: clientAccount.name,
           amount: 400,
         },
       ],
@@ -190,15 +192,15 @@ const seedSalesRecords = async () => {
         'credit-0': 400
       },
       cash: {
-        accountId: cashAccount,
-        accountName: accountMap.get(cashAccount),
+        accountId: cashAccount.id,
+        accountName: cashAccount.name,
         amount: 1400,
       },
       cards: [],
       credits: [
         {
-          accountId: clientAccount,
-          accountName: accountMap.get(clientAccount),
+          accountId: clientAccount.id,
+          accountName: clientAccount.name,
           amount: 400,
         },
       ],
@@ -232,7 +234,17 @@ export const addSaleRecord = async (
 ): Promise<string> => {
   const salesCol = collection(db, 'salesRecords');
   const allAccounts = await getAccounts();
-  const accountMap = createAccountMap(allAccounts);
+  
+  const flatAccounts: Account[] = [];
+  const flatten = (accs: Account[]) => {
+      for (const acc of accs) {
+          flatAccounts.push(acc);
+          if (acc.children) flatten(acc.children);
+      }
+  }
+  flatten(allAccounts);
+
+  const accountMap = new Map(flatAccounts.map(a => [a.id, a.name]));
 
   const processedCards: CardAccountDetail[] = [];
   if (data.cards) {
@@ -359,7 +371,7 @@ export const getSaleRecordById = async (id: string): Promise<SalesRecord | null>
 // Update a sales record's status and actuals
 export const updateSaleRecordStatus = async (
   recordId: string,
-  status: 'Ready for Posting' | 'Rejected',
+  status: 'Ready for Posting',
   actuals: { [key: string]: number },
   notes: string
 ): Promise<void> => {
@@ -371,11 +383,145 @@ export const updateSaleRecordStatus = async (
   });
 };
 
-// Update a sales record's status to 'Posted'
+
+const findAccountByCode = (accounts: Account[], code: string): Account | null => {
+    for (const acc of accounts) {
+        if (acc.code === code) {
+            return acc;
+        }
+        if (acc.children) {
+            const found = findAccountByCode(acc.children, code);
+            if (found) return found;
+        }
+    }
+    return null;
+}
+
 export const postSaleRecord = async (recordId: string, costOfSales: number): Promise<void> => {
     const recordRef = doc(db, 'salesRecords', recordId);
-    await updateDoc(recordRef, {
-        status: 'Posted',
-        costOfSales: costOfSales,
+    const recordSnap = await getDoc(recordRef);
+
+    if (!recordSnap.exists()) {
+        throw new Error("Sales record not found.");
+    }
+    const record = recordSnap.data() as SalesRecord;
+    
+    // 1. Fetch all accounts to find system accounts by code
+    const allAccounts = await getAccounts();
+    const salesRevenueAccount = findAccountByCode(allAccounts, '4101'); // إيرادات المبيعات
+    const vatAccount = findAccountByCode(allAccounts, '2101');           // ضريبة القيمة المضافة
+    const cogsAccount = findAccountByCode(allAccounts, '5101');      // تكلفة البضاعة المباعة
+    const inventoryAccount = findAccountByCode(allAccounts, '1101');    // المخزون
+
+    if (!salesRevenueAccount || !vatAccount || !cogsAccount || !inventoryAccount) {
+        throw new Error("System accounts for posting not found. Please ensure accounts 4101, 2101, 5101, 1101 exist.");
+    }
+
+    const journalId = doc(collection(db, 'temp')).id; // Generate a unique ID for this journal entry
+    const description = `ترحيل مبيعات فترة ${record.period === 'Morning' ? 'الصباحية' : 'المسائية'} ليوم ${record.date.toDate().toLocaleDateString('ar-SA')}`;
+    const totalActualSales = Object.values(record.actuals || {}).reduce((sum, val) => sum + val, 0);
+
+    // Using 1.15 as the VAT factor (assuming prices include VAT)
+    const salesRevenue = totalActualSales / 1.15;
+    const vatAmount = totalActualSales - salesRevenue;
+
+    const batch = writeBatch(db);
+    const transactionsCol = collection(db, 'transactions');
+    
+    // 2. Create Debit entries
+    const actuals = record.actuals || {};
+
+    if (actuals['cash'] > 0) {
+        batch.set(doc(transactionsCol), {
+            accountId: record.cash.accountId,
+            date: record.date,
+            amount: actuals['cash'],
+            type: 'Journal',
+            description,
+            journalId,
+            createdAt: Timestamp.now(),
+        });
+    }
+
+    record.cards.forEach((card, i) => {
+        const actualAmount = actuals[`card-${i}`];
+        if (actualAmount > 0) {
+            batch.set(doc(transactionsCol), {
+                accountId: card.accountId,
+                date: record.date,
+                amount: actualAmount,
+                type: 'Journal',
+                description,
+                journalId,
+                createdAt: Timestamp.now(),
+            });
+        }
     });
+
+    record.credits.forEach((credit, i) => {
+        const actualAmount = actuals[`credit-${i}`];
+        if (actualAmount > 0) {
+            batch.set(doc(transactionsCol), {
+                accountId: credit.accountId,
+                date: record.date,
+                amount: actualAmount,
+                type: 'Journal',
+                description,
+                journalId,
+                createdAt: Timestamp.now(),
+            });
+        }
+    });
+
+    // 3. Create Credit entries for Sales and VAT
+    batch.set(doc(transactionsCol), {
+        accountId: salesRevenueAccount.id,
+        date: record.date,
+        amount: -salesRevenue,
+        type: 'Journal',
+        description,
+        journalId,
+        createdAt: Timestamp.now(),
+    });
+    
+    batch.set(doc(transactionsCol), {
+        accountId: vatAccount.id,
+        date: record.date,
+        amount: -vatAmount,
+        type: 'Journal',
+        description,
+        journalId,
+        createdAt: Timestamp.now(),
+    });
+
+    // 4. Create COGS entry if cost is provided
+    if (costOfSales > 0) {
+        const cogsDescription = `تكلفة مبيعات فترة ${record.period === 'Morning' ? 'الصباحية' : 'المسائية'} ليوم ${record.date.toDate().toLocaleDateString('ar-SA')}`;
+        // Debit COGS
+        batch.set(doc(transactionsCol), {
+            accountId: cogsAccount.id,
+            date: record.date,
+            amount: costOfSales,
+            type: 'Journal',
+            description: cogsDescription,
+            journalId: `${journalId}-cogs`,
+            createdAt: Timestamp.now(),
+        });
+        // Credit Inventory
+         batch.set(doc(transactionsCol), {
+            accountId: inventoryAccount.id,
+            date: record.date,
+            amount: -costOfSales,
+            type: 'Journal',
+            description: cogsDescription,
+            journalId: `${journalId}-cogs`,
+            createdAt: Timestamp.now(),
+        });
+    }
+
+    // 5. Update the sales record status to 'Posted'
+    batch.update(recordRef, { status: 'Posted', costOfSales: costOfSales });
+
+    // Commit all operations
+    await batch.commit();
 };

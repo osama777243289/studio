@@ -19,68 +19,81 @@ import {
 
 const defaultAccounts: (Omit<Account, 'id' | 'children'> & { children?: Omit<Account, 'id' | 'children'>[] })[] = [
     {
-        code: '1', name: 'الأصول', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: [], parentId: null,
+        code: '1', name: 'الأصول', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: [], parentId: null, isSystemAccount: true,
         children: [
-            { code: '11', name: 'الأصول المتداولة', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: [], parentId: null },
-            { code: '12', name: 'الأصول الثابتة', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['Fixed Assets'], parentId: null },
+            { 
+                code: '11', name: 'الأصول المتداولة', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: [], parentId: null, isSystemAccount: true,
+                children: [
+                    { code: '1101', name: 'المخزون', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['مخزون'], parentId: null, isSystemAccount: true },
+                ] 
+            },
+            { code: '12', name: 'الأصول الثابتة', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['Fixed Assets'], parentId: null, isSystemAccount: true },
         ],
     },
     {
-        code: '2', name: 'الخصوم', type: 'Credit', group: 'Liabilities', status: 'Active', closingType: 'Balance Sheet', classifications: [], parentId: null,
+        code: '2', name: 'الخصوم', type: 'Credit', group: 'Liabilities', status: 'Active', closingType: 'Balance Sheet', classifications: [], parentId: null, isSystemAccount: true,
         children: [
-            { code: '21', name: 'الخصوم المتداولة', type: 'Credit', group: 'Liabilities', status: 'Active', closingType: 'Balance Sheet', classifications: [], parentId: null },
+            { 
+                code: '21', name: 'الخصوم المتداولة', type: 'Credit', group: 'Liabilities', status: 'Active', closingType: 'Balance Sheet', classifications: [], parentId: null, isSystemAccount: true,
+                children: [
+                    { code: '2101', name: 'ضريبة القيمة المضافة', type: 'Credit', group: 'Liabilities', status: 'Active', closingType: 'Balance Sheet', classifications: [], parentId: null, isSystemAccount: true },
+                ]
+            },
         ]
     },
     {
-        code: '3', name: 'حقوق الملكية', type: 'Credit', group: 'Equity', status: 'Active', closingType: 'Balance Sheet', classifications: [], parentId: null },
+        code: '3', name: 'حقوق الملكية', type: 'Credit', group: 'Equity', status: 'Active', closingType: 'Balance Sheet', classifications: [], parentId: null, isSystemAccount: true },
     {
-        code: '4', name: 'الإيرادات', type: 'Credit', group: 'Revenues', status: 'Active', closingType: 'Income Statement', classifications: ['Revenues'], parentId: null },
+        code: '4', name: 'الإيرادات', type: 'Credit', group: 'Revenues', status: 'Active', closingType: 'Income Statement', classifications: ['Revenues'], parentId: null, isSystemAccount: true,
+         children: [
+            { code: '41', name: 'إيرادات النشاط الرئيسي', type: 'Credit', group: 'Revenues', status: 'Active', closingType: 'Income Statement', classifications: [], parentId: null, isSystemAccount: true,
+              children: [
+                  { code: '4101', name: 'إيرادات المبيعات', type: 'Credit', group: 'Revenues', status: 'Active', closingType: 'Income Statement', classifications: ['Revenues'], parentId: null, isSystemAccount: true },
+              ]
+            }
+        ]
+    },
     {
-        code: '5', name: 'المصروفات', type: 'Debit', group: 'Expenses', status: 'Active', closingType: 'Income Statement', classifications: ['Expenses'], parentId: null },
+        code: '5', name: 'المصروفات', type: 'Debit', group: 'Expenses', status: 'Active', closingType: 'Income Statement', classifications: ['Expenses'], parentId: null, isSystemAccount: true,
+        children: [
+            { code: '51', name: 'تكلفة المبيعات', type: 'Debit', group: 'Expenses', status: 'Active', closingType: 'Income Statement', classifications: [], parentId: null, isSystemAccount: true,
+               children: [
+                   { code: '5101', name: 'تكلفة البضاعة المباعة', type: 'Debit', group: 'Expenses', status: 'Active', closingType: 'Income Statement', classifications: [], parentId: null, isSystemAccount: true },
+               ]
+            }
+        ]
+    },
 ];
 
-// Seed the database with default accounts
 const seedAccounts = async () => {
     const batch = writeBatch(db);
     const accountsCol = collection(db, 'accounts');
-    const rootDocs: { [key: string]: string } = {};
-
-    // Create root accounts first
-    for (const account of defaultAccounts) {
+    
+    const addAccountRecursive = (account: any, parentId: string | null) => {
         const newDocRef = doc(accountsCol);
-        rootDocs[account.code] = newDocRef.id;
         const { children, ...accountData } = account;
-        batch.set(newDocRef, { ...accountData, parentId: null });
-    }
-
-    // Create child accounts
-    for (const account of defaultAccounts) {
-        if (account.children) {
-            const parentId = rootDocs[account.code];
-            for (const child of account.children) {
-                const newChildDocRef = doc(accountsCol);
-                const { children: _, ...childData } = child; // remove children prop if any
-                batch.set(newChildDocRef, { ...childData, parentId });
-            }
+        batch.set(newDocRef, { ...accountData, parentId });
+        
+        if (children) {
+            children.forEach((child: any) => addAccountRecursive(child, newDocRef.id));
         }
-    }
+    };
+
+    defaultAccounts.forEach(account => addAccountRecursive(account, null));
     
     await batch.commit();
     console.log("Default accounts have been seeded to Firestore.");
 };
 
 
-// Function to build a nested tree from a flat list of accounts
 const buildAccountTree = (accounts: any[]): Account[] => {
   const accountMap = new Map<string, Account>();
   const rootAccounts: Account[] = [];
 
-  // First pass: create a map of all accounts
   accounts.forEach(account => {
     accountMap.set(account.id, { ...account, children: [] });
   });
 
-  // Second pass: build the tree structure
   accounts.forEach(account => {
     if (account.parentId) {
       const parent = accountMap.get(account.parentId);
@@ -105,17 +118,14 @@ const buildAccountTree = (accounts: any[]): Account[] => {
   return rootAccounts;
 };
 
-// Get all accounts and structure them as a tree
 export const getAccounts = async (): Promise<Account[]> => {
   const accountsCol = collection(db, 'accounts');
   const q = query(accountsCol, orderBy("code"));
   const accountSnapshot = await getDocs(q);
 
-  // If no accounts exist, seed the database with defaults
   if (accountSnapshot.empty) {
       console.log("No accounts found. Seeding database...");
       await seedAccounts();
-      // Fetch again after seeding
       const seededSnapshot = await getDocs(q);
       const accounts: any[] = seededSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       return buildAccountTree(accounts);
@@ -125,7 +135,6 @@ export const getAccounts = async (): Promise<Account[]> => {
   return buildAccountTree(accounts);
 };
 
-// Helper function to check for uniqueness
 async function isAccountUnique(name: string, code: string, currentAccountId?: string): Promise<{ unique: boolean; message: string }> {
     const accountsCol = collection(db, 'accounts');
     const nameQuery = query(accountsCol, where("name", "==", name));
@@ -146,8 +155,6 @@ async function isAccountUnique(name: string, code: string, currentAccountId?: st
     return { unique: true, message: "" };
 }
 
-
-// Add a new account
 export const addAccount = async (accountData: AccountFormData, parentId: string | null): Promise<{ success: boolean; message: string; accountId?: string }> => {
   const uniqueness = await isAccountUnique(accountData.name, accountData.code);
   if (!uniqueness.unique) {
@@ -155,7 +162,7 @@ export const addAccount = async (accountData: AccountFormData, parentId: string 
   }
 
   const accountsCol = collection(db, 'accounts');
-  const { parentId: dataParentId, ...restOfData } = accountData; // Separate parentId
+  const { parentId: dataParentId, ...restOfData } = accountData;
   const newAccountData: any = {
     ...restOfData,
     parentId: parentId || null,
@@ -169,7 +176,6 @@ export const addAccount = async (accountData: AccountFormData, parentId: string 
   }
 };
 
-// Update an existing account
 export const updateAccount = async (accountId: string, accountData: Partial<AccountFormData>): Promise<{ success: boolean; message: string }> => {
   if (!accountData.name || !accountData.code) {
      return { success: false, message: "الاسم والرمز مطلوبان." };
@@ -188,11 +194,15 @@ export const updateAccount = async (accountId: string, accountData: Partial<Acco
   }
 };
 
-
-// Delete an account (and its children recursively)
 export const deleteAccount = async (accountId: string): Promise<void> => {
     await runTransaction(db, async (transaction) => {
         const accountsCol = collection(db, "accounts");
+        const accountRef = doc(accountsCol, accountId);
+        const accountDoc = await transaction.get(accountRef);
+
+        if (!accountDoc.exists() || accountDoc.data().isSystemAccount) {
+            throw new Error("لا يمكن حذف حسابات النظام.");
+        }
         
         const childrenQuery = query(accountsCol, where("parentId", "==", accountId));
         const childrenSnapshot = await getDocs(childrenQuery);
@@ -201,7 +211,6 @@ export const deleteAccount = async (accountId: string): Promise<void> => {
             throw new Error("لا يمكن حذف حساب يحتوي على حسابات فرعية. يرجى حذف الحسابات الفرعية أولاً.");
         }
         
-        const accountToDeleteRef = doc(accountsCol, accountId);
-        transaction.delete(accountToDeleteRef);
+        transaction.delete(accountRef);
     });
 };

@@ -8,13 +8,13 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import { Button } from "@/components/ui/button"
-import { ChevronsUpDown, Plus, Trash2, Pencil, FileText } from "lucide-react"
+import { ChevronsUpDown, Plus, Trash2, Pencil, FileText, Lock } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Badge } from "../ui/badge"
 
 export const accountClassifications = [
     'صندوق', 'بنك', 'شبكات', 'موظف', 'عهدة', 'أصول ثابتة', 
-    'عملاء', 'كاشير', 'موردون', 'مصروفات', 'إيرادات'
+    'عملاء', 'كاشير', 'موردون', 'مصروفات', 'إيرادات', 'مخزون'
 ];
 export const closingAccountTypes = ['الميزانية العمومية', 'قائمة الدخل'];
 
@@ -29,6 +29,7 @@ export interface Account {
   classifications: (typeof accountClassifications[number])[];
   children?: Account[];
   parentId?: string | null;
+  isSystemAccount?: boolean;
 }
 
 interface AccountTreeProps {
@@ -68,7 +69,6 @@ function AccountItem({ account, level, onAddSubAccount, onEditAccount, onDeleteA
   const [isOpen, setIsOpen] = React.useState(level < 2);
   const hasChildren = account.children && account.children.length > 0;
   
-  // Level is determined by code length. L1=1, L2=2, L3=4, L4=7
   const currentLevel = account.code.length === 1 ? 1 : account.code.length === 2 ? 2 : account.code.length === 4 ? 3 : 4;
   const isTransactional = currentLevel === 4;
   const canHaveChildren = currentLevel < 4;
@@ -102,6 +102,7 @@ function AccountItem({ account, level, onAddSubAccount, onEditAccount, onDeleteA
                 <span className="flex-1 font-medium flex items-center gap-2">
                   {account.name}
                   {isTransactional && <FileText className="h-4 w-4 text-blue-500" title="حساب تحليلي" />}
+                  {account.isSystemAccount && <Lock className="h-4 w-4 text-amber-500" title="حساب نظام" />}
                 </span>
                 <div className="flex items-center gap-2">
                     <Badge variant="outline">{translateGroup(account.group)}</Badge>
@@ -110,20 +111,24 @@ function AccountItem({ account, level, onAddSubAccount, onEditAccount, onDeleteA
                     </Badge>
                 </div>
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEditAccount(account)}>
-                        <Pencil className="h-4 w-4 text-blue-500"/>
-                        <span className="sr-only">تعديل</span>
-                    </Button>
+                    {!account.isSystemAccount && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEditAccount(account)}>
+                            <Pencil className="h-4 w-4 text-blue-500"/>
+                            <span className="sr-only">تعديل</span>
+                        </Button>
+                    )}
                     {canHaveChildren && (
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onAddSubAccount(account.id)}>
                           <Plus className="h-4 w-4 text-green-500"/>
                           <span className="sr-only">إضافة حساب فرعي</span>
                       </Button>
                     )}
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDeleteAccount(account)}>
-                        <Trash2 className="h-4 w-4 text-red-500"/>
-                        <span className="sr-only">حذف</span>
-                    </Button>
+                     {!account.isSystemAccount && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDeleteAccount(account)}>
+                            <Trash2 className="h-4 w-4 text-red-500"/>
+                            <span className="sr-only">حذف</span>
+                        </Button>
+                     )}
                 </div>
             </div>
             {account.classifications && account.classifications.length > 0 && (

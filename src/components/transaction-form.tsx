@@ -64,14 +64,15 @@ export function TransactionForm({
   async function onSubmit(values: z.infer<typeof transactionSchema>) {
     const typeText = transactionType === 'Income' ? 'الدخل' : 'المصروف';
     try {
-      await addTransaction(values);
+      await addTransaction({ ...values, amount: transactionType === 'Expense' ? -Math.abs(values.amount) : values.amount });
       toast({
         title: 'نجاح',
         description: `تم تسجيل ${typeText} بنجاح.`,
         variant: 'default',
       });
       form.reset({
-          ...form.getValues(), // keep date and type
+          ...form.getValues(),
+          date: new Date(), // Reset date to today
           amount: undefined,
           accountId: '',
           description: '',

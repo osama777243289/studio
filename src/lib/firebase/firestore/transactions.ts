@@ -1,5 +1,4 @@
 
-
 import { db } from '@/lib/firebase/client';
 import {
   collection,
@@ -13,7 +12,6 @@ import {
   doc,
 } from 'firebase/firestore';
 import { z } from 'zod';
-import { useToast } from '@/hooks/use-toast';
 import { getAccounts, Account } from './accounts';
 
 export const transactionSchema = z.object({
@@ -21,7 +19,8 @@ export const transactionSchema = z.object({
   accountId: z.string().min(1, 'الحساب مطلوب'),
   date: z.date(),
   description: z.string().optional(),
-  type: z.enum(['Income', 'Expense']),
+  type: z.enum(['Income', 'Expense', 'Journal']),
+  journalId: z.string().optional(),
   createdAt: z.instanceof(Timestamp).optional(),
 });
 
@@ -87,6 +86,7 @@ export const addTransaction = async (transactionData: Omit<TransactionFormData, 
     ...transactionData,
     date: Timestamp.fromDate(transactionData.date),
     createdAt: Timestamp.now(),
+    type: transactionData.type === 'Journal' ? 'Journal' : transactionData.amount > 0 ? 'Income' : 'Expense'
   };
   const newDocRef = await addDoc(transactionsCol, dataToSave);
   return newDocRef.id;
