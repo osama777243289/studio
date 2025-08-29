@@ -24,10 +24,21 @@ const defaultAccounts: (Omit<Account, 'id' | 'children'> & { children?: Omit<Acc
             { 
                 code: '11', name: 'الأصول المتداولة', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: [], parentId: null, isSystemAccount: true,
                 children: [
-                    { code: '1101', name: 'المخزون', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['مخزون'], parentId: null, isSystemAccount: true },
+                    { code: '1101', name: 'الصناديق والبنوك', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: [], parentId: null, isSystemAccount: true,
+                        children: [
+                            { code: '1101001', name: 'صندوق الكاشير الرئيسي', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['كاشير', 'صندوق'], parentId: null, isSystemAccount: false },
+                            { code: '1101002', name: 'حساب الشبكة', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['شبكات'], parentId: null, isSystemAccount: false },
+                        ]
+                    },
+                    { code: '1102', name: 'العملاء', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['عملاء'], parentId: null, isSystemAccount: true,
+                        children: [
+                            { code: '1102001', name: 'عميل مبيعات آجلة عام', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['عملاء'], parentId: null, isSystemAccount: false },
+                        ]
+                    },
+                    { code: '1103', name: 'المخزون', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['مخزون'], parentId: null, isSystemAccount: true },
                 ] 
             },
-            { code: '12', name: 'الأصول الثابتة', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['Fixed Assets'], parentId: null, isSystemAccount: true },
+            { code: '12', name: 'الأصول الثابتة', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['أصول ثابتة'], parentId: null, isSystemAccount: true },
         ],
     },
     {
@@ -44,17 +55,17 @@ const defaultAccounts: (Omit<Account, 'id' | 'children'> & { children?: Omit<Acc
     {
         code: '3', name: 'حقوق الملكية', type: 'Credit', group: 'Equity', status: 'Active', closingType: 'Balance Sheet', classifications: [], parentId: null, isSystemAccount: true },
     {
-        code: '4', name: 'الإيرادات', type: 'Credit', group: 'Revenues', status: 'Active', closingType: 'Income Statement', classifications: ['Revenues'], parentId: null, isSystemAccount: true,
+        code: '4', name: 'الإيرادات', type: 'Credit', group: 'Revenues', status: 'Active', closingType: 'Income Statement', classifications: ['إيرادات'], parentId: null, isSystemAccount: true,
          children: [
             { code: '41', name: 'إيرادات النشاط الرئيسي', type: 'Credit', group: 'Revenues', status: 'Active', closingType: 'Income Statement', classifications: [], parentId: null, isSystemAccount: true,
               children: [
-                  { code: '4101', name: 'إيرادات المبيعات', type: 'Credit', group: 'Revenues', status: 'Active', closingType: 'Income Statement', classifications: ['Revenues'], parentId: null, isSystemAccount: true },
+                  { code: '4101', name: 'إيرادات المبيعات', type: 'Credit', group: 'Revenues', status: 'Active', closingType: 'Income Statement', classifications: ['إيرادات'], parentId: null, isSystemAccount: true },
               ]
             }
         ]
     },
     {
-        code: '5', name: 'المصروفات', type: 'Debit', group: 'Expenses', status: 'Active', closingType: 'Income Statement', classifications: ['Expenses'], parentId: null, isSystemAccount: true,
+        code: '5', name: 'المصروفات', type: 'Debit', group: 'Expenses', status: 'Active', closingType: 'Income Statement', classifications: ['مصروفات'], parentId: null, isSystemAccount: true,
         children: [
             { code: '51', name: 'تكلفة المبيعات', type: 'Debit', group: 'Expenses', status: 'Active', closingType: 'Income Statement', classifications: [], parentId: null, isSystemAccount: true,
                children: [

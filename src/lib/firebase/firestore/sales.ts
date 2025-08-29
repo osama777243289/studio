@@ -126,7 +126,7 @@ const seedSalesRecords = async () => {
 
   if (!cashAccount || !networkAccount || !clientAccount) {
     console.log(
-      'Could not find default accounts for seeding sales. Creating some...'
+      'Could not find default accounts for seeding sales. Please create them first.'
     );
     return;
   }
@@ -409,10 +409,10 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
     const salesRevenueAccount = findAccountByCode(allAccounts, '4101'); 
     const vatAccount = findAccountByCode(allAccounts, '2101');           
     const cogsAccount = findAccountByCode(allAccounts, '5101');      
-    const inventoryAccount = findAccountByCode(allAccounts, '1101');    
+    const inventoryAccount = findAccountByCode(allAccounts, '1103');    
 
     if (!salesRevenueAccount || !vatAccount || !cogsAccount || !inventoryAccount) {
-        throw new Error("System accounts for posting not found. Please ensure accounts 4101, 2101, 5101, and 1101 exist.");
+        throw new Error("System accounts for posting not found. Please ensure accounts 4101, 2101, 5101, and 1103 exist.");
     }
 
     const journalId = doc(collection(db, 'temp')).id; 
