@@ -17,8 +17,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { getSalesRecordsByStatus, SalesRecord, postSaleRecord } from '@/lib/firebase/firestore/sales';
-import { Loader2, AlertCircle, Send, CheckCheck } from 'lucide-react';
+import { getSalesRecordsByStatus, SalesRecord, postSaleRecord, unpostSaleRecord } from '@/lib/firebase/firestore/sales';
+import { Loader2, AlertCircle, Send, CheckCheck, Undo2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -50,6 +50,7 @@ export default function PostEntriesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [postingId, setPostingId] = useState<string | null>(null);
+  const [unpostingId, setUnpostingId] = useState<string | null>(null);
   const [costs, setCosts] = useState<{ [key: string]: number | string }>({});
   const { toast } = useToast();
 
@@ -115,6 +116,27 @@ export default function PostEntriesPage() {
     }
   }
 
+   const handleUnpostRecord = async (recordId: string) => {
+    setUnpostingId(recordId);
+    try {
+        await unpostSaleRecord(recordId);
+        toast({
+            title: 'تم إلغاء الترحيل',
+            description: `تمت إعادة السجل ${recordId} إلى حالة "جاهز للترحيل".`,
+        });
+        fetchRecords();
+    } catch(e: any) {
+        console.error("Failed to unpost record:", e);
+        toast({
+            title: 'خطأ في إلغاء الترحيل',
+            description: e.message || 'فشلت عملية إلغاء الترحيل. يرجى المحاولة مرة أخرى.',
+            variant: 'destructive',
+        });
+    } finally {
+        setUnpostingId(null);
+    }
+  };
+
 
   return (
     <div className="space-y-8">
@@ -179,7 +201,7 @@ export default function PostEntriesPage() {
                           <Button 
                               size="sm"
                               onClick={() => handlePostRecord(record.id)}
-                              disabled={postingId === record.id || !costs[record.id]}
+                              disabled={postingId === record.id || !costs[record.id] || unpostingId !== null}
                           >
                               {postingId === record.id ? (
                                   <>
@@ -224,29 +246,24 @@ export default function PostEntriesPage() {
                    <TableHeader>
                      <TableRow>
                        <TableHead>التاريخ</TableHead>
-                       <TableHead>الفترة</TableHead>
                        <TableHead>الكاشير</TableHead>
-                       <TableHead className="text-center">الإجمالي الفعلي</TableHead>
                        <TableHead className="text-center">تكلفة المبيعات</TableHead>
                        <TableHead className="text-center">الحالة</TableHead>
+                       <TableHead className="text-center">الإجراء</TableHead>
                      </TableRow>
                    </TableHeader>
                    <TableBody>
                      {postedRecords.length === 0 ? (
                        <TableRow>
-                         <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                         <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                            لا توجد سجلات مُرحّلة.
                          </TableCell>
                        </TableRow>
                      ) : (
                        postedRecords.map((record) => (
                          <TableRow key={record.id}>
-                           <TableCell>{format(record.date.toDate(), 'yyyy/MM/dd')}</TableCell>
-                           <TableCell>{record.period === 'Morning' ? 'صباحية' : 'مسائية'}</TableCell>
+                           <TableCell>{format(record.date.toDate(), 'yyyy/MM/dd')} - {record.period === 'Morning' ? 'صباحية' : 'مسائية'}</TableCell>
                            <TableCell>{record.cashier}</TableCell>
-                           <TableCell className="text-center font-mono">
-                              {record.actuals ? Object.values(record.actuals).reduce((a,b) => a + b, 0).toFixed(2) : record.total.toFixed(2)}
-                           </TableCell>
                            <TableCell className="text-center font-mono">
                                {record.costOfSales?.toFixed(2) || 'N/A'}
                            </TableCell>
@@ -254,6 +271,27 @@ export default function PostEntriesPage() {
                                <Badge variant={getStatusVariant(translateStatus(record.status))} className="bg-blue-100 text-blue-800">
                                    {translateStatus(record.status)}
                                </Badge>
+                           </TableCell>
+                           <TableCell className="text-center">
+                              <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => handleUnpostRecord(record.id)}
+                                  disabled={unpostingId === record.id || postingId !== null}
+                               >
+                                 {unpostingId === record.id ? (
+                                    <>
+                                        <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                                        جاري الإلغاء...
+                                    </>
+                                 ) : (
+                                    <>
+                                        <Undo2 className="ml-2 h-4 w-4" />
+                                        إلغاء الترحيل
+                                    </>
+                                 )}
+                               
+                               </Button>
                            </TableCell>
                          </TableRow>
                        ))

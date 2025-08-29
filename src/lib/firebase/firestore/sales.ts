@@ -91,6 +91,8 @@ export interface SalesRecord {
   actuals?: { [key: string]: number };
   matchNotes?: string;
   costOfSales?: number;
+  journalId?: string;
+  cogsJournalId?: string;
 }
 
 const createAccountMap = (accounts: Account[]): Map<string, Account> => {
@@ -407,29 +409,27 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
     }
     const record = recordSnap.data() as SalesRecord;
     
-    // 1. Fetch all accounts to find system accounts by code
     const allAccounts = await getAccounts();
-    const salesRevenueAccount = findAccountByCode(allAccounts, '4101'); // إيرادات المبيعات
-    const vatAccount = findAccountByCode(allAccounts, '2101');           // ضريبة القيمة المضافة
-    const cogsAccount = findAccountByCode(allAccounts, '5101');      // تكلفة البضاعة المباعة
-    const inventoryAccount = findAccountByCode(allAccounts, '1101');    // المخزون
+    const salesRevenueAccount = findAccountByCode(allAccounts, '4101'); 
+    const vatAccount = findAccountByCode(allAccounts, '2101');           
+    const cogsAccount = findAccountByCode(allAccounts, '5101');      
+    const inventoryAccount = findAccountByCode(allAccounts, '1101');    
 
     if (!salesRevenueAccount || !vatAccount || !cogsAccount || !inventoryAccount) {
         throw new Error("System accounts for posting not found. Please ensure accounts 4101, 2101, 5101, and 1101 exist.");
     }
 
-    const journalId = doc(collection(db, 'temp')).id; // Generate a unique ID for this journal entry
+    const journalId = doc(collection(db, 'temp')).id; 
+    let cogsJournalId: string | null = null;
     const description = `ترحيل مبيعات فترة ${record.period === 'Morning' ? 'الصباحية' : 'المسائية'} ليوم ${record.date.toDate().toLocaleDateString('ar-SA')} ${record.postingNumber ? '- ' + record.postingNumber : ''}`;
     const totalActualSales = Object.values(record.actuals || {}).reduce((sum, val) => sum + val, 0);
 
-    // Assuming totalActualSales is VAT-inclusive.
     const salesRevenue = totalActualSales / 1.15;
     const vatAmount = totalActualSales - salesRevenue;
 
     const batch = writeBatch(db);
     const transactionsCol = collection(db, 'transactions');
     
-    // 2. Create Debit entries (Cash, Cards, Credit)
     const actuals = record.actuals || {};
 
     if (actuals['cash'] > 0) {
@@ -474,7 +474,6 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
         }
     });
 
-    // 3. Create Credit entries for Sales Revenue and VAT
     batch.set(doc(transactionsCol), {
         accountId: salesRevenueAccount.id,
         date: record.date,
@@ -495,11 +494,10 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
         createdAt: Timestamp.now(),
     });
 
-    // 4. Create COGS entry if cost is provided
     if (costOfSales > 0) {
-        const cogsJournalId = doc(collection(db, 'temp')).id;
+        cogsJournalId = doc(collection(db, 'temp')).id;
         const cogsDescription = `تكلفة مبيعات فترة ${record.period === 'Morning' ? 'الصباحية' : 'المسائية'} ليوم ${record.date.toDate().toLocaleDateString('ar-SA')} ${record.postingNumber ? '- ' + record.postingNumber : ''}`;
-        // Debit COGS
+        
         batch.set(doc(transactionsCol), {
             accountId: cogsAccount.id,
             date: record.date,
@@ -509,7 +507,7 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
             journalId: cogsJournalId,
             createdAt: Timestamp.now(),
         });
-        // Credit Inventory
+        
          batch.set(doc(transactionsCol), {
             accountId: inventoryAccount.id,
             date: record.date,
@@ -521,9 +519,51 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
         });
     }
 
-    // 5. Update the sales record status to 'Posted'
-    batch.update(recordRef, { status: 'Posted', costOfSales: costOfSales });
+    batch.update(recordRef, { 
+        status: 'Posted', 
+        costOfSales: costOfSales,
+        journalId: journalId,
+        cogsJournalId: cogsJournalId,
+    });
 
-    // Commit all operations
     await batch.commit();
 };
+
+export const unpostSaleRecord = async (recordId: string): Promise<void> => {
+    const recordRef = doc(db, 'salesRecords', recordId);
+    const recordSnap = await getDoc(recordRef);
+
+    if (!recordSnap.exists()) {
+        throw new Error("Sales record not found.");
+    }
+
+    const record = recordSnap.data() as SalesRecord;
+
+    if (record.status !== 'Posted') {
+        throw new Error("Only posted records can be un-posted.");
+    }
+    
+    const batch = writeBatch(db);
+    const transactionsCol = collection(db, 'transactions');
+    
+    const journalIdsToDelete: string[] = [];
+    if (record.journalId) journalIdsToDelete.push(record.journalId);
+    if (record.cogsJournalId) journalIdsToDelete.push(record.cogsJournalId);
+
+    if(journalIdsToDelete.length > 0) {
+        const q = query(transactionsCol, where('journalId', 'in', journalIdsToDelete));
+        const transactionsSnapshot = await getDocs(q);
+
+        transactionsSnapshot.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+    }
+
+    batch.update(recordRef, {
+        status: 'Ready for Posting',
+        journalId: null,
+        cogsJournalId: null,
+    });
+    
+    await batch.commit();
+}
