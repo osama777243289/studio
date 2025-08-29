@@ -4,7 +4,8 @@ import { getAccounts } from "./accounts";
 import { getAllTransactions } from "./transactions";
 import type { Account } from "@/components/chart-of-accounts/account-tree";
 import { Timestamp } from "firebase/firestore";
-import { startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { startOfMonth, endOfMonth, subMonths, format } from 'date-fns';
+import { arSA } from 'date-fns/locale';
 
 export interface TrialBalanceAccount extends Account {
     movementDebit: number;
@@ -57,6 +58,13 @@ export interface DashboardSummary {
     operatingExpensesChange: number | null;
     netIncomeChange: number | null;
 }
+
+export interface MonthlyData {
+  month: string;
+  income: number;
+  expenses: number;
+}
+
 
 const calculateBalances = async (startDate?: Date, endDate?: Date): Promise<Map<string, { movementDebit: number; movementCredit: number }>> => {
     const transactions = await getAllTransactions();
@@ -293,3 +301,57 @@ export const getDashboardSummary = async (): Promise<DashboardSummary> => {
         netIncomeChange: calculatePercentageChange(currentMetrics.netIncome, prevMetrics.netIncome),
     }
 }
+
+export const getMonthlyChartData = async (): Promise<MonthlyData[]> => {
+    const allTransactions = await getAllTransactions();
+    const accountTree = await getAccounts();
+
+    const revenueAccountIds = new Set<string>();
+    const expenseAccountIds = new Set<string>();
+
+    const findAccountsByGroup = (accounts: Account[], group: Account['group'], idSet: Set<string>) => {
+        accounts.forEach(acc => {
+            if (acc.group === group) {
+                const traverse = (subAcc: Account) => {
+                    idSet.add(subAcc.id);
+                    if (subAcc.children) {
+                        subAcc.children.forEach(traverse);
+                    }
+                };
+                traverse(acc);
+            }
+        });
+    };
+
+    findAccountsByGroup(accountTree, 'Revenues', revenueAccountIds);
+    findAccountsByGroup(accountTree, 'Expenses', expenseAccountIds);
+
+    const monthlyData: { [key: string]: { income: number; expenses: number } } = {};
+    const now = new Date();
+
+    for (let i = 5; i >= 0; i--) {
+        const date = subMonths(now, i);
+        const monthKey = format(date, 'yyyy-MM');
+        const monthName = format(date, 'MMM', { locale: arSA });
+        monthlyData[monthKey] = { income: 0, expenses: 0 };
+    }
+
+    allTransactions.forEach(tx => {
+        const monthKey = format(tx.date.toDate(), 'yyyy-MM');
+        if (monthlyData[monthKey]) {
+            if (revenueAccountIds.has(tx.accountId)) {
+                monthlyData[monthKey].income += Math.abs(tx.amount); 
+            } else if (expenseAccountIds.has(tx.accountId)) {
+                monthlyData[monthKey].expenses += Math.abs(tx.amount);
+            }
+        }
+    });
+    
+    return Object.entries(monthlyData).map(([key, value]) => {
+         const monthName = format(new Date(`${key}-01`), 'MMM', { locale: arSA });
+         return {
+            month: monthName,
+            ...value
+         }
+    });
+};
