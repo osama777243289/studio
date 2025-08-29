@@ -328,13 +328,17 @@ export const getSalesRecordsByStatus = async (
   const salesCol = collection(db, 'salesRecords');
   const q = query(
     salesCol,
-    where('status', '==', status),
-    orderBy('createdAt', 'desc')
+    where('status', '==', status)
   );
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(
+  const records = snapshot.docs.map(
     (doc) => ({ id: doc.id, ...doc.data() } as SalesRecord)
   );
+  
+  // Sort manually to avoid composite index requirement
+  records.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+
+  return records;
 };
 
 
@@ -375,5 +379,3 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
         costOfSales: costOfSales,
     });
 };
-
-    
