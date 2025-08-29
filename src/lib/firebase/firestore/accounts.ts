@@ -1,4 +1,6 @@
 
+'use client';
+
 import { db } from '@/lib/firebase/client';
 import { AccountFormData } from '@/components/chart-of-accounts/account-dialog';
 import { Account } from '@/components/chart-of-accounts/account-tree';
@@ -14,7 +16,8 @@ import {
   deleteDoc,
   runTransaction,
   getDoc,
-  orderBy
+  orderBy,
+  limit
 } from 'firebase/firestore';
 
 const defaultAccounts: (Omit<Account, 'id' | 'children'> & { children?: Omit<Account, 'id' | 'children'>[] })[] = [
@@ -121,19 +124,23 @@ const buildAccountTree = (accounts: Account[]): Account[] => {
   const accountMap = new Map<string, Account>();
   const rootAccounts: Account[] = [];
 
+  // First pass: create a map of all accounts and initialize children arrays.
   accounts.forEach(account => {
     accountMap.set(account.id, { ...account, children: [] });
   });
 
+  // Second pass: build the tree structure.
   accounts.forEach(account => {
     if (account.parentId && accountMap.has(account.parentId)) {
       const parent = accountMap.get(account.parentId)!;
       parent.children?.push(accountMap.get(account.id)!);
     } else {
+      // If an account has no parent, it's a root account.
       rootAccounts.push(accountMap.get(account.id)!);
     }
   });
 
+  // Helper function to recursively sort children by code.
   const sortChildren = (node: Account) => {
     if (node.children && node.children.length > 0) {
       node.children.sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
@@ -141,6 +148,7 @@ const buildAccountTree = (accounts: Account[]): Account[] => {
     }
   };
 
+  // Sort root accounts and then recursively sort their children.
   rootAccounts.sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
   rootAccounts.forEach(sortChildren);
 
