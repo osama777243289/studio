@@ -22,7 +22,6 @@ import { Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { Group, group } from 'console';
 
 interface GroupedTransaction {
     journalId: string;
@@ -32,7 +31,6 @@ interface GroupedTransaction {
 }
 
 export default function GeneralJournalPage() {
-  const [transactions, setTransactions] = useState<TransactionWithAccountName[]>([]);
   const [groupedTransactions, setGroupedTransactions] = useState<GroupedTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +41,6 @@ export default function GeneralJournalPage() {
       setError(null);
       try {
         const fetchedTransactions = await getAllTransactions();
-        setTransactions(fetchedTransactions);
 
         const grouped = fetchedTransactions.reduce((acc, tx) => {
             const journalId = tx.journalId || tx.id;
@@ -58,8 +55,21 @@ export default function GeneralJournalPage() {
             acc[journalId].entries.push(tx);
             return acc;
         }, {} as Record<string, GroupedTransaction>);
+        
+        const sortedGroups = Object.values(grouped).sort((a, b) => b.date.getTime() - a.date.getTime());
 
-        setGroupedTransactions(Object.values(grouped));
+        // Sort entries within each group: debits first, then credits
+        sortedGroups.forEach(group => {
+            group.entries.sort((a, b) => {
+                const aIsDebit = a.amount > 0;
+                const bIsDebit = b.amount > 0;
+                if (aIsDebit && !bIsDebit) return -1;
+                if (!aIsDebit && bIsDebit) return 1;
+                return 0;
+            });
+        });
+
+        setGroupedTransactions(sortedGroups);
 
       } catch (e: any) {
         console.error("Failed to fetch transactions:", e);
@@ -119,7 +129,7 @@ export default function GeneralJournalPage() {
                     group.entries.map((tx, index) => (
                          <TableRow key={tx.id} className={index === group.entries.length - 1 ? 'border-b-4 border-b-primary/20' : ''}>
                              {index === 0 && (
-                                <TableCell rowSpan={group.entries.length} className="align-top">
+                                <TableCell rowSpan={group.entries.length} className="align-top whitespace-nowrap">
                                     <div className="flex flex-col">
                                         <span>{format(group.date, 'yyyy/MM/dd')}</span>
                                         <Badge variant="outline" className="mt-1 w-fit">{group.journalId.substring(0,8)}</Badge>
@@ -127,11 +137,11 @@ export default function GeneralJournalPage() {
                                 </TableCell>
                              )}
                             <TableCell className={`font-medium ${isCredit(tx.amount) ? 'pr-8' : ''}`}>{tx.accountName}</TableCell>
-                            <TableCell className="text-center font-mono">
-                                {!isCredit(tx.amount) ? formatCurrency(tx.amount) : formatCurrency(0)}
+                            <TableCell className="text-center font-mono whitespace-nowrap">
+                                {!isCredit(tx.amount) ? formatCurrency(tx.amount) : ''}
                             </TableCell>
-                            <TableCell className="text-center font-mono text-red-600">
-                                {isCredit(tx.amount) ? formatCurrency(Math.abs(tx.amount)) : formatCurrency(0)}
+                            <TableCell className="text-center font-mono text-red-600 whitespace-nowrap">
+                                {isCredit(tx.amount) ? formatCurrency(Math.abs(tx.amount)) : ''}
                             </TableCell>
                              {index === 0 && (
                                 <TableCell rowSpan={group.entries.length} className="text-muted-foreground align-top">{group.description}</TableCell>
