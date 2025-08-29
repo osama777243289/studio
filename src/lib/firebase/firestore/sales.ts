@@ -419,17 +419,17 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
     }
 
     const journalId = doc(collection(db, 'temp')).id; // Generate a unique ID for this journal entry
-    const description = `ترحيل مبيعات فترة ${record.period === 'Morning' ? 'الصباحية' : 'المسائية'} ليوم ${record.date.toDate().toLocaleDateString('ar-SA')} - ${record.postingNumber || ''}`;
+    const description = `ترحيل مبيعات فترة ${record.period === 'Morning' ? 'الصباحية' : 'المسائية'} ليوم ${record.date.toDate().toLocaleDateString('ar-SA')} ${record.postingNumber ? '- ' + record.postingNumber : ''}`;
     const totalActualSales = Object.values(record.actuals || {}).reduce((sum, val) => sum + val, 0);
 
-    // Using 1.15 as the VAT factor (assuming prices include VAT)
+    // Assuming totalActualSales is VAT-inclusive.
     const salesRevenue = totalActualSales / 1.15;
     const vatAmount = totalActualSales - salesRevenue;
 
     const batch = writeBatch(db);
     const transactionsCol = collection(db, 'transactions');
     
-    // 2. Create Debit entries
+    // 2. Create Debit entries (Cash, Cards, Credit)
     const actuals = record.actuals || {};
 
     if (actuals['cash'] > 0) {
@@ -474,11 +474,11 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
         }
     });
 
-    // 3. Create Credit entries for Sales and VAT
+    // 3. Create Credit entries for Sales Revenue and VAT
     batch.set(doc(transactionsCol), {
         accountId: salesRevenueAccount.id,
         date: record.date,
-        amount: -salesRevenue,
+        amount: -salesRevenue, // Credit
         type: 'Journal',
         description,
         journalId,
@@ -488,7 +488,7 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
     batch.set(doc(transactionsCol), {
         accountId: vatAccount.id,
         date: record.date,
-        amount: -vatAmount,
+        amount: -vatAmount, // Credit
         type: 'Journal',
         description,
         journalId,
@@ -498,12 +498,12 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
     // 4. Create COGS entry if cost is provided
     if (costOfSales > 0) {
         const cogsJournalId = doc(collection(db, 'temp')).id;
-        const cogsDescription = `تكلفة مبيعات فترة ${record.period === 'Morning' ? 'الصباحية' : 'المسائية'} ليوم ${record.date.toDate().toLocaleDateString('ar-SA')}`;
+        const cogsDescription = `تكلفة مبيعات فترة ${record.period === 'Morning' ? 'الصباحية' : 'المسائية'} ليوم ${record.date.toDate().toLocaleDateString('ar-SA')} ${record.postingNumber ? '- ' + record.postingNumber : ''}`;
         // Debit COGS
         batch.set(doc(transactionsCol), {
             accountId: cogsAccount.id,
             date: record.date,
-            amount: costOfSales,
+            amount: costOfSales, // Debit
             type: 'Journal',
             description: cogsDescription,
             journalId: cogsJournalId,
@@ -513,7 +513,7 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
          batch.set(doc(transactionsCol), {
             accountId: inventoryAccount.id,
             date: record.date,
-            amount: -costOfSales,
+            amount: -costOfSales, // Credit
             type: 'Journal',
             description: cogsDescription,
             journalId: cogsJournalId,
