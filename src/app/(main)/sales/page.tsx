@@ -8,6 +8,7 @@ import { getAccounts } from '@/lib/firebase/firestore/accounts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SalesRecord } from '@/lib/firebase/firestore/sales';
 import { Card } from '@/components/ui/card';
+import { SalesRecords } from '@/components/sales/sales-records';
 
 export default function SalesPage() {
     const [accounts, setAccounts] = useState<Account[]>([]);
@@ -31,7 +32,7 @@ export default function SalesPage() {
 
 
   return (
-    <div className="flex justify-center items-start pt-8">
+    <div className="flex flex-col gap-8 justify-center items-center pt-8">
       <Card className="w-full max-w-2xl">
         {loading ? (
              <div className="space-y-8 p-6">
@@ -54,6 +55,9 @@ export default function SalesPage() {
              <SalesForm accounts={accounts}/>
         )}
       </Card>
+      <div className="w-full max-w-4xl">
+        <SalesRecords />
+      </div>
     </div>
   );
 }

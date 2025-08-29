@@ -57,12 +57,12 @@ export function SalesRecords() {
         fetchRecords();
     }, []);
 
-    const translateStatus = (status: string) => {
+    const translateStatus = (status: 'Pending Upload' | 'Pending Matching' | 'Ready for Posting' | 'Posted') => {
         switch (status) {
             case 'Pending Upload': return 'قيد الرفع';
             case 'Pending Matching': return 'قيد المطابقة';
-            case 'Matched': return 'مطابق';
-            default: return status;
+            case 'Ready for Posting': return 'جاهز للترحيل';
+            case 'Posted': return 'مرحل';
         }
     }
 
@@ -106,9 +106,10 @@ export function SalesRecords() {
                     <TableCell>${record.total.toFixed(2)}</TableCell>
                     <TableCell>
                     <Badge variant={getStatusVariant(translateStatus(record.status))} className={
-                        record.status === 'Matched' ? 'bg-green-100 text-green-800' : 
+                        record.status === 'Posted' ? 'bg-blue-100 text-blue-800' :
+                        record.status === 'Ready for Posting' ? 'bg-green-100 text-green-800' : 
                         record.status === 'Pending Matching' ? 'bg-yellow-100 text-yellow-800' : 
-                        record.status === 'Pending Upload' ? 'bg-blue-100 text-blue-800' : ''
+                        record.status === 'Pending Upload' ? 'bg-gray-100 text-gray-800' : ''
                     }>
                         {translateStatus(record.status)}
                     </Badge>
