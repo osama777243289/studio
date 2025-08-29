@@ -384,16 +384,15 @@ export const updateSaleRecordStatus = async (
 
 
 const findAccountByCode = (accounts: Account[], code: string): Account | null => {
-    for (const acc of accounts) {
-        if (acc.code === code) {
-            return acc;
-        }
-        if (acc.children) {
-            const found = findAccountByCode(acc.children, code);
-            if (found) return found;
-        }
+    const flatAccounts: Account[] = [];
+    const flatten = (accs: Account[]) => {
+      for (const acc of accs) {
+          flatAccounts.push(acc);
+          if (acc.children) flatten(acc.children);
+      }
     }
-    return null;
+    flatten(accounts);
+    return flatAccounts.find(acc => acc.code === code) || null;
 }
 
 export const postSaleRecord = async (recordId: string, costOfSales: number): Promise<void> => {
@@ -409,10 +408,10 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
     const salesRevenueAccount = findAccountByCode(allAccounts, '4101001'); 
     const vatAccount = findAccountByCode(allAccounts, '2101001');           
     const cogsAccount = findAccountByCode(allAccounts, '5101001');      
-    const inventoryAccount = findAccountByCode(allAccounts, '1103001');    
+    const inventoryAccount = findAccountByCode(allAccounts, '1104001');    
 
     if (!salesRevenueAccount || !vatAccount || !cogsAccount || !inventoryAccount) {
-        throw new Error("System accounts for posting not found. Please ensure accounts 4101001, 2101001, 5101001, and 1103001 exist.");
+        throw new Error("System accounts for posting not found. Please ensure accounts 4101001, 2101001, 5101001, and 1104001 exist.");
     }
 
     const journalId = doc(collection(db, 'temp')).id; 
@@ -436,16 +435,6 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
             amount: actualCashAmount, // Debit
             type: 'Journal',
             description,
-            journalId,
-            createdAt: Timestamp.now(),
-        });
-         // Credit the cashier account for control purposes
-        batch.set(doc(transactionsCol), {
-            accountId: record.cash.accountId,
-            date: record.date,
-            amount: -actualCashAmount, // Credit
-            type: 'Journal',
-            description: `قيد رقابي عكسي لـ: ${description}`,
             journalId,
             createdAt: Timestamp.now(),
         });

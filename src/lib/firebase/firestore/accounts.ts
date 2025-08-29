@@ -35,9 +35,9 @@ const defaultAccounts: (Omit<Account, 'id' | 'children'> & { children?: Omit<Acc
                             { code: '1102001', name: 'عميل مبيعات آجلة عام', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'الميزانية العمومية', classifications: ['عملاء'], parentId: null, isSystemAccount: false },
                         ]
                     },
-                    { code: '1103', name: 'المخزون', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'الميزانية العمومية', classifications: [], parentId: null, isSystemAccount: true,
+                    { code: '1104', name: 'المخزون', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'الميزانية العمومية', classifications: [], parentId: null, isSystemAccount: true,
                         children: [
-                            { code: '1103001', name: 'مخزون البضائع', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'الميزانية العمومية', classifications: ['مخزون'], parentId: null, isSystemAccount: true },
+                            { code: '1104001', name: 'مخزون البضائع', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'الميزانية العمومية', classifications: ['مخزون'], parentId: null, isSystemAccount: true },
                         ]
                     },
                 ] 
