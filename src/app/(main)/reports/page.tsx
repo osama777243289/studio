@@ -2,93 +2,17 @@
 'use client';
 
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  TableFooter
-} from "@/components/ui/table"
+import { Download } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Download, ArrowLeft } from "lucide-react"
-import Papa from 'papaparse';
-import Link from "next/link";
-
-const profitAndLossData = {
-  title: 'بيان الأرباح والخسائر',
-  period: 'للفترة المنتهية في 30 يونيو 2024',
-  rows: [
-    { description: 'الإيرادات', amount: null, isHeader: true },
-    { description: 'المبيعات', amount: 120000.00, isHeader: false, indent: true },
-    { description: 'الخدمات', amount: 35000.00, isHeader: false, indent: true },
-    { description: 'إجمالي الإيرادات', amount: 155000.00, isHeader: true },
-    { description: 'المصروفات', amount: null, isHeader: true },
-    { description: 'الرواتب والأجور', amount: 60000.00, isHeader: false, indent: true },
-    { description: 'الإيجار', amount: 12000.00, isHeader: false, indent: true },
-    { description: 'التسويق', amount: 8500.00, isHeader: false, indent: true },
-    { description: 'الخدمات', amount: 4200.00, isHeader: false, indent: true },
-  ],
-  footer: { description: 'صافي الربح', amount: 70300.00 },
-};
-
-const balanceSheetData = {
-    title: 'الميزانية العمومية',
-    period: 'كما في 30 يونيو 2024',
-    rows: [
-        { description: 'الأصول', amount: null, isHeader: true },
-        { description: 'النقد', amount: 80500.00, isHeader: false, indent: true },
-        { description: 'الذمم المدينة', amount: 15200.00, isHeader: false, indent: true },
-        { description: 'المخزون', amount: 25000.00, isHeader: false, indent: true },
-        { description: 'إجمالي الأصول', amount: 120700.00, isHeader: true, isTotal: true },
-        { description: 'الخصوم وحقوق الملكية', amount: null, isHeader: true },
-        { description: 'الذمم الدائنة', amount: 10400.00, isHeader: false, indent: true },
-        { description: 'حقوق الملكية', amount: 110300.00, isHeader: false, indent: true },
-        { description: 'إجمالي الخصوم وحقوق الملكية', amount: 120700.00, isHeader: true, isTotal: true },
-    ],
-    footer: null
-}
-
+import { IncomeStatement } from "@/components/reports/income-statement";
+import { BalanceSheet } from "@/components/reports/balance-sheet";
+import { TrialBalance } from "@/components/reports/trial-balance";
 
 export default function ReportsPage() {
 
-    const formatAmount = (amount: number | null) => {
-        if (amount === null) return '';
-        return `$${amount.toFixed(2)}`;
-    }
-
+    // Placeholder for export functionality
     const handleExport = () => {
-        const pnlCsv = Papa.unparse({
-            fields: ['الوصف', 'المبلغ'],
-            data: [
-                ...profitAndLossData.rows.map(row => [row.description, row.amount ? formatAmount(row.amount) : '']),
-                [profitAndLossData.footer.description, formatAmount(profitAndLossData.footer.amount)]
-            ]
-        });
-
-        const balanceSheetCsv = Papa.unparse({
-            fields: ['الوصف', 'المبلغ'],
-            data: balanceSheetData.rows.map(row => [row.description, row.amount ? formatAmount(row.amount) : ''])
-        });
-
-        const combinedCsv = `${profitAndLossData.title}\n${profitAndLossData.period}\n${pnlCsv}\n\n${balanceSheetData.title}\n${balanceSheetData.period}\n${balanceSheetCsv}`;
-        
-        const blob = new Blob([`\uFEFF${combinedCsv}`], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', 'financial_reports.csv');
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        alert("سيتم تفعيل خاصية التصدير في المراحل القادمة.");
     }
 
   return (
@@ -104,85 +28,24 @@ export default function ReportsPage() {
             </Button>
         </div>
 
-      <Tabs defaultValue="p-l" className="w-full">
-        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3">
-          <TabsTrigger value="p-l">الأرباح والخسائر</TabsTrigger>
-          <TabsTrigger value="balance-sheet">الميزانية العمومية</TabsTrigger>
+      <Tabs defaultValue="trial-balance" className="w-full">
+        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-4">
+          <TabsTrigger value="trial-balance">ميزان المراجعة</TabsTrigger>
+          <TabsTrigger value="income-statement">قائمة الدخل</TabsTrigger>
+          <TabsTrigger value="balance-sheet">المركز المالي</TabsTrigger>
           <TabsTrigger value="other-reports">تقارير أخرى</TabsTrigger>
         </TabsList>
-        <TabsContent value="p-l">
-          <Card>
-            <CardHeader>
-              <CardTitle className="font-headline">{profitAndLossData.title}</CardTitle>
-              <CardDescription>{profitAndLossData.period}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>الوصف</TableHead>
-                    <TableHead className="text-left">المبلغ</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {profitAndLossData.rows.map((row, index) => (
-                      <TableRow key={index} className={row.isHeader ? "font-medium" : ""}>
-                          <TableCell className={row.indent ? "pr-8" : ""}>{row.description}</TableCell>
-                          <TableCell className="text-left">{row.amount !== null ? formatAmount(row.amount) : ''}</TableCell>
-                      </TableRow>
-                  ))}
-                </TableBody>
-                <TableFooter>
-                  <TableRow className="text-lg font-bold bg-muted/50">
-                    <TableCell>{profitAndLossData.footer.description}</TableCell>
-                    <TableCell className="text-left text-green-600">{formatAmount(profitAndLossData.footer.amount)}</TableCell>
-                  </TableRow>
-                </TableFooter>
-              </Table>
-            </CardContent>
-          </Card>
+        <TabsContent value="trial-balance">
+            <TrialBalance />
+        </TabsContent>
+        <TabsContent value="income-statement">
+            <IncomeStatement />
         </TabsContent>
         <TabsContent value="balance-sheet">
-          <Card>
-            <CardHeader>
-              <CardTitle className="font-headline">{balanceSheetData.title}</CardTitle>
-              <CardDescription>{balanceSheetData.period}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>الوصف</TableHead>
-                    <TableHead className="text-left">المبلغ</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {balanceSheetData.rows.map((row, index) => (
-                         <TableRow key={index} className={`${row.isHeader ? "font-medium" : ""} ${row.isTotal ? "bg-muted/20" : ""}`}>
-                            <TableCell className={row.indent ? "pr-8" : ""}>{row.description}</TableCell>
-                            <TableCell className="text-left">{row.amount !== null ? formatAmount(row.amount) : ''}</TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+            <BalanceSheet />
         </TabsContent>
         <TabsContent value="other-reports">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="font-headline">تقارير أخرى</CardTitle>
-                    <CardDescription>تقارير إضافية وتفصيلية.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-2">
-                        <Link href="/reports/cashier-sales" className="flex items-center justify-between p-3 bg-muted/50 hover:bg-muted rounded-md transition-colors">
-                           <span>تقرير مبيعات الكاشير</span>
-                           <ArrowLeft className="h-5 w-5" />
-                        </Link>
-                    </div>
-                </CardContent>
-            </Card>
+             {/* This can be used for other reports like Cashier Sales Report link */}
         </TabsContent>
       </Tabs>
     </div>
