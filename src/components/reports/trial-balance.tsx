@@ -29,6 +29,7 @@ import { Button } from '../ui/button';
 import { FileSearch, Loader2, AlertCircle } from 'lucide-react';
 import { getTrialBalanceData, TrialBalanceAccount } from '@/lib/firebase/firestore/reports';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { cn } from '@/lib/utils';
 
 
 export function TrialBalance() {
@@ -78,7 +79,11 @@ export function TrialBalance() {
             return (
                 <Fragment key={account.id}>
                     {showRow && (
-                        <TableRow className={account.level === 1 ? "font-bold bg-muted/30" : ""}>
+                        <TableRow className={cn(
+                            account.level === 1 && "font-bold bg-primary/20",
+                            account.level === 2 && "font-semibold bg-primary/10",
+                            account.level === 3 && "bg-primary/5",
+                        )}>
                             <TableCell className="font-mono" style={{paddingRight: `${(account.level > 1 ? account.level - 1 : 0) * 1.5 + 1}rem`}}>
                               {account.code}
                             </TableCell>
@@ -191,7 +196,11 @@ export function TrialBalance() {
                                 renderTree(treeData)
                             ) : (
                                 getFlatFilteredData().map(account => (
-                                     <TableRow key={account.id} className={account.level === 1 ? "font-bold bg-muted/30" : ""}>
+                                     <TableRow key={account.id} className={cn(
+                                        account.level === 1 && "font-bold bg-primary/20",
+                                        account.level === 2 && "font-semibold bg-primary/10",
+                                        account.level === 3 && "bg-primary/5",
+                                    )}>
                                         <TableCell className="font-mono" style={{paddingRight: `${(account.level > 1 ? account.level - 1 : 0) * 1.5 + 1}rem`}}>
                                         {account.code}
                                         </TableCell>
