@@ -18,16 +18,36 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { getSalesRecordsByStatus, SalesRecord, postSaleRecord } from '@/lib/firebase/firestore/sales';
-import { Loader2, AlertCircle, Send } from 'lucide-react';
+import { Loader2, AlertCircle, Send, CheckCheck } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+
+const translateStatus = (status: 'Pending Upload' | 'Pending Matching' | 'Ready for Posting' | 'Posted') => {
+    switch (status) {
+        case 'Pending Upload': return 'قيد الرفع';
+        case 'Pending Matching': return 'قيد المطابقة';
+        case 'Ready for Posting': return 'جاهز للترحيل';
+        case 'Posted': return 'مُرحّل';
+        default: return status;
+    }
+}
+
+const getStatusVariant = (status: string) => {
+    switch (status) {
+        case 'جاهز للترحيل': return 'default';
+        case 'مُرحّل': return 'secondary';
+        default: return 'outline';
+    }
+}
 
 export default function PostEntriesPage() {
-  const [records, setRecords] = useState<SalesRecord[]>([]);
+  const [readyRecords, setReadyRecords] = useState<SalesRecord[]>([]);
+  const [postedRecords, setPostedRecords] = useState<SalesRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [postingId, setPostingId] = useState<string | null>(null);
@@ -38,11 +58,16 @@ export default function PostEntriesPage() {
       setLoading(true);
       setError(null);
       try {
-        const fetchedRecords = await getSalesRecordsByStatus('Ready for Posting');
-        setRecords(fetchedRecords);
+        const [fetchedReadyRecords, fetchedPostedRecords] = await Promise.all([
+             getSalesRecordsByStatus('Ready for Posting'),
+             getSalesRecordsByStatus('Posted')
+        ]);
+        setReadyRecords(fetchedReadyRecords);
+        setPostedRecords(fetchedPostedRecords);
+
       } catch (e: any) {
         console.error("Failed to fetch records:", e);
-        setError("فشل تحميل السجلات الجاهزة للترحيل.");
+        setError("فشل تحميل السجلات.");
       } finally {
         setLoading(false);
       }
@@ -78,8 +103,7 @@ export default function PostEntriesPage() {
             title: 'تم الترحيل بنجاح',
             description: `تم ترحيل السجل رقم ${recordId} بنجاح.`,
         });
-        // Refresh the list
-        fetchRecords();
+        fetchRecords(); // Refresh both lists
     } catch(e: any) {
         console.error("Failed to post record:", e);
         toast({
@@ -94,88 +118,153 @@ export default function PostEntriesPage() {
 
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="font-headline">ترحيل القيود</CardTitle>
-        <CardDescription>مراجعة وترحيل قيود المبيعات المطابقة إلى اليومية العامة بعد إدخال تكلفة المبيعات.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <div className="flex justify-center items-center min-h-[300px]">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+    <div className="space-y-8">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Send className="h-6 w-6 text-primary" />
+            <CardTitle className="font-headline">السجلات الجاهزة للترحيل</CardTitle>
           </div>
-        ) : error ? (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>خطأ في التحميل</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>التاريخ</TableHead>
-                  <TableHead>الفترة</TableHead>
-                  <TableHead>الكاشير</TableHead>
-                  <TableHead className="text-center">الإجمالي الفعلي</TableHead>
-                  <TableHead className="w-[200px]">تكلفة المبيعات</TableHead>
-                  <TableHead className="text-center">الإجراء</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {records.length === 0 ? (
+          <CardDescription>مراجعة وترحيل قيود المبيعات المطابقة إلى اليومية العامة بعد إدخال تكلفة المبيعات.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex justify-center items-center min-h-[200px]">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : error ? (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>خطأ في التحميل</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                      لا توجد سجلات جاهزة للترحيل حاليًا.
-                    </TableCell>
+                    <TableHead>التاريخ</TableHead>
+                    <TableHead>الفترة</TableHead>
+                    <TableHead>الكاشير</TableHead>
+                    <TableHead className="text-center">الإجمالي الفعلي</TableHead>
+                    <TableHead className="w-[200px]">تكلفة المبيعات</TableHead>
+                    <TableHead className="text-center">الإجراء</TableHead>
                   </TableRow>
-                ) : (
-                  records.map((record) => (
-                    <TableRow key={record.id}>
-                      <TableCell>{format(record.date.toDate(), 'yyyy/MM/dd')}</TableCell>
-                      <TableCell>{record.period === 'Morning' ? 'صباحية' : 'مسائية'}</TableCell>
-                      <TableCell>{record.cashier}</TableCell>
-                      <TableCell className="text-center font-mono">
-                        {record.actuals ? Object.values(record.actuals).reduce((a,b) => a + b, 0).toFixed(2) : record.total.toFixed(2)}
-                      </TableCell>
-                       <TableCell>
-                          <Input 
-                            type="number"
-                            placeholder="أدخل تكلفة المبيعات"
-                            value={costs[record.id] || ''}
-                            onChange={(e) => handleCostChange(record.id, e.target.value)}
-                            className="text-center"
-                          />
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Button 
-                            size="sm"
-                            onClick={() => handlePostRecord(record.id)}
-                            disabled={postingId === record.id || !costs[record.id]}
-                        >
-                            {postingId === record.id ? (
-                                <>
-                                 <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                                 جاري الترحيل...
-                                </>
-                            ) : (
-                                <>
-                                 <Send className="ml-2 h-4 w-4" />
-                                 ترحيل القيد
-                                </>
-                            )}
-                           
-                        </Button>
+                </TableHeader>
+                <TableBody>
+                  {readyRecords.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                        لا توجد سجلات جاهزة للترحيل حاليًا.
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  ) : (
+                    readyRecords.map((record) => (
+                      <TableRow key={record.id}>
+                        <TableCell>{format(record.date.toDate(), 'yyyy/MM/dd')}</TableCell>
+                        <TableCell>{record.period === 'Morning' ? 'صباحية' : 'مسائية'}</TableCell>
+                        <TableCell>{record.cashier}</TableCell>
+                        <TableCell className="text-center font-mono">
+                          {record.actuals ? Object.values(record.actuals).reduce((a,b) => a + b, 0).toFixed(2) : record.total.toFixed(2)}
+                        </TableCell>
+                         <TableCell>
+                            <Input 
+                              type="number"
+                              placeholder="أدخل تكلفة المبيعات"
+                              value={costs[record.id] || ''}
+                              onChange={(e) => handleCostChange(record.id, e.target.value)}
+                              className="text-center"
+                            />
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Button 
+                              size="sm"
+                              onClick={() => handlePostRecord(record.id)}
+                              disabled={postingId === record.id || !costs[record.id]}
+                          >
+                              {postingId === record.id ? (
+                                  <>
+                                   <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                                   جاري الترحيل...
+                                  </>
+                              ) : (
+                                  <>
+                                   <Send className="ml-2 h-4 w-4" />
+                                   ترحيل القيد
+                                  </>
+                              )}
+                             
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+           <div className="flex items-center gap-2">
+            <CheckCheck className="h-6 w-6 text-green-600" />
+            <CardTitle className="font-headline">السجلات المُرحّلة</CardTitle>
           </div>
-        )}
-      </CardContent>
-    </Card>
+          <CardDescription>عرض السجلات التي تم ترحيلها بنجاح إلى اليومية العامة.</CardDescription>
+        </CardHeader>
+        <CardContent>
+           {loading ? (
+                <div className="flex justify-center items-center min-h-[200px]">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+           ) : (
+               <div className="overflow-x-auto">
+                 <Table>
+                   <TableHeader>
+                     <TableRow>
+                       <TableHead>التاريخ</TableHead>
+                       <TableHead>الفترة</TableHead>
+                       <TableHead>الكاشير</TableHead>
+                       <TableHead className="text-center">الإجمالي الفعلي</TableHead>
+                       <TableHead className="text-center">تكلفة المبيعات</TableHead>
+                       <TableHead className="text-center">الحالة</TableHead>
+                     </TableRow>
+                   </TableHeader>
+                   <TableBody>
+                     {postedRecords.length === 0 ? (
+                       <TableRow>
+                         <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                           لا توجد سجلات مُرحّلة.
+                         </TableCell>
+                       </TableRow>
+                     ) : (
+                       postedRecords.map((record) => (
+                         <TableRow key={record.id}>
+                           <TableCell>{format(record.date.toDate(), 'yyyy/MM/dd')}</TableCell>
+                           <TableCell>{record.period === 'Morning' ? 'صباحية' : 'مسائية'}</TableCell>
+                           <TableCell>{record.cashier}</TableCell>
+                           <TableCell className="text-center font-mono">
+                              {record.actuals ? Object.values(record.actuals).reduce((a,b) => a + b, 0).toFixed(2) : record.total.toFixed(2)}
+                           </TableCell>
+                           <TableCell className="text-center font-mono">
+                               {record.costOfSales?.toFixed(2) || 'N/A'}
+                           </TableCell>
+                           <TableCell className="text-center">
+                               <Badge variant={getStatusVariant(translateStatus(record.status))} className="bg-blue-100 text-blue-800">
+                                   {translateStatus(record.status)}
+                               </Badge>
+                           </TableCell>
+                         </TableRow>
+                       ))
+                     )}
+                   </TableBody>
+                 </Table>
+               </div>
+           )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

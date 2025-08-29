@@ -143,6 +143,11 @@ const seedSalesRecords = async () => {
       postingNumber: 'PO-002',
       total: 1200,
       status: 'Ready for Posting',
+      costOfSales: 750,
+      actuals: {
+        'cash': 800,
+        'credit-0': 400
+      },
       cash: {
         accountId: cashAccount,
         accountName: accountMap.get(cashAccount),
@@ -165,6 +170,11 @@ const seedSalesRecords = async () => {
       postingNumber: 'PO-003',
       total: 1800,
       status: 'Posted',
+      costOfSales: 1100,
+      actuals: {
+        'cash': 1400,
+        'credit-0': 400
+      },
       cash: {
         accountId: cashAccount,
         accountName: accountMap.get(cashAccount),
