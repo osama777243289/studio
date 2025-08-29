@@ -19,57 +19,57 @@ import {
 
 const defaultAccounts: (Omit<Account, 'id' | 'children'> & { children?: Omit<Account, 'id' | 'children'>[] })[] = [
     {
-        code: '1', name: 'الأصول', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: [], parentId: null, isSystemAccount: true,
+        code: '1', name: 'الأصول', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'الميزانية العمومية', classifications: [], parentId: null, isSystemAccount: true,
         children: [
             { 
-                code: '11', name: 'الأصول المتداولة', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: [], parentId: null, isSystemAccount: true,
+                code: '11', name: 'الأصول المتداولة', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'الميزانية العمومية', classifications: [], parentId: null, isSystemAccount: true,
                 children: [
-                    { code: '1101', name: 'الصناديق والبنوك', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: [], parentId: null, isSystemAccount: true,
+                    { code: '1101', name: 'النقدية بالصناديق والبنوك', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'الميزانية العمومية', classifications: [], parentId: null, isSystemAccount: true,
                         children: [
-                            { code: '1101001', name: 'صندوق الكاشير الرئيسي', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['كاشير', 'صندوق'], parentId: null, isSystemAccount: false },
-                            { code: '1101002', name: 'حساب الشبكة', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['شبكات'], parentId: null, isSystemAccount: false },
+                            { code: '1101001', name: 'صندوق الكاشير الرئيسي', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'الميزانية العمومية', classifications: ['كاشير', 'صندوق'], parentId: null, isSystemAccount: false },
+                            { code: '1101002', name: 'حساب الشبكة', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'الميزانية العمومية', classifications: ['شبكات'], parentId: null, isSystemAccount: false },
                         ]
                     },
-                    { code: '1102', name: 'العملاء', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['عملاء'], parentId: null, isSystemAccount: true,
+                    { code: '1102', name: 'العملاء', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'الميزانية العمومية', classifications: [], parentId: null, isSystemAccount: true,
                         children: [
-                            { code: '1102001', name: 'عميل مبيعات آجلة عام', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['عملاء'], parentId: null, isSystemAccount: false },
+                            { code: '1102001', name: 'عميل مبيعات آجلة عام', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'الميزانية العمومية', classifications: ['عملاء'], parentId: null, isSystemAccount: false },
                         ]
                     },
-                    { code: '1103', name: 'المخزون', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['مخزون'], parentId: null, isSystemAccount: true },
+                    { code: '1103', name: 'المخزون', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'الميزانية العمومية', classifications: ['مخزون'], parentId: null, isSystemAccount: true },
                 ] 
             },
-            { code: '12', name: 'الأصول الثابتة', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'Balance Sheet', classifications: ['أصول ثابتة'], parentId: null, isSystemAccount: true },
+            { code: '12', name: 'الأصول الثابتة', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'الميزانية العمومية', classifications: ['أصول ثابتة'], parentId: null, isSystemAccount: true },
         ],
     },
     {
-        code: '2', name: 'الخصوم', type: 'Credit', group: 'Liabilities', status: 'Active', closingType: 'Balance Sheet', classifications: [], parentId: null, isSystemAccount: true,
+        code: '2', name: 'الخصوم', type: 'Credit', group: 'Liabilities', status: 'Active', closingType: 'الميزانية العمومية', classifications: [], parentId: null, isSystemAccount: true,
         children: [
             { 
-                code: '21', name: 'الخصوم المتداولة', type: 'Credit', group: 'Liabilities', status: 'Active', closingType: 'Balance Sheet', classifications: [], parentId: null, isSystemAccount: true,
+                code: '21', name: 'الخصوم المتداولة', type: 'Credit', group: 'Liabilities', status: 'Active', closingType: 'الميزانية العمومية', classifications: [], parentId: null, isSystemAccount: true,
                 children: [
-                    { code: '2101', name: 'ضريبة القيمة المضافة', type: 'Credit', group: 'Liabilities', status: 'Active', closingType: 'Balance Sheet', classifications: [], parentId: null, isSystemAccount: true },
+                    { code: '2101', name: 'ضريبة القيمة المضافة', type: 'Credit', group: 'Liabilities', status: 'Active', closingType: 'الميزانية العمومية', classifications: [], parentId: null, isSystemAccount: true },
                 ]
             },
         ]
     },
     {
-        code: '3', name: 'حقوق الملكية', type: 'Credit', group: 'Equity', status: 'Active', closingType: 'Balance Sheet', classifications: [], parentId: null, isSystemAccount: true },
+        code: '3', name: 'حقوق الملكية', type: 'Credit', group: 'Equity', status: 'Active', closingType: 'الميزانية العمومية', classifications: [], parentId: null, isSystemAccount: true },
     {
-        code: '4', name: 'الإيرادات', type: 'Credit', group: 'Revenues', status: 'Active', closingType: 'Income Statement', classifications: ['إيرادات'], parentId: null, isSystemAccount: true,
+        code: '4', name: 'الإيرادات', type: 'Credit', group: 'Revenues', status: 'Active', closingType: 'قائمة الدخل', classifications: [], parentId: null, isSystemAccount: true,
          children: [
-            { code: '41', name: 'إيرادات النشاط الرئيسي', type: 'Credit', group: 'Revenues', status: 'Active', closingType: 'Income Statement', classifications: [], parentId: null, isSystemAccount: true,
+            { code: '41', name: 'إيرادات النشاط الرئيسي', type: 'Credit', group: 'Revenues', status: 'Active', closingType: 'قائمة الدخل', classifications: [], parentId: null, isSystemAccount: true,
               children: [
-                  { code: '4101', name: 'إيرادات المبيعات', type: 'Credit', group: 'Revenues', status: 'Active', closingType: 'Income Statement', classifications: ['إيرادات'], parentId: null, isSystemAccount: true },
+                  { code: '4101', name: 'إيرادات المبيعات', type: 'Credit', group: 'Revenues', status: 'Active', closingType: 'قائمة الدخل', classifications: ['إيرادات'], parentId: null, isSystemAccount: true },
               ]
             }
         ]
     },
     {
-        code: '5', name: 'المصروفات', type: 'Debit', group: 'Expenses', status: 'Active', closingType: 'Income Statement', classifications: ['مصروفات'], parentId: null, isSystemAccount: true,
+        code: '5', name: 'المصروفات', type: 'Debit', group: 'Expenses', status: 'Active', closingType: 'قائمة الدخل', classifications: [], parentId: null, isSystemAccount: true,
         children: [
-            { code: '51', name: 'تكلفة المبيعات', type: 'Debit', group: 'Expenses', status: 'Active', closingType: 'Income Statement', classifications: [], parentId: null, isSystemAccount: true,
+            { code: '51', name: 'تكلفة المبيعات', type: 'Debit', group: 'Expenses', status: 'Active', closingType: 'قائمة الدخل', classifications: [], parentId: null, isSystemAccount: true,
                children: [
-                   { code: '5101', name: 'تكلفة البضاعة المباعة', type: 'Debit', group: 'Expenses', status: 'Active', closingType: 'Income Statement', classifications: [], parentId: null, isSystemAccount: true },
+                   { code: '5101', name: 'تكلفة البضاعة المباعة', type: 'Debit', group: 'Expenses', status: 'Active', closingType: 'قائمة الدخل', classifications: [], parentId: null, isSystemAccount: true },
                ]
             }
         ]
@@ -97,25 +97,29 @@ const seedAccounts = async () => {
 };
 
 
-const buildAccountTree = (accounts: any[]): Account[] => {
+const buildAccountTree = (accounts: Account[]): Account[] => {
   const accountMap = new Map<string, Account>();
   const rootAccounts: Account[] = [];
 
+  // First, create a map of all accounts by their ID.
   accounts.forEach(account => {
     accountMap.set(account.id, { ...account, children: [] });
   });
 
+  // Then, iterate over the accounts again to build the tree.
   accounts.forEach(account => {
-    if (account.parentId) {
+    const currentAccount = accountMap.get(account.id);
+    if (!currentAccount) return;
+
+    if (account.parentId && accountMap.has(account.parentId)) {
       const parent = accountMap.get(account.parentId);
-      if (parent) {
-        parent.children?.push(accountMap.get(account.id)!);
-      }
+      parent?.children?.push(currentAccount);
     } else {
-      rootAccounts.push(accountMap.get(account.id)!);
+      rootAccounts.push(currentAccount);
     }
   });
   
+  // Helper function to sort children recursively
   const sortChildren = (node: Account) => {
     if (node.children && node.children.length > 0) {
       node.children.sort((a, b) => a.code.localeCompare(b.code));
@@ -123,6 +127,7 @@ const buildAccountTree = (accounts: any[]): Account[] => {
     }
   };
 
+  // Sort root accounts and then their children recursively
   rootAccounts.sort((a, b) => a.code.localeCompare(b.code));
   rootAccounts.forEach(sortChildren);
 
@@ -130,21 +135,26 @@ const buildAccountTree = (accounts: any[]): Account[] => {
 };
 
 export const getAccounts = async (): Promise<Account[]> => {
-  const accountsCol = collection(db, 'accounts');
-  const q = query(accountsCol, orderBy("code"));
-  const accountSnapshot = await getDocs(q);
+    const accountsCol = collection(db, 'accounts');
+    const q = query(accountsCol, orderBy("code"));
+    let accountSnapshot = await getDocs(q);
 
-  if (accountSnapshot.empty) {
-      console.log("No accounts found. Seeding database...");
-      await seedAccounts();
-      const seededSnapshot = await getDocs(q);
-      const accounts: any[] = seededSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      return buildAccountTree(accounts);
-  }
-  
-  const accounts: any[] = accountSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  return buildAccountTree(accounts);
+    // If the database is empty, seed it with default accounts.
+    if (accountSnapshot.empty) {
+        console.log("No accounts found. Seeding database...");
+        await seedAccounts();
+        // Fetch the accounts again after seeding.
+        accountSnapshot = await getDocs(q);
+    }
+    
+    const accountsList = accountSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+    } as Account));
+    
+    return buildAccountTree(accountsList);
 };
+
 
 async function isAccountUnique(name: string, code: string, currentAccountId?: string): Promise<{ unique: boolean; message: string }> {
     const accountsCol = collection(db, 'accounts');
