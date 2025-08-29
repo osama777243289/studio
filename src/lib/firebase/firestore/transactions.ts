@@ -77,8 +77,7 @@ export const getRecentTransactions = async (count: number = 5): Promise<Transact
 // Get all transactions
 export const getAllTransactions = async (): Promise<TransactionWithAccountName[]> => {
     const transactionsCol = collection(db, 'transactions');
-    // We fetch all journal entries, filtering out any old seed data without a proper description
-    const q = query(transactionsCol, where('description', '!=', ''), orderBy('description'), orderBy('date', 'desc'));
+    const q = query(transactionsCol, orderBy('createdAt', 'desc'));
     const transactionSnapshot = await getDocs(q);
     
     if (transactionSnapshot.empty) {
