@@ -3,6 +3,8 @@
 import { getAccounts } from "./accounts";
 import { getAllTransactions } from "./transactions";
 import type { Account } from "@/components/chart-of-accounts/account-tree";
+import { Timestamp } from "firebase/firestore";
+import { startOfMonth, endOfMonth, subMonths } from 'date-fns';
 
 export interface TrialBalanceAccount extends Account {
     movementDebit: number;
@@ -46,13 +48,23 @@ export interface DashboardSummary {
     totalExpenses: number;
     netIncome: number;
     balance: number;
+    revenueChange: number | null;
+    expenseChange: number | null;
+    netIncomeChange: number | null;
 }
 
-const calculateBalances = async (): Promise<Map<string, { movementDebit: number; movementCredit: number }>> => {
+const calculateBalances = async (startDate?: Date, endDate?: Date): Promise<Map<string, { movementDebit: number; movementCredit: number }>> => {
     const transactions = await getAllTransactions();
     const balances = new Map<string, { movementDebit: number; movementCredit: number }>();
+    
+    const filteredTransactions = transactions.filter(tx => {
+        const txDate = tx.date.toDate();
+        if (startDate && txDate < startDate) return false;
+        if (endDate && txDate > endDate) return false;
+        return true;
+    });
 
-    for (const tx of transactions) {
+    for (const tx of filteredTransactions) {
         if (!tx.accountId) continue;
         const current = balances.get(tx.accountId) || { movementDebit: 0, movementCredit: 0 };
         if (tx.amount > 0) {
@@ -66,9 +78,9 @@ const calculateBalances = async (): Promise<Map<string, { movementDebit: number;
     return balances;
 };
 
-const processAccountsForReports = async (asTree: boolean = false): Promise<TrialBalanceAccount[]> => {
+const processAccountsForReports = async (asTree: boolean = false, startDate?: Date, endDate?: Date): Promise<TrialBalanceAccount[]> => {
     const accountTree = await getAccounts();
-    const balances = await calculateBalances();
+    const balances = await calculateBalances(startDate, endDate);
     const processedAccountsMap = new Map<string, TrialBalanceAccount>();
 
     const traverse = (accounts: Account[], level: number): { totalMovementDebit: number; totalMovementCredit: number } => {
@@ -217,19 +229,49 @@ export const getBalanceSheetData = async (): Promise<BalanceSheetData> => {
     };
 };
 
+const calculatePercentageChange = (current: number, previous: number): number | null => {
+    if (previous === 0) {
+        return current > 0 ? 100.0 : 0.0; // Or null if you prefer not to show a percentage
+    }
+    return ((current - previous) / previous) * 100;
+}
+
 export const getDashboardSummary = async (): Promise<DashboardSummary> => {
-    const allAccounts = await processAccountsForReports();
+    const now = new Date();
+    const currentMonthStart = startOfMonth(now);
+    const currentMonthEnd = endOfMonth(now);
+    
+    const prevMonth = subMonths(now, 1);
+    const prevMonthStart = startOfMonth(prevMonth);
+    const prevMonthEnd = endOfMonth(prevMonth);
 
-    const totalRevenues = Math.abs(getReportAccounts(allAccounts, 'Revenues').find(a => a.level === 1)?.balance || 0);
-    const totalExpenses = getReportAccounts(allAccounts, 'Expenses').find(a => a.level === 1)?.balance || 0;
+    // Get data for all time for balance
+    const allTimeAccounts = await processAccountsForReports(false);
+    
+    // Get data for current month
+    const currentMonthAccounts = await processAccountsForReports(false, currentMonthStart, currentMonthEnd);
 
-    const cashAndBanks = allAccounts.filter(acc => acc.level === 4 && (acc.classifications?.includes('صندوق') || acc.classifications?.includes('بنك')));
+    // Get data for previous month
+    const prevMonthAccounts = await processAccountsForReports(false, prevMonthStart, prevMonthEnd);
+
+    const currentRevenues = Math.abs(getReportAccounts(currentMonthAccounts, 'Revenues').find(a => a.level === 1)?.balance || 0);
+    const currentExpenses = getReportAccounts(currentMonthAccounts, 'Expenses').find(a => a.level === 1)?.balance || 0;
+    const currentNetIncome = currentRevenues - currentExpenses;
+
+    const prevRevenues = Math.abs(getReportAccounts(prevMonthAccounts, 'Revenues').find(a => a.level === 1)?.balance || 0);
+    const prevExpenses = getReportAccounts(prevMonthAccounts, 'Expenses').find(a => a.level === 1)?.balance || 0;
+    const prevNetIncome = prevRevenues - prevExpenses;
+
+    const cashAndBanks = allTimeAccounts.filter(acc => acc.level === 4 && (acc.classifications?.includes('صندوق') || acc.classifications?.includes('بنك')));
     const balance = cashAndBanks.reduce((sum, acc) => sum + (acc.closingDebit - acc.closingCredit), 0);
 
     return {
-        totalRevenues,
-        totalExpenses,
-        netIncome: totalRevenues - totalExpenses,
+        totalRevenues: currentRevenues,
+        totalExpenses: currentExpenses,
+        netIncome: currentNetIncome,
         balance,
+        revenueChange: calculatePercentageChange(currentRevenues, prevRevenues),
+        expenseChange: calculatePercentageChange(currentExpenses, prevExpenses),
+        netIncomeChange: calculatePercentageChange(currentNetIncome, prevNetIncome),
     }
 }

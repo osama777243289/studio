@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { DollarSign, CreditCard, TrendingUp, TrendingDown, Loader2 } from "lucide-react"
+import { DollarSign, CreditCard, TrendingUp, TrendingDown, Loader2, ArrowUp, ArrowDown } from "lucide-react"
 import { OverviewChart } from "@/components/dashboard/overview-chart"
 import { RecentTransactions } from "@/components/dashboard/recent-transactions"
 import { Transaction } from "@/lib/firebase/firestore/transactions";
@@ -18,6 +18,7 @@ import { getAccounts } from "@/lib/firebase/firestore/accounts";
 import { Account } from "@/components/chart-of-accounts/account-tree";
 import { Skeleton } from '@/components/ui/skeleton';
 import { getDashboardSummary, type DashboardSummary } from '@/lib/firebase/firestore/reports';
+import { cn } from '@/lib/utils';
 
 // Helper to create a map of account IDs to names
 const createAccountMap = (accounts: Account[]): Map<string, string> => {
@@ -98,31 +99,45 @@ export default function DashboardPage() {
      )
   }
 
-  const SummaryCard = ({ title, value, icon: Icon, isLoading }: { title: string, value: number, icon: React.ElementType, isLoading: boolean }) => (
-    <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{title}</CardTitle>
-            <Icon className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-             {isLoading ? (
-                <Skeleton className="h-8 w-3/4" />
-            ) : (
-                <div className="text-2xl font-bold">{formatCurrency(value)}</div>
-            )}
-            {/* You can add comparison logic later */}
-            {/* <p className="text-xs text-muted-foreground">+20.1% من الشهر الماضي</p> */}
-        </CardContent>
-    </Card>
-);
+  const SummaryCard = ({ title, value, icon: Icon, change, changeType, isLoading }: { title: string, value: number, icon: React.ElementType, change: number | null, changeType: 'positive' | 'negative', isLoading: boolean }) => {
+    const isPositiveChange = change !== null && ( (changeType === 'positive' && change >= 0) || (changeType === 'negative' && change < 0) );
+    const isNegativeChange = change !== null && ( (changeType === 'positive' && change < 0) || (changeType === 'negative' && change >= 0) );
+    return (
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{title}</CardTitle>
+                <Icon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                {isLoading ? (
+                    <div className="space-y-2">
+                        <Skeleton className="h-8 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
+                    </div>
+                ) : (
+                   <>
+                    <div className="text-2xl font-bold">{formatCurrency(value)}</div>
+                    {change !== null && (
+                         <p className={cn("text-xs text-muted-foreground flex items-center gap-1", isPositiveChange && "text-green-600", isNegativeChange && "text-destructive")}>
+                            {isPositiveChange && <ArrowUp className="h-4 w-4"/>}
+                            {isNegativeChange && <ArrowDown className="h-4 w-4"/>}
+                            {change.toFixed(1)}% عن الشهر الماضي
+                        </p>
+                    )}
+                   </>
+                )}
+            </CardContent>
+        </Card>
+    );
+  };
 
   return (
     <div className="flex flex-col gap-6">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <SummaryCard title="إجمالي الدخل" value={summary?.totalRevenues || 0} icon={TrendingUp} isLoading={loading} />
-        <SummaryCard title="إجمالي المصروفات" value={summary?.totalExpenses || 0} icon={TrendingDown} isLoading={loading} />
-        <SummaryCard title="صافي الربح" value={summary?.netIncome || 0} icon={DollarSign} isLoading={loading} />
-        <SummaryCard title="الرصيد" value={summary?.balance || 0} icon={CreditCard} isLoading={loading} />
+        <SummaryCard title="إجمالي الدخل" value={summary?.totalRevenues || 0} icon={TrendingUp} change={summary?.revenueChange ?? null} changeType="positive" isLoading={loading} />
+        <SummaryCard title="إجمالي المصروفات" value={summary?.totalExpenses || 0} icon={TrendingDown} change={summary?.expenseChange ?? null} changeType="negative" isLoading={loading} />
+        <SummaryCard title="صافي الربح" value={summary?.netIncome || 0} icon={DollarSign} change={summary?.netIncomeChange ?? null} changeType="positive" isLoading={loading} />
+        <SummaryCard title="الرصيد" value={summary?.balance || 0} icon={CreditCard} change={null} changeType="positive" isLoading={loading} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-7">
