@@ -19,6 +19,8 @@ import { Account } from "@/components/chart-of-accounts/account-tree";
 import { Skeleton } from '@/components/ui/skeleton';
 import { getDashboardSummary, type DashboardSummary } from '@/lib/firebase/firestore/reports';
 import { cn } from '@/lib/utils';
+import { arSA } from 'date-fns/locale';
+import { format } from 'date-fns';
 
 // Helper to create a map of account IDs to names
 const createAccountMap = (accounts: Account[]): Map<string, string> => {
@@ -99,9 +101,7 @@ export default function DashboardPage() {
      )
   }
 
-  const SummaryCard = ({ title, value, icon: Icon, change, changeType, isLoading }: { title: string, value: number, icon: React.ElementType, change: number | null, changeType: 'positive' | 'negative' | 'none', isLoading: boolean }) => {
-    const isPositiveChange = change !== null && changeType !== 'none' && ( (changeType === 'positive' && change >= 0) || (changeType === 'negative' && change < 0) );
-    const isNegativeChange = change !== null && changeType !== 'none' && ( (changeType === 'positive' && change < 0) || (changeType === 'negative' && change >= 0) );
+  const SummaryCard = ({ title, data, icon: Icon, isLoading }: { title: string, data: DashboardSummary['dailyAverages']['netIncome'], icon: React.ElementType, isLoading: boolean }) => {
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -113,17 +113,22 @@ export default function DashboardPage() {
                     <div className="space-y-2">
                         <Skeleton className="h-8 w-3/4" />
                         <Skeleton className="h-4 w-1/2" />
+                        <Skeleton className="h-4 w-1/3" />
                     </div>
                 ) : (
                    <>
-                    <div className="text-2xl font-bold">{formatCurrency(value)}</div>
-                    {change !== null && changeType !== 'none' && !isNaN(change) && (
-                         <p className={cn("text-xs text-muted-foreground flex items-center gap-1", isPositiveChange && "text-green-600", isNegativeChange && "text-destructive")}>
-                            {isPositiveChange && <ArrowUp className="h-4 w-4"/>}
-                            {isNegativeChange && <ArrowDown className="h-4 w-4"/>}
-                            {Math.abs(change).toFixed(1)}% عن الشهر الماضي
-                        </p>
-                    )}
+                    <div className="text-2xl font-bold">{formatCurrency(data.currentMonth)}</div>
+                     <p className="text-xs text-muted-foreground">
+                        المتوسط اليومي للشهر الحالي
+                    </p>
+                    <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                        {data.previousMonths.map(item => (
+                            <div key={item.month} className="flex justify-between">
+                                <span>{item.month}</span>
+                                <span>{formatCurrency(item.average)}</span>
+                            </div>
+                        ))}
+                    </div>
                    </>
                 )}
             </CardContent>
@@ -134,13 +139,39 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
-        <SummaryCard title="إجمالي المبيعات" value={summary?.totalRevenues || 0} icon={TrendingUp} change={summary?.revenueChange ?? null} changeType="positive" isLoading={loading} />
-        <SummaryCard title="تكلفة المبيعات" value={summary?.totalCOGS || 0} icon={TrendingDown} change={summary?.cogsChange ?? null} changeType="negative" isLoading={loading} />
-        <SummaryCard title="مجمل الربح" value={summary?.grossProfit || 0} icon={Wallet} change={summary?.grossProfitChange ?? null} changeType="positive" isLoading={loading} />
-        <SummaryCard title="المصروفات التشغيلية" value={summary?.totalOperatingExpenses || 0} icon={PackageMinus} change={summary?.operatingExpensesChange ?? null} changeType="negative" isLoading={loading} />
-        <SummaryCard title="صافي الربح" value={summary?.netIncome || 0} icon={DollarSign} change={summary?.netIncomeChange ?? null} changeType="positive" isLoading={loading} />
-        <SummaryCard title="رصيد الصناديق" value={summary?.cashBalance || 0} icon={Wallet} change={null} changeType="none" isLoading={loading} />
-        <SummaryCard title="رصيد البنوك" value={summary?.bankBalance || 0} icon={Landmark} change={null} changeType="none" isLoading={loading} />
+        <SummaryCard title="إجمالي المبيعات" data={summary?.dailyAverages.totalRevenues} icon={TrendingUp} isLoading={loading} />
+        <SummaryCard title="تكلفة المبيعات" data={summary?.dailyAverages.totalCOGS} icon={TrendingDown} isLoading={loading} />
+        <SummaryCard title="مجمل الربح" data={summary?.dailyAverages.grossProfit} icon={Wallet} isLoading={loading} />
+        <SummaryCard title="المصروفات التشغيلية" data={summary?.dailyAverages.totalOperatingExpenses} icon={PackageMinus} isLoading={loading} />
+        <SummaryCard title="صافي الربح" data={summary?.dailyAverages.netIncome} icon={DollarSign} isLoading={loading} />
+        
+        {/* Balances are point-in-time, so they don't have daily averages */}
+         <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">رصيد الصناديق</CardTitle>
+                <Wallet className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                {loading ? (
+                    <Skeleton className="h-8 w-3/4" />
+                ) : (
+                    <div className="text-2xl font-bold">{formatCurrency(summary?.cashBalance || 0)}</div>
+                )}
+            </CardContent>
+        </Card>
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">رصيد البنوك</CardTitle>
+                <Landmark className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                {loading ? (
+                    <Skeleton className="h-8 w-3/4" />
+                ) : (
+                    <div className="text-2xl font-bold">{formatCurrency(summary?.bankBalance || 0)}</div>
+                )}
+            </CardContent>
+        </Card>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-7">
@@ -183,3 +214,5 @@ export default function DashboardPage() {
     </div>
   )
 }
+
+    

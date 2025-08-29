@@ -4,7 +4,7 @@ import { getAccounts } from "./accounts";
 import { getAllTransactions } from "./transactions";
 import type { Account } from "@/components/chart-of-accounts/account-tree";
 import { Timestamp } from "firebase/firestore";
-import { startOfMonth, endOfMonth, subMonths, format } from 'date-fns';
+import { startOfMonth, endOfMonth, subMonths, format, getDaysInMonth, getDate } from 'date-fns';
 import { arSA } from 'date-fns/locale';
 
 export interface TrialBalanceAccount extends Account {
@@ -44,19 +44,21 @@ export interface BalanceSheetData {
     totalLiabilitiesAndEquity: number;
 }
 
+interface DailyAverageData {
+    currentMonth: number;
+    previousMonths: { month: string; average: number }[];
+}
+
 export interface DashboardSummary {
-    totalRevenues: number;
-    totalCOGS: number;
-    grossProfit: number;
-    totalOperatingExpenses: number;
-    netIncome: number;
+    dailyAverages: {
+        totalRevenues: DailyAverageData;
+        totalCOGS: DailyAverageData;
+        grossProfit: DailyAverageData;
+        totalOperatingExpenses: DailyAverageData;
+        netIncome: DailyAverageData;
+    };
     cashBalance: number;
     bankBalance: number;
-    revenueChange: number | null;
-    cogsChange: number | null;
-    grossProfitChange: number | null;
-    operatingExpensesChange: number | null;
-    netIncomeChange: number | null;
 }
 
 export interface MonthlyData {
@@ -242,13 +244,6 @@ export const getBalanceSheetData = async (): Promise<BalanceSheetData> => {
     };
 };
 
-const calculatePercentageChange = (current: number, previous: number): number | null => {
-    if (previous === 0) {
-        return current > 0 ? 100.0 : 0.0;
-    }
-    return ((current - previous) / Math.abs(previous)) * 100;
-}
-
 const getMonthlyMetrics = async (startDate: Date, endDate: Date) => {
     const accounts = await processAccountsForReports(false, startDate, endDate);
     
@@ -267,40 +262,54 @@ const getMonthlyMetrics = async (startDate: Date, endDate: Date) => {
 
 export const getDashboardSummary = async (): Promise<DashboardSummary> => {
     const now = new Date();
-    const currentMonthStart = startOfMonth(now);
-    const currentMonthEnd = endOfMonth(now);
-    
-    const prevMonth = subMonths(now, 1);
-    const prevMonthStart = startOfMonth(prevMonth);
-    const prevMonthEnd = endOfMonth(prevMonth);
+    const metrics: { [key: string]: Awaited<ReturnType<typeof getMonthlyMetrics>> } = {};
+    const dailyAverages: DashboardSummary['dailyAverages'] = {
+        totalRevenues: { currentMonth: 0, previousMonths: [] },
+        totalCOGS: { currentMonth: 0, previousMonths: [] },
+        grossProfit: { currentMonth: 0, previousMonths: [] },
+        totalOperatingExpenses: { currentMonth: 0, previousMonths: [] },
+        netIncome: { currentMonth: 0, previousMonths: [] },
+    };
 
-    // Get data for all time for balance
+    // Calculate metrics for the current month and the last 3 months
+    for (let i = 0; i < 4; i++) {
+        const date = subMonths(now, i);
+        const startDate = startOfMonth(date);
+        const endDate = endOfMonth(date);
+        const monthKey = format(date, 'yyyy-MM');
+        
+        metrics[monthKey] = await getMonthlyMetrics(startDate, endDate);
+
+        const isCurrentMonth = i === 0;
+        const daysInMonth = isCurrentMonth ? getDate(now) : getDaysInMonth(date);
+        const monthName = format(date, 'LLLL', { locale: arSA });
+
+        const calculateAverages = (metricKey: keyof DashboardSummary['dailyAverages']) => {
+            const total = metrics[monthKey][metricKey];
+            const average = daysInMonth > 0 ? total / daysInMonth : 0;
+            if (isCurrentMonth) {
+                dailyAverages[metricKey].currentMonth = average;
+            } else {
+                dailyAverages[metricKey].previousMonths.push({ month: monthName, average: average });
+            }
+        };
+
+        (Object.keys(dailyAverages) as (keyof typeof dailyAverages)[]).forEach(calculateAverages);
+    }
+
+    // Get balances (point-in-time, not monthly)
     const allTimeAccounts = await processAccountsForReports(false);
-    
-    const currentMetrics = await getMonthlyMetrics(currentMonthStart, currentMonthEnd);
-    const prevMetrics = await getMonthlyMetrics(prevMonthStart, prevMonthEnd);
-
     const cashAccounts = allTimeAccounts.filter(acc => acc.level === 4 && acc.classifications?.includes('صندوق'));
     const bankAccounts = allTimeAccounts.filter(acc => acc.level === 4 && acc.classifications?.includes('بنك'));
-
     const cashBalance = cashAccounts.reduce((sum, acc) => sum + (acc.closingDebit - acc.closingCredit), 0);
     const bankBalance = bankAccounts.reduce((sum, acc) => sum + (acc.closingDebit - acc.closingCredit), 0);
 
     return {
-        totalRevenues: currentMetrics.totalRevenues,
-        totalCOGS: currentMetrics.totalCOGS,
-        grossProfit: currentMetrics.grossProfit,
-        totalOperatingExpenses: currentMetrics.totalOperatingExpenses,
-        netIncome: currentMetrics.netIncome,
+        dailyAverages,
         cashBalance,
         bankBalance,
-        revenueChange: calculatePercentageChange(currentMetrics.totalRevenues, prevMetrics.totalRevenues),
-        cogsChange: calculatePercentageChange(currentMetrics.totalCOGS, prevMetrics.totalCOGS),
-        grossProfitChange: calculatePercentageChange(currentMetrics.grossProfit, prevMetrics.grossProfit),
-        operatingExpensesChange: calculatePercentageChange(currentMetrics.totalOperatingExpenses, prevMetrics.totalOperatingExpenses),
-        netIncomeChange: calculatePercentageChange(currentMetrics.netIncome, prevMetrics.netIncome),
-    }
-}
+    };
+};
 
 export const getMonthlyChartData = async (): Promise<MonthlyData[]> => {
     const allTransactions = await getAllTransactions();
@@ -332,7 +341,6 @@ export const getMonthlyChartData = async (): Promise<MonthlyData[]> => {
     for (let i = 5; i >= 0; i--) {
         const date = subMonths(now, i);
         const monthKey = format(date, 'yyyy-MM');
-        const monthName = format(date, 'MMM', { locale: arSA });
         monthlyData[monthKey] = { income: 0, expenses: 0 };
     }
 
@@ -355,3 +363,5 @@ export const getMonthlyChartData = async (): Promise<MonthlyData[]> => {
          }
     });
 };
+
+    
