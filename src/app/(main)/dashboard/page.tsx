@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { DollarSign, CreditCard, TrendingUp, TrendingDown, Loader2, ArrowUp, ArrowDown } from "lucide-react"
+import { DollarSign, CreditCard, TrendingUp, TrendingDown, Loader2, ArrowUp, ArrowDown, ClipboardList, PackageMinus, Wallet, ShoppingCart, Activity } from "lucide-react"
 import { OverviewChart } from "@/components/dashboard/overview-chart"
 import { RecentTransactions } from "@/components/dashboard/recent-transactions"
 import { Transaction } from "@/lib/firebase/firestore/transactions";
@@ -117,11 +117,11 @@ export default function DashboardPage() {
                 ) : (
                    <>
                     <div className="text-2xl font-bold">{formatCurrency(value)}</div>
-                    {change !== null && (
+                    {change !== null && !isNaN(change) && (
                          <p className={cn("text-xs text-muted-foreground flex items-center gap-1", isPositiveChange && "text-green-600", isNegativeChange && "text-destructive")}>
                             {isPositiveChange && <ArrowUp className="h-4 w-4"/>}
                             {isNegativeChange && <ArrowDown className="h-4 w-4"/>}
-                            {change.toFixed(1)}% عن الشهر الماضي
+                            {Math.abs(change).toFixed(1)}% عن الشهر الماضي
                         </p>
                     )}
                    </>
@@ -133,11 +133,12 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <SummaryCard title="إجمالي الدخل" value={summary?.totalRevenues || 0} icon={TrendingUp} change={summary?.revenueChange ?? null} changeType="positive" isLoading={loading} />
-        <SummaryCard title="إجمالي المصروفات" value={summary?.totalExpenses || 0} icon={TrendingDown} change={summary?.expenseChange ?? null} changeType="negative" isLoading={loading} />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <SummaryCard title="إجمالي المبيعات" value={summary?.totalRevenues || 0} icon={TrendingUp} change={summary?.revenueChange ?? null} changeType="positive" isLoading={loading} />
+        <SummaryCard title="تكلفة المبيعات" value={summary?.totalCOGS || 0} icon={TrendingDown} change={summary?.cogsChange ?? null} changeType="negative" isLoading={loading} />
+        <SummaryCard title="مجمل الربح" value={summary?.grossProfit || 0} icon={Wallet} change={summary?.grossProfitChange ?? null} changeType="positive" isLoading={loading} />
+        <SummaryCard title="المصروفات التشغيلية" value={summary?.totalOperatingExpenses || 0} icon={PackageMinus} change={summary?.operatingExpensesChange ?? null} changeType="negative" isLoading={loading} />
         <SummaryCard title="صافي الربح" value={summary?.netIncome || 0} icon={DollarSign} change={summary?.netIncomeChange ?? null} changeType="positive" isLoading={loading} />
-        <SummaryCard title="الرصيد" value={summary?.balance || 0} icon={CreditCard} change={null} changeType="positive" isLoading={loading} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-7">

@@ -45,11 +45,15 @@ export interface BalanceSheetData {
 
 export interface DashboardSummary {
     totalRevenues: number;
-    totalExpenses: number;
+    totalCOGS: number;
+    grossProfit: number;
+    totalOperatingExpenses: number;
     netIncome: number;
     balance: number;
     revenueChange: number | null;
-    expenseChange: number | null;
+    cogsChange: number | null;
+    grossProfitChange: number | null;
+    operatingExpensesChange: number | null;
     netIncomeChange: number | null;
 }
 
@@ -231,10 +235,26 @@ export const getBalanceSheetData = async (): Promise<BalanceSheetData> => {
 
 const calculatePercentageChange = (current: number, previous: number): number | null => {
     if (previous === 0) {
-        return current > 0 ? 100.0 : 0.0; // Or null if you prefer not to show a percentage
+        return current > 0 ? 100.0 : 0.0;
     }
-    return ((current - previous) / previous) * 100;
+    return ((current - previous) / Math.abs(previous)) * 100;
 }
+
+const getMonthlyMetrics = async (startDate: Date, endDate: Date) => {
+    const accounts = await processAccountsForReports(false, startDate, endDate);
+    
+    const totalRevenues = Math.abs(getReportAccounts(accounts, 'Revenues').find(a => a.level === 1)?.balance || 0);
+    const expensesWithCogs = getReportAccounts(accounts, 'Expenses');
+    const totalCOGS = expensesWithCogs.find(e => e.code === '51')?.balance || 0;
+    const totalOperatingExpenses = expensesWithCogs
+      .filter(e => !e.code.startsWith('51') && e.level === 2)
+      .reduce((sum, acc) => sum + acc.balance, 0);
+    const grossProfit = totalRevenues - totalCOGS;
+    const netIncome = grossProfit - totalOperatingExpenses;
+    
+    return { totalRevenues, totalCOGS, grossProfit, totalOperatingExpenses, netIncome };
+}
+
 
 export const getDashboardSummary = async (): Promise<DashboardSummary> => {
     const now = new Date();
@@ -248,30 +268,23 @@ export const getDashboardSummary = async (): Promise<DashboardSummary> => {
     // Get data for all time for balance
     const allTimeAccounts = await processAccountsForReports(false);
     
-    // Get data for current month
-    const currentMonthAccounts = await processAccountsForReports(false, currentMonthStart, currentMonthEnd);
-
-    // Get data for previous month
-    const prevMonthAccounts = await processAccountsForReports(false, prevMonthStart, prevMonthEnd);
-
-    const currentRevenues = Math.abs(getReportAccounts(currentMonthAccounts, 'Revenues').find(a => a.level === 1)?.balance || 0);
-    const currentExpenses = getReportAccounts(currentMonthAccounts, 'Expenses').find(a => a.level === 1)?.balance || 0;
-    const currentNetIncome = currentRevenues - currentExpenses;
-
-    const prevRevenues = Math.abs(getReportAccounts(prevMonthAccounts, 'Revenues').find(a => a.level === 1)?.balance || 0);
-    const prevExpenses = getReportAccounts(prevMonthAccounts, 'Expenses').find(a => a.level === 1)?.balance || 0;
-    const prevNetIncome = prevRevenues - prevExpenses;
+    const currentMetrics = await getMonthlyMetrics(currentMonthStart, currentMonthEnd);
+    const prevMetrics = await getMonthlyMetrics(prevMonthStart, prevMonthEnd);
 
     const cashAndBanks = allTimeAccounts.filter(acc => acc.level === 4 && (acc.classifications?.includes('صندوق') || acc.classifications?.includes('بنك')));
     const balance = cashAndBanks.reduce((sum, acc) => sum + (acc.closingDebit - acc.closingCredit), 0);
 
     return {
-        totalRevenues: currentRevenues,
-        totalExpenses: currentExpenses,
-        netIncome: currentNetIncome,
+        totalRevenues: currentMetrics.totalRevenues,
+        totalCOGS: currentMetrics.totalCOGS,
+        grossProfit: currentMetrics.grossProfit,
+        totalOperatingExpenses: currentMetrics.totalOperatingExpenses,
+        netIncome: currentMetrics.netIncome,
         balance,
-        revenueChange: calculatePercentageChange(currentRevenues, prevRevenues),
-        expenseChange: calculatePercentageChange(currentExpenses, prevExpenses),
-        netIncomeChange: calculatePercentageChange(currentNetIncome, prevNetIncome),
+        revenueChange: calculatePercentageChange(currentMetrics.totalRevenues, prevMetrics.totalRevenues),
+        cogsChange: calculatePercentageChange(currentMetrics.totalCOGS, prevMetrics.totalCOGS),
+        grossProfitChange: calculatePercentageChange(currentMetrics.grossProfit, prevMetrics.grossProfit),
+        operatingExpensesChange: calculatePercentageChange(currentMetrics.totalOperatingExpenses, prevMetrics.totalOperatingExpenses),
+        netIncomeChange: calculatePercentageChange(currentMetrics.netIncome, prevMetrics.netIncome),
     }
 }
