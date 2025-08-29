@@ -35,7 +35,7 @@ const defaultAccounts: (Omit<Account, 'id' | 'children'> & { children?: Omit<Acc
                             { code: '1102001', name: 'عميل مبيعات آجلة عام', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'الميزانية العمومية', classifications: ['عملاء'], parentId: null, isSystemAccount: false },
                         ]
                     },
-                    { code: '1104', name: 'المخزون', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'الميزانية العمومية', classifications: [], parentId: null, isSystemAccount: true,
+                     { code: '1104', name: 'المخزون', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'الميزانية العمومية', classifications: [], parentId: null, isSystemAccount: true,
                         children: [
                             { code: '1104001', name: 'مخزون البضائع', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'الميزانية العمومية', classifications: ['مخزون'], parentId: null, isSystemAccount: true },
                         ]
@@ -117,34 +117,27 @@ const buildAccountTree = (accounts: Account[]): Account[] => {
   const accountMap = new Map<string, Account>();
   const rootAccounts: Account[] = [];
 
-  // First, create a map of all accounts by their ID.
   accounts.forEach(account => {
     accountMap.set(account.id, { ...account, children: [] });
   });
 
-  // Then, iterate over the accounts again to build the tree.
   accounts.forEach(account => {
-    const currentAccount = accountMap.get(account.id);
-    if (!currentAccount) return;
-
     if (account.parentId && accountMap.has(account.parentId)) {
-      const parent = accountMap.get(account.parentId);
-      parent?.children?.push(currentAccount);
+      const parent = accountMap.get(account.parentId)!;
+      parent.children?.push(accountMap.get(account.id)!);
     } else {
-      rootAccounts.push(currentAccount);
+      rootAccounts.push(accountMap.get(account.id)!);
     }
   });
-  
-  // Helper function to sort children recursively
+
   const sortChildren = (node: Account) => {
     if (node.children && node.children.length > 0) {
-      node.children.sort((a, b) => a.code.localeCompare(b.code));
+      node.children.sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
       node.children.forEach(sortChildren);
     }
   };
 
-  // Sort root accounts and then their children recursively
-  rootAccounts.sort((a, b) => a.code.localeCompare(b.code));
+  rootAccounts.sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
   rootAccounts.forEach(sortChildren);
 
   return rootAccounts;
@@ -155,11 +148,9 @@ export const getAccounts = async (): Promise<Account[]> => {
     const q = query(accountsCol, orderBy("code"));
     let accountSnapshot = await getDocs(q);
 
-    // If the database is empty, seed it with default accounts.
     if (accountSnapshot.empty) {
         console.log("No accounts found. Seeding database...");
         await seedAccounts();
-        // Fetch the accounts again after seeding.
         accountSnapshot = await getDocs(q);
     }
     
