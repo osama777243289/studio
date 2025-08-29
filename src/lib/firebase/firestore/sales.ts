@@ -323,7 +323,7 @@ export const getSalesRecords = async (
 
 // Get sales records by status
 export const getSalesRecordsByStatus = async (
-  status: 'Pending Matching' | 'Ready for Posting' | 'Posted'
+  status: 'Pending Upload' | 'Pending Matching' | 'Ready for Posting' | 'Posted'
 ): Promise<SalesRecord[]> => {
   const salesCol = collection(db, 'salesRecords');
   const q = query(
@@ -375,3 +375,5 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
         costOfSales: costOfSales,
     });
 };
+
+    
