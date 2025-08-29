@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { db, storage } from '@/lib/firebase/client';
@@ -414,11 +415,11 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
     const inventoryAccount = findAccountByCode(allAccounts, '1101');    // المخزون
 
     if (!salesRevenueAccount || !vatAccount || !cogsAccount || !inventoryAccount) {
-        throw new Error("System accounts for posting not found. Please ensure accounts 4101, 2101, 5101, 1101 exist.");
+        throw new Error("System accounts for posting not found. Please ensure accounts 4101, 2101, 5101, and 1101 exist.");
     }
 
     const journalId = doc(collection(db, 'temp')).id; // Generate a unique ID for this journal entry
-    const description = `ترحيل مبيعات فترة ${record.period === 'Morning' ? 'الصباحية' : 'المسائية'} ليوم ${record.date.toDate().toLocaleDateString('ar-SA')}`;
+    const description = `ترحيل مبيعات فترة ${record.period === 'Morning' ? 'الصباحية' : 'المسائية'} ليوم ${record.date.toDate().toLocaleDateString('ar-SA')} - ${record.postingNumber || ''}`;
     const totalActualSales = Object.values(record.actuals || {}).reduce((sum, val) => sum + val, 0);
 
     // Using 1.15 as the VAT factor (assuming prices include VAT)
@@ -496,6 +497,7 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
 
     // 4. Create COGS entry if cost is provided
     if (costOfSales > 0) {
+        const cogsJournalId = doc(collection(db, 'temp')).id;
         const cogsDescription = `تكلفة مبيعات فترة ${record.period === 'Morning' ? 'الصباحية' : 'المسائية'} ليوم ${record.date.toDate().toLocaleDateString('ar-SA')}`;
         // Debit COGS
         batch.set(doc(transactionsCol), {
@@ -504,7 +506,7 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
             amount: costOfSales,
             type: 'Journal',
             description: cogsDescription,
-            journalId: `${journalId}-cogs`,
+            journalId: cogsJournalId,
             createdAt: Timestamp.now(),
         });
         // Credit Inventory
@@ -514,7 +516,7 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
             amount: -costOfSales,
             type: 'Journal',
             description: cogsDescription,
-            journalId: `${journalId}-cogs`,
+            journalId: cogsJournalId,
             createdAt: Timestamp.now(),
         });
     }
