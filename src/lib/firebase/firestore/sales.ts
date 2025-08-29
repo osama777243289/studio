@@ -92,6 +92,20 @@ export interface SalesRecord {
   costOfSales?: number;
 }
 
+const createAccountMap = (accounts: Account[]): Map<string, string> => {
+  const accountMap = new Map<string, string>();
+  const traverse = (accs: Account[]) => {
+    for (const acc of accs) {
+      accountMap.set(acc.id, acc.name);
+      if (acc.children) {
+        traverse(acc.children);
+      }
+    }
+  };
+  traverse(accounts);
+  return accountMap;
+};
+
 const seedSalesRecords = async () => {
   const allAccounts = await getAccounts();
   const accountMap = createAccountMap(allAccounts);
@@ -284,21 +298,6 @@ export const addSaleRecord = async (
 };
 
 
-// Helper to create a map of account IDs to names
-const createAccountMap = (accounts: Account[]): Map<string, string> => {
-  const accountMap = new Map<string, string>();
-  const traverse = (accs: Account[]) => {
-    for (const acc of accs) {
-      accountMap.set(acc.id, acc.name);
-      if (acc.children) {
-        traverse(acc.children);
-      }
-    }
-  };
-  traverse(accounts);
-  return accountMap;
-};
-
 // Get all sales records
 export const getSalesRecords = async (
   count: number = 20
@@ -333,7 +332,6 @@ export const getSalesRecordsByStatus = async (
     orderBy('createdAt', 'desc')
   );
   const snapshot = await getDocs(q);
-  
   return snapshot.docs.map(
     (doc) => ({ id: doc.id, ...doc.data() } as SalesRecord)
   );
@@ -376,6 +374,4 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
         status: 'Posted',
         costOfSales: costOfSales,
     });
-    // Here you would also create the actual journal entries.
-    // This part is to be implemented.
-}
+};
