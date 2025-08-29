@@ -77,7 +77,13 @@ export const getRecentTransactions = async (count: number = 5): Promise<Transact
 // Get all transactions
 export const getAllTransactions = async (): Promise<TransactionWithAccountName[]> => {
     const transactionsCol = collection(db, 'transactions');
-    const q = query(transactionsCol, orderBy('createdAt', 'desc'));
+    // Filter for transactions that have a description field.
+    const q = query(
+        transactionsCol, 
+        where('description', '!=', ''),
+        orderBy('description'),
+        orderBy('createdAt', 'desc')
+    );
     const transactionSnapshot = await getDocs(q);
     
     if (transactionSnapshot.empty) {
