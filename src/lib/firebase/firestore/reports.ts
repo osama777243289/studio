@@ -1,10 +1,13 @@
+
 import { getAccounts } from "./accounts";
 import { getAllTransactions } from "./transactions";
 import type { Account } from "@/components/chart-of-accounts/account-tree";
 
 export interface TrialBalanceAccount extends Account {
-    debit: number;
-    credit: number;
+    movementDebit: number;
+    movementCredit: number;
+    closingDebit: number;
+    closingCredit: number;
     level: number;
 }
 
@@ -38,13 +41,18 @@ export interface BalanceSheetData {
 }
 
 
-const calculateBalances = async (): Promise<Map<string, number>> => {
+const calculateBalances = async (): Promise<Map<string, { movementDebit: number; movementCredit: number }>> => {
     const transactions = await getAllTransactions();
-    const balances = new Map<string, number>();
+    const balances = new Map<string, { movementDebit: number; movementCredit: number }>();
 
     for (const tx of transactions) {
-        const currentBalance = balances.get(tx.accountId) || 0;
-        balances.set(tx.accountId, currentBalance + tx.amount);
+        const current = balances.get(tx.accountId) || { movementDebit: 0, movementCredit: 0 };
+        if (tx.amount > 0) {
+            current.movementDebit += tx.amount;
+        } else {
+            current.movementCredit += Math.abs(tx.amount);
+        }
+        balances.set(tx.accountId, current);
     }
     
     return balances;
@@ -55,40 +63,41 @@ const processAccountsForReports = async (): Promise<TrialBalanceAccount[]> => {
     const balances = await calculateBalances();
     const processedAccounts: TrialBalanceAccount[] = [];
 
-    const traverse = (accounts: Account[], level: number): { totalDebit: number; totalCredit: number } => {
-        let levelDebit = 0;
-        let levelCredit = 0;
+    const traverse = (accounts: Account[], level: number): { totalMovementDebit: number; totalMovementCredit: number } => {
+        let levelMovementDebit = 0;
+        let levelMovementCredit = 0;
 
         for (const acc of accounts) {
-            let debit = 0;
-            let credit = 0;
+            let movementDebit = 0;
+            let movementCredit = 0;
 
             if (acc.children && acc.children.length > 0) {
                 const childTotals = traverse(acc.children, level + 1);
-                debit = childTotals.totalDebit;
-                credit = childTotals.totalCredit;
+                movementDebit = childTotals.totalMovementDebit;
+                movementCredit = childTotals.totalMovementCredit;
             } else {
                 // This is a leaf node (transactional account)
-                const balance = balances.get(acc.id) || 0;
-                if (balance > 0) {
-                    debit = balance;
-                } else {
-                    credit = Math.abs(balance);
-                }
+                const balance = balances.get(acc.id) || { movementDebit: 0, movementCredit: 0 };
+                movementDebit = balance.movementDebit;
+                movementCredit = balance.movementCredit;
             }
 
+            const balance = movementDebit - movementCredit;
+            
             processedAccounts.push({
                 ...acc,
-                debit,
-                credit,
+                movementDebit,
+                movementCredit,
+                closingDebit: balance > 0 ? balance : 0,
+                closingCredit: balance < 0 ? Math.abs(balance) : 0,
                 level,
             });
 
-            levelDebit += debit;
-            levelCredit += credit;
+            levelMovementDebit += movementDebit;
+            levelMovementCredit += movementCredit;
         }
 
-        return { totalDebit: levelDebit, totalCredit: levelCredit };
+        return { totalMovementDebit: levelMovementDebit, totalMovementCredit: levelMovementCredit };
     };
 
     traverse(accountTree, 1);
@@ -107,7 +116,7 @@ const getReportAccounts = (allAccounts: TrialBalanceAccount[], group: Account['g
     return allAccounts
         .filter(acc => acc.group === group)
         .map(acc => {
-            const balance = acc.type === 'Debit' ? acc.debit - acc.credit : acc.credit - acc.debit;
+            const balance = acc.type === 'Debit' ? acc.closingDebit - acc.closingCredit : acc.closingCredit - acc.closingDebit;
             return {
                 id: acc.id,
                 code: acc.code,

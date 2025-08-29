@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useMemo, useState } from 'react';
@@ -58,17 +59,20 @@ export function TrialBalance() {
         return allAccounts.filter(item => item.level <= parseInt(selectedLevel, 10));
     }, [selectedLevel, allAccounts]);
 
-    const { totalDebit, totalCredit } = useMemo(() => {
+    const totals = useMemo(() => {
         return allAccounts
             .filter(acc => acc.level === 1)
             .reduce((totals, acc) => {
-                totals.totalDebit += acc.debit;
-                totals.totalCredit += acc.credit;
+                totals.movementDebit += acc.movementDebit;
+                totals.movementCredit += acc.movementCredit;
+                totals.closingDebit += acc.closingDebit;
+                totals.closingCredit += acc.closingCredit;
                 return totals;
-            }, { totalDebit: 0, totalCredit: 0 });
+            }, { movementDebit: 0, movementCredit: 0, closingDebit: 0, closingCredit: 0 });
     }, [allAccounts]);
     
     const formatCurrency = (amount: number) => {
+      if (amount === 0) return '-';
       return new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(amount);
     };
 
@@ -78,7 +82,7 @@ export function TrialBalance() {
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                         <CardTitle className="font-headline">ميزان المراجعة</CardTitle>
-                        <CardDescription>عرض أرصدة جميع الحسابات (مدينة ودائنة)</CardDescription>
+                        <CardDescription>عرض حركة وأرصدة جميع الحسابات</CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
                         <Select value={selectedLevel} onValueChange={setSelectedLevel}>
@@ -116,8 +120,14 @@ export function TrialBalance() {
                         <Table>
                             <TableHeader>
                             <TableRow>
-                                <TableHead className="w-[120px]">الرمز</TableHead>
-                                <TableHead>اسم الحساب</TableHead>
+                                <TableHead rowSpan={2} className="w-[100px] align-middle">الرمز</TableHead>
+                                <TableHead rowSpan={2} className="align-middle">اسم الحساب</TableHead>
+                                <TableHead colSpan={2} className="text-center border-b">حركة الفترة</TableHead>
+                                <TableHead colSpan={2} className="text-center border-b">الرصيد الختامي</TableHead>
+                            </TableRow>
+                             <TableRow>
+                                <TableHead className="text-center">مدين</TableHead>
+                                <TableHead className="text-center">دائن</TableHead>
                                 <TableHead className="text-center">مدين</TableHead>
                                 <TableHead className="text-center">دائن</TableHead>
                             </TableRow>
@@ -125,7 +135,7 @@ export function TrialBalance() {
                             <TableBody>
                             {filteredData.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                                         لا توجد بيانات لعرضها.
                                     </TableCell>
                                 </TableRow>
@@ -136,8 +146,10 @@ export function TrialBalance() {
                                       {item.code}
                                     </TableCell>
                                     <TableCell>{item.name}</TableCell>
-                                    <TableCell className="text-center font-mono">{formatCurrency(item.debit)}</TableCell>
-                                    <TableCell className="text-center font-mono">{formatCurrency(item.credit)}</TableCell>
+                                    <TableCell className="text-center font-mono">{formatCurrency(item.movementDebit)}</TableCell>
+                                    <TableCell className="text-center font-mono">{formatCurrency(item.movementCredit)}</TableCell>
+                                    <TableCell className="text-center font-mono">{formatCurrency(item.closingDebit)}</TableCell>
+                                    <TableCell className="text-center font-mono">{formatCurrency(item.closingCredit)}</TableCell>
                                 </TableRow>
                                 ))
                             )}
@@ -145,8 +157,10 @@ export function TrialBalance() {
                             <TableFooter>
                                 <TableRow className="text-lg font-bold bg-muted">
                                     <TableCell colSpan={2}>الإجمالي</TableCell>
-                                    <TableCell className="text-center font-mono">{formatCurrency(totalDebit)}</TableCell>
-                                    <TableCell className="text-center font-mono">{formatCurrency(totalCredit)}</TableCell>
+                                    <TableCell className="text-center font-mono">{formatCurrency(totals.movementDebit)}</TableCell>
+                                    <TableCell className="text-center font-mono">{formatCurrency(totals.movementCredit)}</TableCell>
+                                    <TableCell className="text-center font-mono">{formatCurrency(totals.closingDebit)}</TableCell>
+                                    <TableCell className="text-center font-mono">{formatCurrency(totals.closingCredit)}</TableCell>
                                 </TableRow>
                             </TableFooter>
                         </Table>
