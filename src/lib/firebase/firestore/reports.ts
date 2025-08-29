@@ -1,4 +1,5 @@
 
+
 import { getAccounts } from "./accounts";
 import { getAllTransactions } from "./transactions";
 import type { Account } from "@/components/chart-of-accounts/account-tree";
@@ -46,6 +47,7 @@ const calculateBalances = async (): Promise<Map<string, { movementDebit: number;
     const balances = new Map<string, { movementDebit: number; movementCredit: number }>();
 
     for (const tx of transactions) {
+        if (!tx.accountId) continue;
         const current = balances.get(tx.accountId) || { movementDebit: 0, movementCredit: 0 };
         if (tx.amount > 0) {
             current.movementDebit += tx.amount;
@@ -58,10 +60,10 @@ const calculateBalances = async (): Promise<Map<string, { movementDebit: number;
     return balances;
 };
 
-const processAccountsForReports = async (): Promise<TrialBalanceAccount[]> => {
+const processAccountsForReports = async (asTree: boolean = false): Promise<TrialBalanceAccount[]> => {
     const accountTree = await getAccounts();
     const balances = await calculateBalances();
-    const processedAccounts: TrialBalanceAccount[] = [];
+    const processedAccountsMap = new Map<string, TrialBalanceAccount>();
 
     const traverse = (accounts: Account[], level: number): { totalMovementDebit: number; totalMovementCredit: number } => {
         let levelMovementDebit = 0;
@@ -70,13 +72,16 @@ const processAccountsForReports = async (): Promise<TrialBalanceAccount[]> => {
         for (const acc of accounts) {
             let movementDebit = 0;
             let movementCredit = 0;
+            let children: TrialBalanceAccount[] = [];
 
             if (acc.children && acc.children.length > 0) {
                 const childTotals = traverse(acc.children, level + 1);
                 movementDebit = childTotals.totalMovementDebit;
                 movementCredit = childTotals.totalMovementCredit;
+                if (asTree) {
+                    children = acc.children.map(child => processedAccountsMap.get(child.id)!);
+                }
             } else {
-                // This is a leaf node (transactional account)
                 const balance = balances.get(acc.id) || { movementDebit: 0, movementCredit: 0 };
                 movementDebit = balance.movementDebit;
                 movementCredit = balance.movementCredit;
@@ -84,14 +89,16 @@ const processAccountsForReports = async (): Promise<TrialBalanceAccount[]> => {
 
             const balance = movementDebit - movementCredit;
             
-            processedAccounts.push({
+            const processedAccount: TrialBalanceAccount = {
                 ...acc,
                 movementDebit,
                 movementCredit,
                 closingDebit: balance > 0 ? balance : 0,
                 closingCredit: balance < 0 ? Math.abs(balance) : 0,
                 level,
-            });
+                children: children.length > 0 ? children : undefined,
+            };
+            processedAccountsMap.set(acc.id, processedAccount);
 
             levelMovementDebit += movementDebit;
             levelMovementCredit += movementCredit;
@@ -102,14 +109,25 @@ const processAccountsForReports = async (): Promise<TrialBalanceAccount[]> => {
 
     traverse(accountTree, 1);
     
-    // Sort all processed accounts by code
-    processedAccounts.sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
+    if (asTree) {
+        const rootAccounts = accountTree.map(acc => processedAccountsMap.get(acc.id)!);
+         const sortOrder = ['1', '2', '3', '5', '4']; // Assets, Liab, Equity, Exp, Rev
+         rootAccounts.sort((a, b) => {
+            const aIndex = sortOrder.indexOf(a.code);
+            const bIndex = sortOrder.indexOf(b.code);
+            return aIndex - bIndex;
+        });
+        return rootAccounts;
+    }
 
-    return processedAccounts;
+    const flatList = Array.from(processedAccountsMap.values());
+    flatList.sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
+
+    return flatList;
 }
 
-export const getTrialBalanceData = async (): Promise<TrialBalanceAccount[]> => {
-    return await processAccountsForReports();
+export const getTrialBalanceData = async (asTree: boolean = false): Promise<TrialBalanceAccount[]> => {
+    return await processAccountsForReports(asTree);
 }
 
 const getReportAccounts = (allAccounts: TrialBalanceAccount[], group: Account['group']): ReportAccount[] => {
@@ -137,10 +155,10 @@ export const getIncomeStatementData = async (): Promise<IncomeStatementData> => 
     const cogs = expensesWithCogs.filter(e => e.code.startsWith('51'));
     const expenses = expensesWithCogs.filter(e => !e.code.startsWith('51'));
 
-    // Get total from the main group account (level 1)
     const totalRevenues = getReportAccounts(allAccounts, 'Revenues').find(a => a.level === 1)?.balance || 0;
     const totalCogs = cogs.find(e => e.code === '51')?.balance || 0;
-    const totalExpenses = expenses.reduce((sum, acc) => sum + (acc.level === 2 ? acc.balance : 0), 0);
+    const totalExpenses = expenses.reduce((sum, acc) => (acc.level === 2 ? sum + acc.balance : sum), 0);
+
 
     const grossProfit = totalRevenues - totalCogs;
     const netIncome = grossProfit - totalExpenses;
@@ -166,7 +184,6 @@ export const getBalanceSheetData = async (): Promise<BalanceSheetData> => {
     const liabilities = getReportAccounts(allAccounts, 'Liabilities').filter(a => a.level > 1);
     const equityAccounts = getReportAccounts(allAccounts, 'Equity').filter(a => a.level > 1);
 
-    // Add net income to equity
     const retainedEarnings: ReportAccount = {
         id: 'retained-earnings',
         code: '3999',
