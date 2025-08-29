@@ -66,7 +66,7 @@ export default function PostEntriesPage() {
 
       } catch (e: any) {
         console.error("Failed to fetch records:", e);
-        setError("فشل تحميل السجلات.");
+        setError("فشل تحميل السجلات. يرجى التحقق من اتصالك وإعدادات Firestore.");
       } finally {
         setLoading(false);
       }
