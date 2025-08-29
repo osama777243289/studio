@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { db, storage } from '@/lib/firebase/client';
@@ -341,10 +340,7 @@ export const getSalesRecordsByStatus = async (
   status: 'Pending Upload' | 'Pending Matching' | 'Ready for Posting' | 'Posted'
 ): Promise<SalesRecord[]> => {
   const salesCol = collection(db, 'salesRecords');
-  const q = query(
-    salesCol,
-    where('status', '==', status)
-  );
+  const q = query(salesCol, where('status', '==', status));
   const snapshot = await getDocs(q);
   const records = snapshot.docs.map(
     (doc) => ({ id: doc.id, ...doc.data() } as SalesRecord)
@@ -431,14 +427,25 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
     const transactionsCol = collection(db, 'transactions');
     
     const actuals = record.actuals || {};
-
-    if (actuals['cash'] > 0) {
+    const actualCashAmount = actuals['cash'];
+    if (actualCashAmount > 0) {
+        // Debit the cashier account
         batch.set(doc(transactionsCol), {
             accountId: record.cash.accountId,
             date: record.date,
-            amount: actuals['cash'],
+            amount: actualCashAmount, // Debit
             type: 'Journal',
             description,
+            journalId,
+            createdAt: Timestamp.now(),
+        });
+         // Credit the cashier account for control purposes
+        batch.set(doc(transactionsCol), {
+            accountId: record.cash.accountId,
+            date: record.date,
+            amount: -actualCashAmount, // Credit
+            type: 'Journal',
+            description: `قيد رقابي عكسي لـ: ${description}`,
             journalId,
             createdAt: Timestamp.now(),
         });
@@ -494,10 +501,12 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
         createdAt: Timestamp.now(),
     });
 
+    // Separate COGS entry
     if (costOfSales > 0) {
         cogsJournalId = doc(collection(db, 'temp')).id;
         const cogsDescription = `تكلفة مبيعات فترة ${record.period === 'Morning' ? 'الصباحية' : 'المسائية'} ليوم ${record.date.toDate().toLocaleDateString('ar-SA')} ${record.postingNumber ? '- ' + record.postingNumber : ''}`;
         
+        // Debit COGS
         batch.set(doc(transactionsCol), {
             accountId: cogsAccount.id,
             date: record.date,
@@ -508,6 +517,7 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
             createdAt: Timestamp.now(),
         });
         
+         // Credit Inventory
          batch.set(doc(transactionsCol), {
             accountId: inventoryAccount.id,
             date: record.date,
@@ -567,3 +577,5 @@ export const unpostSaleRecord = async (recordId: string): Promise<void> => {
     
     await batch.commit();
 }
+
+    
