@@ -18,17 +18,20 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { getSalesRecordsByStatus, SalesRecord, postSaleRecord } from '@/lib/firebase/firestore/sales';
-import { Loader2, AlertCircle, Send, Check } from 'lucide-react';
+import { Loader2, AlertCircle, Send } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function PostEntriesPage() {
   const [records, setRecords] = useState<SalesRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [postingId, setPostingId] = useState<string | null>(null);
+  const [costs, setCosts] = useState<{ [key: string]: number | string }>({});
   const { toast } = useToast();
 
   const fetchRecords = async () => {
@@ -48,14 +51,29 @@ export default function PostEntriesPage() {
   useEffect(() => {
     fetchRecords();
   }, []);
+  
+  const handleCostChange = (recordId: string, value: string) => {
+    if (/^\d*\.?\d*$/.test(value)) {
+        setCosts(prev => ({...prev, [recordId]: value}));
+    }
+  };
 
   const handlePostRecord = async (recordId: string) => {
     setPostingId(recordId);
+    const costOfSales = parseFloat(costs[recordId] as string);
+
+    if (isNaN(costOfSales) || costOfSales < 0) {
+        toast({
+            title: 'خطأ في الإدخال',
+            description: 'الرجاء إدخال قيمة صالحة لتكلفة المبيعات.',
+            variant: 'destructive',
+        });
+        setPostingId(null);
+        return;
+    }
+
     try {
-        // In a real scenario, this is where you would generate the journal entries
-        // and save them to the transactions collection.
-        // For now, we just update the status to 'Posted'.
-        await postSaleRecord(recordId);
+        await postSaleRecord(recordId, costOfSales);
         toast({
             title: 'تم الترحيل بنجاح',
             description: `تم ترحيل السجل رقم ${recordId} بنجاح.`,
@@ -79,7 +97,7 @@ export default function PostEntriesPage() {
     <Card>
       <CardHeader>
         <CardTitle className="font-headline">ترحيل القيود</CardTitle>
-        <CardDescription>مراجعة وترحيل قيود المبيعات المطابقة إلى اليومية العامة.</CardDescription>
+        <CardDescription>مراجعة وترحيل قيود المبيعات المطابقة إلى اليومية العامة بعد إدخال تكلفة المبيعات.</CardDescription>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -101,13 +119,14 @@ export default function PostEntriesPage() {
                   <TableHead>الفترة</TableHead>
                   <TableHead>الكاشير</TableHead>
                   <TableHead className="text-center">الإجمالي الفعلي</TableHead>
+                  <TableHead className="w-[200px]">تكلفة المبيعات</TableHead>
                   <TableHead className="text-center">الإجراء</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {records.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                       لا توجد سجلات جاهزة للترحيل حاليًا.
                     </TableCell>
                   </TableRow>
@@ -120,11 +139,20 @@ export default function PostEntriesPage() {
                       <TableCell className="text-center font-mono">
                         {record.actuals ? Object.values(record.actuals).reduce((a,b) => a + b, 0).toFixed(2) : record.total.toFixed(2)}
                       </TableCell>
+                       <TableCell>
+                          <Input 
+                            type="number"
+                            placeholder="أدخل تكلفة المبيعات"
+                            value={costs[record.id] || ''}
+                            onChange={(e) => handleCostChange(record.id, e.target.value)}
+                            className="text-center"
+                          />
+                      </TableCell>
                       <TableCell className="text-center">
                         <Button 
                             size="sm"
                             onClick={() => handlePostRecord(record.id)}
-                            disabled={postingId === record.id}
+                            disabled={postingId === record.id || !costs[record.id]}
                         >
                             {postingId === record.id ? (
                                 <>

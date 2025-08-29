@@ -89,6 +89,7 @@ export interface SalesRecord {
   createdAt: Timestamp;
   actuals?: { [key: string]: number };
   matchNotes?: string;
+  costOfSales?: number;
 }
 
 const seedSalesRecords = async () => {
@@ -209,14 +210,17 @@ export const addSaleRecord = async (
   const allAccounts = await getAccounts();
   const accountMap = createAccountMap(allAccounts);
 
- const processedCards: CardAccountDetail[] = [];
+  const processedCards: CardAccountDetail[] = [];
   if (data.cards) {
     for (const card of data.cards) {
+      if (!card.accountId || card.amount <= 0) continue;
+      
       const processedCard: CardAccountDetail = {
         accountId: card.accountId,
         amount: card.amount,
         accountName: accountMap.get(card.accountId) || 'Unknown',
       };
+      
       if (card.receiptImage) {
         try {
           const imageBuffer = dataUrlToBuffer(card.receiptImage);
@@ -230,8 +234,6 @@ export const addSaleRecord = async (
       processedCards.push(processedCard);
     }
   }
-
-  const validCards = processedCards.filter(c => c.accountId && c.amount > 0);
   
   let enrichedCash: AccountDetail = { accountId: '', amount: 0, accountName: ''};
   if (data.cash && data.cash.accountId && data.cash.amount > 0) {
@@ -251,7 +253,7 @@ export const addSaleRecord = async (
 
   const total =
     (enrichedCash.amount || 0) +
-    (validCards?.reduce((sum, item) => sum + item.amount, 0) || 0) +
+    (processedCards?.reduce((sum, item) => sum + item.amount, 0) || 0) +
     (enrichedCredits?.reduce((sum, item) => sum + item.amount, 0) || 0);
 
   const dataToSave = {
@@ -262,7 +264,7 @@ export const addSaleRecord = async (
     total: total,
     status: 'Pending Matching',
     cash: enrichedCash,
-    cards: validCards,
+    cards: processedCards,
     credits: enrichedCredits,
     createdAt: Timestamp.now(),
   };
@@ -380,10 +382,11 @@ export const updateSaleRecordStatus = async (
 };
 
 // Update a sales record's status to 'Posted'
-export const postSaleRecord = async (recordId: string): Promise<void> => {
+export const postSaleRecord = async (recordId: string, costOfSales: number): Promise<void> => {
     const recordRef = doc(db, 'salesRecords', recordId);
     await updateDoc(recordRef, {
         status: 'Posted',
+        costOfSales: costOfSales,
     });
     // Here you would also create the actual journal entries.
     // This part is to be implemented.
