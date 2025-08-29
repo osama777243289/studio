@@ -1,6 +1,6 @@
-
 "use client";
 
+import { useEffect, useState } from 'react';
 import {
   Card,
   CardContent,
@@ -17,40 +17,82 @@ import {
   TableRow,
   TableFooter
 } from "@/components/ui/table"
+import { getIncomeStatementData, IncomeStatementData } from '@/lib/firebase/firestore/reports';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { Loader2, AlertCircle } from 'lucide-react';
 
-const incomeStatementData = {
-  title: 'قائمة الدخل (بيان الأرباح والخسائر)',
-  period: 'للفترة من 1 يناير 2024 إلى 30 يونيو 2024',
-  revenues: [
-    { code: '4101', name: 'إيرادات المبيعات', amount: 150000.00, isHeader: false },
-    { code: '4201', name: 'إيرادات أخرى', amount: 5000.00, isHeader: false },
-  ],
-  cogs: [
-    { code: '5101', name: 'تكلفة البضاعة المباعة', amount: 80000.00, isHeader: false },
-  ],
-  expenses: [
-    { code: '5201', name: 'مصاريف بيع وتسويق', amount: 15000.00, isHeader: false },
-    { code: '5301', name: 'مصاريف عمومية وإدارية', amount: 25000.00, isHeader: false },
-  ],
+const initialData: IncomeStatementData = {
+    revenues: [],
+    cogs: [],
+    expenses: [],
+    totalRevenues: 0,
+    totalCogs: 0,
+    grossProfit: 0,
+    totalExpenses: 0,
+    netIncome: 0
 };
 
 export function IncomeStatement() {
-    
-    const totalRevenues = incomeStatementData.revenues.reduce((sum, item) => sum + item.amount, 0);
-    const totalCogs = incomeStatementData.cogs.reduce((sum, item) => sum + item.amount, 0);
-    const grossProfit = totalRevenues - totalCogs;
-    const totalExpenses = incomeStatementData.expenses.reduce((sum, item) => sum + item.amount, 0);
-    const netIncome = grossProfit - totalExpenses;
+    const [data, setData] = useState<IncomeStatementData>(initialData);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const fetchedData = await getIncomeStatementData();
+                setData(fetchedData);
+            } catch(e: any) {
+                console.error("Failed to fetch income statement:", e);
+                setError("فشل تحميل بيانات قائمة الدخل. يرجى المحاولة مرة أخرى.");
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
 
     const formatCurrency = (amount: number) => {
       return new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(amount);
     };
 
+    if (loading) {
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline">قائمة الدخل</CardTitle>
+                </CardHeader>
+                <CardContent className="flex justify-center items-center min-h-[300px]">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </CardContent>
+            </Card>
+        );
+    }
+
+    if (error) {
+         return (
+            <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline">قائمة الدخل</CardTitle>
+                </CardHeader>
+                <CardContent>
+                     <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>خطأ في التحميل</AlertTitle>
+                        <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                </CardContent>
+            </Card>
+        );
+    }
+
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="font-headline">{incomeStatementData.title}</CardTitle>
-                <CardDescription>{incomeStatementData.period}</CardDescription>
+                <CardTitle className="font-headline">قائمة الدخل (بيان الأرباح والخسائر)</CardTitle>
+                <CardDescription>للفترة حتى تاريخه</CardDescription>
             </CardHeader>
             <CardContent>
                 <Table>
@@ -63,58 +105,55 @@ export function IncomeStatement() {
                     </TableHeader>
                     <TableBody>
                         <TableRow className="font-bold bg-muted/20">
-                            <TableCell colSpan={2}>الإيرادات</TableCell>
-                            <TableCell></TableCell>
+                            <TableCell colSpan={3}>الإيرادات</TableCell>
                         </TableRow>
-                        {incomeStatementData.revenues.map(item => (
+                        {data.revenues.map(item => (
                             <TableRow key={item.code}>
                                 <TableCell className="font-mono pr-8">{item.code}</TableCell>
                                 <TableCell>{item.name}</TableCell>
-                                <TableCell className="text-left font-mono">{formatCurrency(item.amount)}</TableCell>
+                                <TableCell className="text-left font-mono">{formatCurrency(item.balance)}</TableCell>
                             </TableRow>
                         ))}
                         <TableRow className="font-semibold">
                             <TableCell colSpan={2}>إجمالي الإيرادات</TableCell>
-                            <TableCell className="text-left font-mono">{formatCurrency(totalRevenues)}</TableCell>
+                            <TableCell className="text-left font-mono">{formatCurrency(data.totalRevenues)}</TableCell>
                         </TableRow>
 
                         <TableRow className="font-bold bg-muted/20">
-                             <TableCell colSpan={2}>تكلفة المبيعات</TableCell>
-                            <TableCell></TableCell>
+                             <TableCell colSpan={3}>تكلفة المبيعات</TableCell>
                         </TableRow>
-                        {incomeStatementData.cogs.map(item => (
+                        {data.cogs.map(item => (
                             <TableRow key={item.code}>
                                 <TableCell className="font-mono pr-8">{item.code}</TableCell>
                                 <TableCell>{item.name}</TableCell>
-                                <TableCell className="text-left font-mono">{formatCurrency(item.amount)}</TableCell>
+                                <TableCell className="text-left font-mono">{formatCurrency(item.balance)}</TableCell>
                             </TableRow>
                         ))}
 
                         <TableRow className="font-bold text-lg bg-muted/50">
                             <TableCell colSpan={2}>مجمل الربح</TableCell>
-                            <TableCell className="text-left font-mono">{formatCurrency(grossProfit)}</TableCell>
+                            <TableCell className="text-left font-mono">{formatCurrency(data.grossProfit)}</TableCell>
                         </TableRow>
 
                         <TableRow className="font-bold bg-muted/20">
-                             <TableCell colSpan={2}>المصروفات التشغيلية</TableCell>
-                            <TableCell></TableCell>
+                             <TableCell colSpan={3}>المصروفات التشغيلية</TableCell>
                         </TableRow>
-                        {incomeStatementData.expenses.map(item => (
+                        {data.expenses.map(item => (
                             <TableRow key={item.code}>
                                 <TableCell className="font-mono pr-8">{item.code}</TableCell>
                                 <TableCell>{item.name}</TableCell>
-                                <TableCell className="text-left font-mono">{formatCurrency(item.amount)}</TableCell>
+                                <TableCell className="text-left font-mono">{formatCurrency(item.balance)}</TableCell>
                             </TableRow>
                         ))}
                          <TableRow className="font-semibold">
                             <TableCell colSpan={2}>إجمالي المصروفات التشغيلية</TableCell>
-                            <TableCell className="text-left font-mono">{formatCurrency(totalExpenses)}</TableCell>
+                            <TableCell className="text-left font-mono">{formatCurrency(data.totalExpenses)}</TableCell>
                         </TableRow>
                     </TableBody>
                     <TableFooter>
                         <TableRow className="font-extrabold text-xl bg-primary/10 text-primary">
                             <TableCell colSpan={2}>صافي الدخل (الربح)</TableCell>
-                            <TableCell className="text-left font-mono">{formatCurrency(netIncome)}</TableCell>
+                            <TableCell className="text-left font-mono">{formatCurrency(data.netIncome)}</TableCell>
                         </TableRow>
                     </TableFooter>
                 </Table>

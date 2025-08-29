@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Card,
   CardContent,
@@ -26,33 +25,48 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Button } from '../ui/button';
-import { FileSearch } from 'lucide-react';
-
-
-const mockTrialBalanceData = [
-  { level: 1, code: '1', name: 'الأصول', debit: 150000.00, credit: 0 },
-  { level: 2, code: '11', name: 'الأصول المتداولة', debit: 120000.00, credit: 0 },
-  { level: 3, code: '1101', name: 'النقدية بالصناديق والبنوك', debit: 80000.00, credit: 0 },
-  { level: 4, code: '1101001', name: 'صندوق الكاشير الرئيسي', debit: 50000.00, credit: 0 },
-  { level: 4, code: '1101002', name: 'حساب الشبكة', debit: 30000.00, credit: 0 },
-  { level: 2, code: '12', name: 'الأصول الثابتة', debit: 30000.00, credit: 0 },
-  { level: 1, code: '2', name: 'الخصوم', debit: 0, credit: 50000.00 },
-  { level: 2, code: '21', name: 'الخصوم المتداولة', debit: 0, credit: 20000.00 },
-  { level: 1, code: '3', name: 'حقوق الملكية', debit: 0, credit: 80000.00 },
-  { level: 1, code: '4', name: 'الإيرادات', debit: 0, credit: 150000.00 },
-  { level: 1, code: '5', name: 'المصروفات', debit: 130000.00, credit: 0 },
-];
+import { FileSearch, Loader2, AlertCircle } from 'lucide-react';
+import { getTrialBalanceData, TrialBalanceAccount } from '@/lib/firebase/firestore/reports';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 
 export function TrialBalance() {
+    const [allAccounts, setAllAccounts] = useState<TrialBalanceAccount[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [selectedLevel, setSelectedLevel] = useState('all');
 
-    const filteredData = selectedLevel === 'all'
-        ? mockTrialBalanceData
-        : mockTrialBalanceData.filter(item => item.level <= parseInt(selectedLevel, 10));
+    useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const data = await getTrialBalanceData();
+                setAllAccounts(data);
+            } catch (e: any) {
+                console.error("Failed to fetch trial balance:", e);
+                setError("فشل تحميل بيانات ميزان المراجعة. يرجى المحاولة مرة أخرى.");
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
 
-    const totalDebit = filteredData.reduce((sum, item) => item.level === 1 ? sum + item.debit : sum, 0);
-    const totalCredit = filteredData.reduce((sum, item) => item.level === 1 ? sum + item.credit : sum, 0);
+    const filteredData = useMemo(() => {
+        if (selectedLevel === 'all') return allAccounts;
+        return allAccounts.filter(item => item.level <= parseInt(selectedLevel, 10));
+    }, [selectedLevel, allAccounts]);
+
+    const { totalDebit, totalCredit } = useMemo(() => {
+        return allAccounts
+            .filter(acc => acc.level === 1)
+            .reduce((totals, acc) => {
+                totals.totalDebit += acc.debit;
+                totals.totalCredit += acc.credit;
+                return totals;
+            }, { totalDebit: 0, totalCredit: 0 });
+    }, [allAccounts]);
     
     const formatCurrency = (amount: number) => {
       return new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(amount);
@@ -87,43 +101,57 @@ export function TrialBalance() {
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="overflow-x-auto">
-                    <Table>
-                        <TableHeader>
-                        <TableRow>
-                            <TableHead className="w-[120px]">الرمز</TableHead>
-                            <TableHead>اسم الحساب</TableHead>
-                            <TableHead className="text-center">مدين</TableHead>
-                            <TableHead className="text-center">دائن</TableHead>
-                        </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                        {filteredData.length === 0 ? (
+                {loading ? (
+                    <div className="flex justify-center items-center min-h-[300px]">
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    </div>
+                ) : error ? (
+                     <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>خطأ في التحميل</AlertTitle>
+                        <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
                             <TableRow>
-                                <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                                    لا توجد بيانات لعرضها.
-                                </TableCell>
+                                <TableHead className="w-[120px]">الرمز</TableHead>
+                                <TableHead>اسم الحساب</TableHead>
+                                <TableHead className="text-center">مدين</TableHead>
+                                <TableHead className="text-center">دائن</TableHead>
                             </TableRow>
-                        ) : (
-                            filteredData.map((item) => (
-                            <TableRow key={item.code} style={{paddingRight: `${(item.level - 1) * 20}px`}} className={item.level === 1 ? "font-bold bg-muted/30" : ""}>
-                                <TableCell className="font-mono">{item.code}</TableCell>
-                                <TableCell>{item.name}</TableCell>
-                                <TableCell className="text-center font-mono">{formatCurrency(item.debit)}</TableCell>
-                                <TableCell className="text-center font-mono">{formatCurrency(item.credit)}</TableCell>
-                            </TableRow>
-                            ))
-                        )}
-                        </TableBody>
-                        <TableFooter>
-                            <TableRow className="text-lg font-bold bg-muted">
-                                <TableCell colSpan={2}>الإجمالي</TableCell>
-                                <TableCell className="text-center font-mono">{formatCurrency(totalDebit)}</TableCell>
-                                <TableCell className="text-center font-mono">{formatCurrency(totalCredit)}</TableCell>
-                            </TableRow>
-                        </TableFooter>
-                    </Table>
-                </div>
+                            </TableHeader>
+                            <TableBody>
+                            {filteredData.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                                        لا توجد بيانات لعرضها.
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                filteredData.map((item) => (
+                                <TableRow key={item.code} className={item.level === 1 ? "font-bold bg-muted/30" : ""}>
+                                    <TableCell className="font-mono" style={{paddingRight: `${(item.level > 1 ? item.level : 0) * 1 + 1}rem`}}>
+                                      {item.code}
+                                    </TableCell>
+                                    <TableCell>{item.name}</TableCell>
+                                    <TableCell className="text-center font-mono">{formatCurrency(item.debit)}</TableCell>
+                                    <TableCell className="text-center font-mono">{formatCurrency(item.credit)}</TableCell>
+                                </TableRow>
+                                ))
+                            )}
+                            </TableBody>
+                            <TableFooter>
+                                <TableRow className="text-lg font-bold bg-muted">
+                                    <TableCell colSpan={2}>الإجمالي</TableCell>
+                                    <TableCell className="text-center font-mono">{formatCurrency(totalDebit)}</TableCell>
+                                    <TableCell className="text-center font-mono">{formatCurrency(totalCredit)}</TableCell>
+                                </TableRow>
+                            </TableFooter>
+                        </Table>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );
