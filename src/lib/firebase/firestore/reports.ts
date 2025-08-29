@@ -49,7 +49,8 @@ export interface DashboardSummary {
     grossProfit: number;
     totalOperatingExpenses: number;
     netIncome: number;
-    balance: number;
+    cashBalance: number;
+    bankBalance: number;
     revenueChange: number | null;
     cogsChange: number | null;
     grossProfitChange: number | null;
@@ -271,8 +272,11 @@ export const getDashboardSummary = async (): Promise<DashboardSummary> => {
     const currentMetrics = await getMonthlyMetrics(currentMonthStart, currentMonthEnd);
     const prevMetrics = await getMonthlyMetrics(prevMonthStart, prevMonthEnd);
 
-    const cashAndBanks = allTimeAccounts.filter(acc => acc.level === 4 && (acc.classifications?.includes('صندوق') || acc.classifications?.includes('بنك')));
-    const balance = cashAndBanks.reduce((sum, acc) => sum + (acc.closingDebit - acc.closingCredit), 0);
+    const cashAccounts = allTimeAccounts.filter(acc => acc.level === 4 && acc.classifications?.includes('صندوق'));
+    const bankAccounts = allTimeAccounts.filter(acc => acc.level === 4 && acc.classifications?.includes('بنك'));
+
+    const cashBalance = cashAccounts.reduce((sum, acc) => sum + (acc.closingDebit - acc.closingCredit), 0);
+    const bankBalance = bankAccounts.reduce((sum, acc) => sum + (acc.closingDebit - acc.closingCredit), 0);
 
     return {
         totalRevenues: currentMetrics.totalRevenues,
@@ -280,7 +284,8 @@ export const getDashboardSummary = async (): Promise<DashboardSummary> => {
         grossProfit: currentMetrics.grossProfit,
         totalOperatingExpenses: currentMetrics.totalOperatingExpenses,
         netIncome: currentMetrics.netIncome,
-        balance,
+        cashBalance,
+        bankBalance,
         revenueChange: calculatePercentageChange(currentMetrics.totalRevenues, prevMetrics.totalRevenues),
         cogsChange: calculatePercentageChange(currentMetrics.totalCOGS, prevMetrics.totalCOGS),
         grossProfitChange: calculatePercentageChange(currentMetrics.grossProfit, prevMetrics.grossProfit),
