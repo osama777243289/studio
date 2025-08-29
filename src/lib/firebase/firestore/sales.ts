@@ -299,28 +299,6 @@ const createAccountMap = (accounts: Account[]): Map<string, string> => {
   return accountMap;
 };
 
-// Function to enrich records with account names
-const enrichRecordsWithAccountNames = (
-  records: Omit<SalesRecord, 'id'>[],
-  accountMap: Map<string, string>
-): Omit<SalesRecord, 'id'>[] => {
-  return records.map((record) => ({
-    ...record,
-    cash: {
-      ...record.cash,
-      accountName: accountMap.get(record.cash.accountId) || 'Unknown Account',
-    },
-    cards: record.cards.map((card) => ({
-      ...card,
-      accountName: accountMap.get(card.accountId) || 'Unknown Account',
-    })),
-    credits: record.credits.map((credit) => ({
-      ...credit,
-      accountName: accountMap.get(credit.accountId) || 'Unknown Account',
-    })),
-  }));
-};
-
 // Get all sales records
 export const getSalesRecords = async (
   count: number = 20
