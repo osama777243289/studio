@@ -92,9 +92,14 @@ const defaultAccounts: (Omit<Account, 'id' | 'children'> & { children?: Omit<Acc
     },
 ];
 
-const seedAccounts = async () => {
-    const batch = writeBatch(db);
+export const seedAccounts = async () => {
     const accountsCol = collection(db, 'accounts');
+    const snapshot = await getDocs(query(accountsCol, limit(1)));
+    if (!snapshot.empty) {
+        throw new Error("لا يمكن البذر في قاعدة بيانات تحتوي على حسابات بالفعل.");
+    }
+    
+    const batch = writeBatch(db);
     
     const addAccountRecursive = (account: any, parentId: string | null) => {
         const newDocRef = doc(accountsCol);
@@ -109,7 +114,6 @@ const seedAccounts = async () => {
     defaultAccounts.forEach(account => addAccountRecursive(account, null));
     
     await batch.commit();
-    console.log("Default accounts have been seeded to Firestore.");
 };
 
 
@@ -146,19 +150,17 @@ const buildAccountTree = (accounts: Account[]): Account[] => {
 export const getAccounts = async (): Promise<Account[]> => {
     const accountsCol = collection(db, 'accounts');
     const q = query(accountsCol, orderBy("code"));
-    let accountSnapshot = await getDocs(q);
-
-    if (accountSnapshot.empty) {
-        console.log("No accounts found. Seeding database...");
-        await seedAccounts();
-        accountSnapshot = await getDocs(q);
-    }
+    const accountSnapshot = await getDocs(q);
     
     const accountsList = accountSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
     } as Account));
     
+    if(accountsList.length === 0) {
+        return [];
+    }
+
     return buildAccountTree(accountsList);
 };
 

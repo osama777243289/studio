@@ -10,11 +10,11 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, FileDown, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
+import { PlusCircle, FileDown, Loader2, RefreshCw, AlertCircle, DatabaseZap } from 'lucide-react';
 import { AccountTree, type Account } from '@/components/chart-of-accounts/account-tree';
 import { AccountDialog, AccountFormData } from '@/components/chart-of-accounts/account-dialog';
 import { DeleteAccountDialog } from '@/components/chart-of-accounts/delete-account-dialog';
-import { addAccount, deleteAccount, getAccounts, updateAccount } from '@/lib/firebase/firestore/accounts';
+import { addAccount, deleteAccount, getAccounts, updateAccount, seedAccounts } from '@/lib/firebase/firestore/accounts';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -22,6 +22,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 export default function ChartOfAccountsPage() {
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isSeeding, setIsSeeding] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -48,6 +49,22 @@ export default function ChartOfAccountsPage() {
     useEffect(() => {
         refreshAccounts();
     }, []);
+
+    const handleSeedAccounts = async () => {
+        setIsSeeding(true);
+        setError(null);
+        try {
+            await seedAccounts();
+            toast({ title: "نجاح", description: "تمت إضافة دليل الحسابات الافتراضي بنجاح." });
+            await refreshAccounts();
+        } catch (e: any) {
+            console.error("Failed to seed accounts:", e);
+            toast({ title: "خطأ", description: e.message, variant: "destructive" });
+            setError(e.message);
+        } finally {
+            setIsSeeding(false);
+        }
+    };
 
     const findAccount = (id: string, accs: Account[]): Account | undefined => {
         for (const acc of accs) {
@@ -159,7 +176,7 @@ export default function ChartOfAccountsPage() {
                   <CardDescription>تصفح وإدارة شجرة الحسابات الخاصة بك.</CardDescription>
               </div>
               <div className='flex gap-2 w-full sm:w-auto'>
-                  <Button variant="outline" onClick={refreshAccounts} disabled={loading} className="flex-1 sm:flex-initial">
+                  <Button variant="outline" onClick={refreshAccounts} disabled={loading || isSeeding} className="flex-1 sm:flex-initial">
                       {loading ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <RefreshCw className="ml-2 h-4 w-4" />}
                       تحديث
                   </Button>
@@ -194,9 +211,13 @@ export default function ChartOfAccountsPage() {
                     onDeleteAccount={handleDeleteAccount}
                 />
             ) : !error ? (
-                 <div className="text-center text-muted-foreground">
-                    <p>لم يتم العثور على حسابات.</p>
-                    <p>انقر على "إضافة حساب جديد" للبدء.</p>
+                 <div className="text-center text-muted-foreground flex flex-col items-center gap-4">
+                    <p>دليل الحسابات فارغ.</p>
+                    <p>انقر على الزر أدناه لإضافة الحسابات الافتراضية والبدء.</p>
+                     <Button onClick={handleSeedAccounts} disabled={isSeeding}>
+                        {isSeeding ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <DatabaseZap className="ml-2 h-4 w-4" />}
+                        {isSeeding ? 'جاري الإضافة...' : 'بذر الحسابات الافتراضية'}
+                    </Button>
                 </div>
             ) : null}
           </div>
