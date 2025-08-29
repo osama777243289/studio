@@ -17,6 +17,7 @@ import { getRecentTransactions } from "@/lib/firebase/firestore/transactions";
 import { getAccounts } from "@/lib/firebase/firestore/accounts";
 import { Account } from "@/components/chart-of-accounts/account-tree";
 import { Skeleton } from '@/components/ui/skeleton';
+import { getDashboardSummary, type DashboardSummary } from '@/lib/firebase/firestore/reports';
 
 // Helper to create a map of account IDs to names
 const createAccountMap = (accounts: Account[]): Map<string, string> => {
@@ -37,8 +38,14 @@ interface TransactionWithAccountName extends Transaction {
     accountName: string;
 }
 
+const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'SAR' }).format(amount);
+};
+
+
 export default function DashboardPage() {
   const [transactions, setTransactions] = useState<TransactionWithAccountName[]>([]);
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,9 +54,10 @@ export default function DashboardPage() {
         setLoading(true);
         setError(null);
         try {
-            const [recentTransactions, allAccounts] = await Promise.all([
+            const [recentTransactions, allAccounts, dashboardSummary] = await Promise.all([
                 getRecentTransactions(),
-                getAccounts()
+                getAccounts(),
+                getDashboardSummary()
             ]);
 
             const accountMap = createAccountMap(allAccounts);
@@ -60,6 +68,8 @@ export default function DashboardPage() {
             }));
 
             setTransactions(transactionsWithNames);
+            setSummary(dashboardSummary);
+
         } catch (error: any) {
             console.error("Failed to fetch dashboard data:", error);
             setError("فشل الاتصال بـ Firestore. التطبيق يعمل الآن في وضع العرض التوضيحي.");
@@ -88,57 +98,31 @@ export default function DashboardPage() {
      )
   }
 
+  const SummaryCard = ({ title, value, icon: Icon, isLoading }: { title: string, value: number, icon: React.ElementType, isLoading: boolean }) => (
+    <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">{title}</CardTitle>
+            <Icon className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+             {isLoading ? (
+                <Skeleton className="h-8 w-3/4" />
+            ) : (
+                <div className="text-2xl font-bold">{formatCurrency(value)}</div>
+            )}
+            {/* You can add comparison logic later */}
+            {/* <p className="text-xs text-muted-foreground">+20.1% من الشهر الماضي</p> */}
+        </CardContent>
+    </Card>
+);
+
   return (
     <div className="flex flex-col gap-6">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">إجمالي الدخل</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">$45,231.89</div>
-            <p className="text-xs text-muted-foreground">
-              +20.1% من الشهر الماضي
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">إجمالي المصروفات</CardTitle>
-            <TrendingDown className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">$21,876.33</div>
-            <p className="text-xs text-muted-foreground">
-              +12.4% من الشهر الماضي
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">صافي الربح</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">$23,355.56</div>
-            <p className="text-xs text-muted-foreground">
-              +31.3% من الشهر الماضي
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">الرصيد</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">$102,942.00</div>
-            <p className="text-xs text-muted-foreground">
-              عبر جميع الحسابات
-            </p>
-          </CardContent>
-        </Card>
+        <SummaryCard title="إجمالي الدخل" value={summary?.totalRevenues || 0} icon={TrendingUp} isLoading={loading} />
+        <SummaryCard title="إجمالي المصروفات" value={summary?.totalExpenses || 0} icon={TrendingDown} isLoading={loading} />
+        <SummaryCard title="صافي الربح" value={summary?.netIncome || 0} icon={DollarSign} isLoading={loading} />
+        <SummaryCard title="الرصيد" value={summary?.balance || 0} icon={CreditCard} isLoading={loading} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-7">

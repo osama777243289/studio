@@ -41,6 +41,12 @@ export interface BalanceSheetData {
     totalLiabilitiesAndEquity: number;
 }
 
+export interface DashboardSummary {
+    totalRevenues: number;
+    totalExpenses: number;
+    netIncome: number;
+    balance: number;
+}
 
 const calculateBalances = async (): Promise<Map<string, { movementDebit: number; movementCredit: number }>> => {
     const transactions = await getAllTransactions();
@@ -210,3 +216,20 @@ export const getBalanceSheetData = async (): Promise<BalanceSheetData> => {
         totalLiabilitiesAndEquity: totalLiabilities + totalEquity
     };
 };
+
+export const getDashboardSummary = async (): Promise<DashboardSummary> => {
+    const allAccounts = await processAccountsForReports();
+
+    const totalRevenues = Math.abs(getReportAccounts(allAccounts, 'Revenues').find(a => a.level === 1)?.balance || 0);
+    const totalExpenses = getReportAccounts(allAccounts, 'Expenses').find(a => a.level === 1)?.balance || 0;
+
+    const cashAndBanks = allAccounts.filter(acc => acc.level === 4 && (acc.classifications?.includes('صندوق') || acc.classifications?.includes('بنك')));
+    const balance = cashAndBanks.reduce((sum, acc) => sum + (acc.closingDebit - acc.closingCredit), 0);
+
+    return {
+        totalRevenues,
+        totalExpenses,
+        netIncome: totalRevenues - totalExpenses,
+        balance,
+    }
+}
