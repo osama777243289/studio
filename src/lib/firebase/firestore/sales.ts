@@ -406,13 +406,13 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
     const record = recordSnap.data() as SalesRecord;
     
     const allAccounts = await getAccounts();
-    const salesRevenueAccount = findAccountByCode(allAccounts, '4101'); 
-    const vatAccount = findAccountByCode(allAccounts, '2101');           
-    const cogsAccount = findAccountByCode(allAccounts, '5101');      
-    const inventoryAccount = findAccountByCode(allAccounts, '1103');    
+    const salesRevenueAccount = findAccountByCode(allAccounts, '4101001'); 
+    const vatAccount = findAccountByCode(allAccounts, '2101001');           
+    const cogsAccount = findAccountByCode(allAccounts, '5101001');      
+    const inventoryAccount = findAccountByCode(allAccounts, '1103001');    
 
     if (!salesRevenueAccount || !vatAccount || !cogsAccount || !inventoryAccount) {
-        throw new Error("System accounts for posting not found. Please ensure accounts 4101, 2101, 5101, and 1103 exist.");
+        throw new Error("System accounts for posting not found. Please ensure accounts 4101001, 2101001, 5101001, and 1103001 exist.");
     }
 
     const journalId = doc(collection(db, 'temp')).id; 

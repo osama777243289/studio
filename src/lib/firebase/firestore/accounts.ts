@@ -35,7 +35,11 @@ const defaultAccounts: (Omit<Account, 'id' | 'children'> & { children?: Omit<Acc
                             { code: '1102001', name: 'عميل مبيعات آجلة عام', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'الميزانية العمومية', classifications: ['عملاء'], parentId: null, isSystemAccount: false },
                         ]
                     },
-                    { code: '1103', name: 'المخزون', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'الميزانية العمومية', classifications: ['مخزون'], parentId: null, isSystemAccount: true },
+                    { code: '1103', name: 'المخزون', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'الميزانية العمومية', classifications: [], parentId: null, isSystemAccount: true,
+                        children: [
+                            { code: '1103001', name: 'مخزون البضائع', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'الميزانية العمومية', classifications: ['مخزون'], parentId: null, isSystemAccount: true },
+                        ]
+                    },
                 ] 
             },
             { code: '12', name: 'الأصول الثابتة', type: 'Debit', group: 'Assets', status: 'Active', closingType: 'الميزانية العمومية', classifications: ['أصول ثابتة'], parentId: null, isSystemAccount: true },
@@ -47,7 +51,11 @@ const defaultAccounts: (Omit<Account, 'id' | 'children'> & { children?: Omit<Acc
             { 
                 code: '21', name: 'الخصوم المتداولة', type: 'Credit', group: 'Liabilities', status: 'Active', closingType: 'الميزانية العمومية', classifications: [], parentId: null, isSystemAccount: true,
                 children: [
-                    { code: '2101', name: 'ضريبة القيمة المضافة', type: 'Credit', group: 'Liabilities', status: 'Active', closingType: 'الميزانية العمومية', classifications: [], parentId: null, isSystemAccount: true },
+                    { code: '2101', name: 'ضريبة القيمة المضافة', type: 'Credit', group: 'Liabilities', status: 'Active', closingType: 'الميزانية العمومية', classifications: [], parentId: null, isSystemAccount: true,
+                      children: [
+                           { code: '2101001', name: 'ضريبة القيمة المضافة على المبيعات', type: 'Credit', group: 'Liabilities', status: 'Active', closingType: 'الميزانية العمومية', classifications: [], parentId: null, isSystemAccount: true },
+                      ]
+                    },
                 ]
             },
         ]
@@ -59,7 +67,11 @@ const defaultAccounts: (Omit<Account, 'id' | 'children'> & { children?: Omit<Acc
          children: [
             { code: '41', name: 'إيرادات النشاط الرئيسي', type: 'Credit', group: 'Revenues', status: 'Active', closingType: 'قائمة الدخل', classifications: [], parentId: null, isSystemAccount: true,
               children: [
-                  { code: '4101', name: 'إيرادات المبيعات', type: 'Credit', group: 'Revenues', status: 'Active', closingType: 'قائمة الدخل', classifications: ['إيرادات'], parentId: null, isSystemAccount: true },
+                  { code: '4101', name: 'إيرادات المبيعات', type: 'Credit', group: 'Revenues', status: 'Active', closingType: 'قائمة الدخل', classifications: [], parentId: null, isSystemAccount: true,
+                    children: [
+                        { code: '4101001', name: 'إيراد مبيعات الفرع الرئيسي', type: 'Credit', group: 'Revenues', status: 'Active', closingType: 'قائمة الدخل', classifications: ['إيرادات'], parentId: null, isSystemAccount: true },
+                    ]
+                  },
               ]
             }
         ]
@@ -69,7 +81,11 @@ const defaultAccounts: (Omit<Account, 'id' | 'children'> & { children?: Omit<Acc
         children: [
             { code: '51', name: 'تكلفة المبيعات', type: 'Debit', group: 'Expenses', status: 'Active', closingType: 'قائمة الدخل', classifications: [], parentId: null, isSystemAccount: true,
                children: [
-                   { code: '5101', name: 'تكلفة البضاعة المباعة', type: 'Debit', group: 'Expenses', status: 'Active', closingType: 'قائمة الدخل', classifications: [], parentId: null, isSystemAccount: true },
+                   { code: '5101', name: 'تكلفة البضاعة المباعة', type: 'Debit', group: 'Expenses', status: 'Active', closingType: 'قائمة الدخل', classifications: [], parentId: null, isSystemAccount: true,
+                     children: [
+                         { code: '5101001', name: 'تكلفة مبيعات الفرع الرئيسي', type: 'Debit', group: 'Expenses', status: 'Active', closingType: 'قائمة الدخل', classifications: [], parentId: null, isSystemAccount: true },
+                     ]
+                   },
                ]
             }
         ]
