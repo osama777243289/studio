@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { db, storage } from '@/lib/firebase/client';
@@ -287,9 +288,10 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
     const vatAccount = findAccountByCode(allAccounts, '2101001');           
     const cogsAccount = findAccountByCode(allAccounts, '5101001');      
     const inventoryAccount = findAccountByCode(allAccounts, '1104001');    
+    const mainCashAccount = findAccountByCode(allAccounts, '1101001');
 
-    if (!salesRevenueAccount || !vatAccount || !cogsAccount || !inventoryAccount) {
-        throw new Error("System accounts for posting not found. Please ensure accounts 4101001, 2101001, 5101001, and 1104001 exist.");
+    if (!salesRevenueAccount || !vatAccount || !cogsAccount || !inventoryAccount || !mainCashAccount) {
+        throw new Error("System accounts for posting not found. Please ensure accounts 4101001, 2101001, 5101001, 1104001 and 1101001 exist.");
     }
 
     const journalId = doc(collection(db, 'temp')).id; 
@@ -304,9 +306,11 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
     const transactionsCol = collection(db, 'transactions');
     
     const actuals = record.actuals || {};
+    
+    // Debit all payment methods against revenue/VAT
     const actualCashAmount = actuals['cash'];
     if (actualCashAmount > 0) {
-        // Debit the cashier account
+        // Debit cashier account (to be credited immediately)
         batch.set(doc(transactionsCol), {
             accountId: record.cash.accountId,
             date: record.date,
@@ -316,13 +320,25 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
             journalId,
             createdAt: Timestamp.now(),
         });
-        // Credit the cashier account (for tracking)
-        batch.set(doc(transactionsCol), {
+
+        // Add entry to move cash from cashier to main fund
+        // Debit Main Fund
+         batch.set(doc(transactionsCol), {
+            accountId: mainCashAccount.id,
+            date: record.date,
+            amount: actualCashAmount, // Debit
+            type: 'Journal',
+            description: `إيداع نقدية من ${record.cash.accountName}`,
+            journalId,
+            createdAt: Timestamp.now(),
+        });
+        // Credit Cashier Account
+         batch.set(doc(transactionsCol), {
             accountId: record.cash.accountId,
             date: record.date,
             amount: -actualCashAmount, // Credit
             type: 'Journal',
-            description: `${description} - (حركة عكسية للرقابة)`,
+            description: `إيداع نقدية إلى ${mainCashAccount.name}`,
             journalId,
             createdAt: Timestamp.now(),
         });
@@ -334,7 +350,7 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
             batch.set(doc(transactionsCol), {
                 accountId: card.accountId,
                 date: record.date,
-                amount: actualAmount,
+                amount: actualAmount, // Debit
                 type: 'Journal',
                 description,
                 journalId,
@@ -349,7 +365,7 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
             batch.set(doc(transactionsCol), {
                 accountId: credit.accountId,
                 date: record.date,
-                amount: actualAmount,
+                amount: actualAmount, // Debit
                 type: 'Journal',
                 description,
                 journalId,
@@ -358,6 +374,7 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
         }
     });
 
+    // Credit Sales Revenue
     batch.set(doc(transactionsCol), {
         accountId: salesRevenueAccount.id,
         date: record.date,
@@ -368,6 +385,7 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
         createdAt: Timestamp.now(),
     });
     
+    // Credit VAT Payable
     batch.set(doc(transactionsCol), {
         accountId: vatAccount.id,
         date: record.date,
@@ -454,5 +472,7 @@ export const unpostSaleRecord = async (recordId: string): Promise<void> => {
     
     await batch.commit();
 }
+
+    
 
     
