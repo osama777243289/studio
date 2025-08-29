@@ -108,118 +108,6 @@ const createAccountMap = (accounts: Account[]): Map<string, Account> => {
   return accountMap;
 };
 
-const seedSalesRecords = async () => {
-  const allAccounts = await getAccounts();
-  const flatAccounts: Account[] = [];
-  const flatten = (accs: Account[]) => {
-      for (const acc of accs) {
-          flatAccounts.push(acc);
-          if (acc.children) flatten(acc.children);
-      }
-  }
-  flatten(allAccounts);
-
-  const cashAccount = flatAccounts.find(a => a.classifications?.includes('كاشير'));
-  const networkAccount = flatAccounts.find(a => a.classifications?.includes('شبكات'));
-  const clientAccount = flatAccounts.find(a => a.classifications?.includes('عملاء'));
-
-
-  if (!cashAccount || !networkAccount || !clientAccount) {
-    console.log(
-      'Could not find default accounts for seeding sales. Please create them first.'
-    );
-    return;
-  }
-
-  const defaultRecords = [
-    {
-      date: Timestamp.fromDate(new Date()),
-      period: 'Morning',
-      cashier: 'Yousef Khaled',
-      postingNumber: 'PO-001',
-      total: 650,
-      status: 'Pending Matching',
-      cash: {
-        accountId: cashAccount.id,
-        accountName: cashAccount.name,
-        amount: 500,
-      },
-      cards: [
-        {
-          accountId: networkAccount.id,
-          accountName: networkAccount.name,
-          amount: 150,
-        },
-      ],
-      credits: [],
-      createdAt: Timestamp.now(),
-    },
-    {
-      date: Timestamp.fromDate(new Date()),
-      period: 'Evening',
-      cashier: 'Ahmad Ali',
-      postingNumber: 'PO-002',
-      total: 1200,
-      status: 'Ready for Posting',
-      costOfSales: 750,
-      actuals: {
-        'cash': 800,
-        'credit-0': 400
-      },
-      cash: {
-        accountId: cashAccount.id,
-        accountName: cashAccount.name,
-        amount: 800,
-      },
-      cards: [],
-      credits: [
-        {
-          accountId: clientAccount.id,
-          accountName: clientAccount.name,
-          amount: 400,
-        },
-      ],
-      createdAt: Timestamp.now(),
-    },
-     {
-      date: Timestamp.fromDate(new Date()),
-      period: 'Evening',
-      cashier: 'Sara Khalid',
-      postingNumber: 'PO-003',
-      total: 1800,
-      status: 'Posted',
-      costOfSales: 1100,
-      actuals: {
-        'cash': 1400,
-        'credit-0': 400
-      },
-      cash: {
-        accountId: cashAccount.id,
-        accountName: cashAccount.name,
-        amount: 1400,
-      },
-      cards: [],
-      credits: [
-        {
-          accountId: clientAccount.id,
-          accountName: clientAccount.name,
-          amount: 400,
-        },
-      ],
-      createdAt: Timestamp.now(),
-    },
-  ];
-
-  const batch = writeBatch(db);
-  const salesCol = collection(db, 'salesRecords');
-  defaultRecords.forEach((rec) => {
-    const newDocRef = doc(salesCol);
-    batch.set(newDocRef, rec);
-  });
-  await batch.commit();
-  console.log('Default sales records have been seeded.');
-};
-
 // Function to convert data URL to a Buffer
 const dataUrlToBuffer = (dataUrl: string): Buffer => {
   const base64 = dataUrl.split(',')[1];
@@ -319,16 +207,6 @@ export const getSalesRecords = async (
   const salesCol = collection(db, 'salesRecords');
   const q = query(salesCol, orderBy('createdAt', 'desc'), limit(count));
   const snapshot = await getDocs(q);
-
-  if (snapshot.empty) {
-    console.log('No sales records found, seeding database...');
-    await seedSalesRecords();
-    const seededSnapshot = await getDocs(q);
-    if (seededSnapshot.empty) return [];
-    return seededSnapshot.docs.map(
-      (doc) => ({ id: doc.id, ...doc.data() } as SalesRecord)
-    );
-  }
 
   return snapshot.docs.map(
     (doc) => ({ id: doc.id, ...doc.data() } as SalesRecord)
@@ -435,6 +313,16 @@ export const postSaleRecord = async (recordId: string, costOfSales: number): Pro
             amount: actualCashAmount, // Debit
             type: 'Journal',
             description,
+            journalId,
+            createdAt: Timestamp.now(),
+        });
+        // Credit the cashier account (for tracking)
+        batch.set(doc(transactionsCol), {
+            accountId: record.cash.accountId,
+            date: record.date,
+            amount: -actualCashAmount, // Credit
+            type: 'Journal',
+            description: `${description} - (حركة عكسية للرقابة)`,
             journalId,
             createdAt: Timestamp.now(),
         });

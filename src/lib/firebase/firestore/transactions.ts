@@ -81,7 +81,6 @@ export const getAllTransactions = async (): Promise<TransactionWithAccountName[]
     const transactionSnapshot = await getDocs(q);
     
     if (transactionSnapshot.empty) {
-        console.log("No transactions found. Returning empty array.");
         return [];
     }
 
