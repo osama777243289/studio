@@ -1,4 +1,6 @@
 
+'use client';
+
 import { db } from '@/lib/firebase/client';
 import {
   collection,
@@ -77,11 +79,8 @@ export const getRecentTransactions = async (count: number = 5): Promise<Transact
 // Get all transactions
 export const getAllTransactions = async (): Promise<TransactionWithAccountName[]> => {
     const transactionsCol = collection(db, 'transactions');
-    // Filter for transactions that have a description field.
     const q = query(
         transactionsCol, 
-        where('description', '!=', ''),
-        orderBy('description'),
         orderBy('createdAt', 'desc')
     );
     const transactionSnapshot = await getDocs(q);
