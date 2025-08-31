@@ -102,6 +102,7 @@ export default function DashboardPage() {
   }
 
   const SummaryCard = ({ title, data, icon: Icon, isLoading }: { title: string, data: DashboardSummary['dailyAverages']['netIncome'], icon: React.ElementType, isLoading: boolean }) => {
+    const hasData = data && data.currentMonth !== undefined;
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -117,12 +118,12 @@ export default function DashboardPage() {
                     </div>
                 ) : (
                    <>
-                    <div className="text-2xl font-bold">{formatCurrency(data.currentMonth)}</div>
+                    <div className="text-2xl font-bold">{hasData ? formatCurrency(data.currentMonth) : formatCurrency(0)}</div>
                      <p className="text-xs text-muted-foreground">
                         المتوسط اليومي للشهر الحالي
                     </p>
                     <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-                        {data.previousMonths.map(item => (
+                        {hasData && data.previousMonths.map(item => (
                             <div key={item.month} className="flex justify-between">
                                 <span>{item.month}</span>
                                 <span>{formatCurrency(item.average)}</span>

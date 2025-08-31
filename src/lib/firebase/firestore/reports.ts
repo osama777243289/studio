@@ -247,14 +247,21 @@ export const getBalanceSheetData = async (): Promise<BalanceSheetData> => {
 const getMonthlyMetrics = async (startDate: Date, endDate: Date) => {
     const accounts = await processAccountsForReports(false, startDate, endDate);
     
-    const totalRevenuesWithVat = Math.abs(getReportAccounts(accounts, 'Revenues').find(a => a.level === 1)?.balance || 0);
-    const totalRevenues = totalRevenuesWithVat / 1.15; // Calculate pre-tax revenue
+    const getBalanceForGroup = (group: Account['group']) => {
+        const rootAccount = accounts.find(a => a.group === group && a.level === 1);
+        if (!rootAccount) return 0;
+        return rootAccount.type === 'Credit' ? rootAccount.closingCredit - rootAccount.closingDebit : rootAccount.closingDebit - rootAccount.closingCredit;
+    };
     
-    const expensesWithCogs = getReportAccounts(accounts, 'Expenses');
-    const totalCOGS = expensesWithCogs.find(e => e.code === '51')?.balance || 0;
+    const totalRevenuesWithVat = getBalanceForGroup('Revenues');
+    const totalRevenues = totalRevenuesWithVat / 1.15;
+    
+    const expensesWithCogs = accounts.filter(a => a.group === 'Expenses');
+    const totalCOGS = expensesWithCogs.find(e => e.code === '51')?.closingDebit || 0;
+    
     const totalOperatingExpenses = expensesWithCogs
       .filter(e => !e.code.startsWith('51') && e.level === 2)
-      .reduce((sum, acc) => sum + acc.balance, 0);
+      .reduce((sum, acc) => sum + acc.closingDebit, 0);
       
     const grossProfit = totalRevenues - totalCOGS;
     const netIncome = grossProfit - totalOperatingExpenses;
