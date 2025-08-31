@@ -247,12 +247,15 @@ export const getBalanceSheetData = async (): Promise<BalanceSheetData> => {
 const getMonthlyMetrics = async (startDate: Date, endDate: Date) => {
     const accounts = await processAccountsForReports(false, startDate, endDate);
     
-    const totalRevenues = Math.abs(getReportAccounts(accounts, 'Revenues').find(a => a.level === 1)?.balance || 0);
+    const totalRevenuesWithVat = Math.abs(getReportAccounts(accounts, 'Revenues').find(a => a.level === 1)?.balance || 0);
+    const totalRevenues = totalRevenuesWithVat / 1.15; // Calculate pre-tax revenue
+    
     const expensesWithCogs = getReportAccounts(accounts, 'Expenses');
     const totalCOGS = expensesWithCogs.find(e => e.code === '51')?.balance || 0;
     const totalOperatingExpenses = expensesWithCogs
       .filter(e => !e.code.startsWith('51') && e.level === 2)
       .reduce((sum, acc) => sum + acc.balance, 0);
+      
     const grossProfit = totalRevenues - totalCOGS;
     const netIncome = grossProfit - totalOperatingExpenses;
     
@@ -363,5 +366,3 @@ export const getMonthlyChartData = async (): Promise<MonthlyData[]> => {
          }
     });
 };
-
-    
