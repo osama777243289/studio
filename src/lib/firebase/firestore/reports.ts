@@ -250,10 +250,14 @@ const getMonthlyMetrics = async (startDate: Date, endDate: Date) => {
     const getBalanceForGroup = (group: Account['group']) => {
         const rootAccount = accounts.find(a => a.group === group && a.level === 1);
         if (!rootAccount) return 0;
-        return rootAccount.type === 'Credit' ? rootAccount.closingCredit - rootAccount.closingDebit : rootAccount.closingDebit - rootAccount.closingCredit;
+        return rootAccount.type === 'Credit' 
+            ? rootAccount.closingCredit - rootAccount.closingDebit 
+            : rootAccount.closingDebit - rootAccount.closingCredit;
     };
     
+    // إجمالي الإيرادات من الحساب الرئيسي للإيرادات (شامل الضريبة)
     const totalRevenuesWithVat = getBalanceForGroup('Revenues');
+    // إجمالي الإيرادات الصافية (بعد خصم ضريبة القيمة المضافة)
     const totalRevenues = totalRevenuesWithVat / 1.15;
     
     const expensesWithCogs = accounts.filter(a => a.group === 'Expenses');
