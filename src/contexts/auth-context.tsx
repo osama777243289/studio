@@ -25,7 +25,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     } catch (error) {
       console.error('Failed to parse session cookie:', error);
-      setUser(null);
+      // If parsing fails, treat the user as not logged in.
+      setUser(null); 
     } finally {
       setLoading(false);
     }
