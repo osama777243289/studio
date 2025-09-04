@@ -94,10 +94,11 @@ export function SalesForm({ accounts }: SalesFormProps) {
   });
 
   useEffect(() => {
+    // This effect ensures the form's internal state is updated when the user logs in.
     if (user?.name) {
       form.setValue('salesperson', user.name, { shouldValidate: true });
     }
-  }, [user, form]);
+  }, [user, form.setValue]);
 
   const { fields: cardFields, append: appendCard, remove: removeCard } = useFieldArray({
     control: form.control,
@@ -229,7 +230,13 @@ export function SalesForm({ accounts }: SalesFormProps) {
                   <User className="h-5 w-5" />
                   <Label htmlFor="salesperson">مندوب المبيعات</Label>
                 </div>
-                <Input id="salesperson" placeholder="جاري تحميل اسم المستخدم..." {...form.register('salesperson')} readOnly className="bg-muted" />
+                <Input 
+                  id="salesperson" 
+                  value={user?.name || ''} 
+                  placeholder="جاري تحميل اسم المستخدم..." 
+                  readOnly 
+                  className="bg-muted" 
+                />
                 {form.formState.errors.salesperson && <p className="text-sm font-medium text-destructive">{form.formState.errors.salesperson.message as string}</p>}
               </div>
                <div className="space-y-2">
