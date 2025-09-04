@@ -13,7 +13,8 @@ import {
   query,
   orderBy,
   writeBatch,
-  where
+  where,
+  setDoc
 } from 'firebase/firestore';
 import { createUserWithEmailAndPassword, updatePassword, deleteUser as deleteAuthUser } from 'firebase/auth';
 
@@ -95,7 +96,7 @@ export const getUsers = async (): Promise<User[]> => {
 // Add a new user
 export const addUser = async (userData: UserFormData): Promise<string> => {
     if (!userData.email || !userData.password) {
-        throw new Error("Email and password are required to create a new user.");
+        throw new Error("البريد الإلكتروني وكلمة المرور مطلوبان لإنشاء مستخدم جديد.");
     }
     
     // Step 1: Create user in Firebase Authentication
@@ -119,7 +120,7 @@ export const addUser = async (userData: UserFormData): Promise<string> => {
 
     // Use the UID from Auth as the document ID in Firestore for easy mapping
     const userDocRef = doc(usersCol, user.uid);
-    await writeBatch(db).set(userDocRef, newUser).commit();
+    await setDoc(userDocRef, newUser);
 
     return user.uid;
 };
@@ -136,7 +137,6 @@ export const updateUser = async (userId: string, userData: Partial<UserFormData>
     // For now, we assume the admin has rights to do this or we handle it differently.
     // A better approach would be a separate "change password" flow for the user.
     // As a simplification, we can't update other users' passwords directly this way.
-    // We will skip password update from this form for now to avoid re-auth complexity.
     console.warn("Password update skipped. Requires re-authentication which is not implemented in this flow.");
   }
   
@@ -144,7 +144,7 @@ export const updateUser = async (userId: string, userData: Partial<UserFormData>
     dataToSave.employeeAccountId = undefined;
   }
 
-  await updateDoc(userRef, dataToSave);
+  await updateDoc(userRef, dataToSave as any);
 };
 
 
@@ -161,3 +161,5 @@ export const deleteUser = async (userId: string): Promise<void> => {
   // because the middleware checks the Firestore document.
   console.warn(`User ${userId} deleted from Firestore. Associated Auth user was not deleted.`);
 };
+
+    
