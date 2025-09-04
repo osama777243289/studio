@@ -49,9 +49,11 @@ import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { addSaleRecord, salesRecordSchema } from '@/lib/firebase/firestore/sales';
 import { useToast } from '@/hooks/use-toast';
+import type { User as CashierUser } from '@/app/(main)/users/page';
 
 interface SalesFormProps {
     accounts: Account[];
+    cashiers: CashierUser[];
 }
 
 // Helper to flatten the account tree and filter by classification
@@ -74,7 +76,7 @@ const getAccountsByClassification = (accounts: Account[], classifications: strin
     return flattened;
 };
 
-export function SalesForm({ accounts }: SalesFormProps) {
+export function SalesForm({ accounts, cashiers }: SalesFormProps) {
   const { toast } = useToast();
 
   const form = useForm<any>({
@@ -218,9 +220,27 @@ export function SalesForm({ accounts }: SalesFormProps) {
               <div className="space-y-2">
                 <div className='flex items-center gap-2'>
                   <User className="h-5 w-5" />
-                  <Label htmlFor="salesperson">مندوب المبيعات</Label>
+                  <Label htmlFor="salesperson">مندوب المبيعات (الكاشير)</Label>
                 </div>
-                 <Input id="salesperson" {...form.register('salesperson')} placeholder="أدخل اسم مندوب المبيعات" />
+                <Controller
+                    name="salesperson"
+                    control={form.control}
+                    render={({ field }) => (
+                        <Select onValueChange={field.onChange} value={field.value}>
+                            <SelectTrigger id="salesperson">
+                                <SelectValue placeholder="اختر الكاشير..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {cashiers.map(cashier => (
+                                    <SelectItem key={cashier.id} value={cashier.name}>
+                                        {cashier.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    )}
+                />
+                 {form.formState.errors.salesperson && <p className="text-sm font-medium text-destructive">{(form.formState.errors.salesperson as any).message}</p>}
               </div>
                <div className="space-y-2">
                 <div className='flex items-center gap-2'>

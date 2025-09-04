@@ -4,28 +4,39 @@
 import { SalesForm } from '@/components/sales/sales-form';
 import { SalesRecords } from '@/components/sales/sales-records';
 import { Account } from '@/components/chart-of-accounts/account-tree';
+import { User } from '@/app/(main)/users/page';
 import { useEffect, useState } from 'react';
 import { getAccounts } from '@/lib/firebase/firestore/accounts';
+import { getUsers } from '@/lib/firebase/firestore/users';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
 
 export default function SalesPage() {
     const [accounts, setAccounts] = useState<Account[]>([]);
+    const [cashiers, setCashiers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchAccounts = async () => {
+        const fetchData = async () => {
             setLoading(true);
             try {
-                const fetchedAccounts = await getAccounts();
+                const [fetchedAccounts, fetchedUsers] = await Promise.all([
+                    getAccounts(),
+                    getUsers()
+                ]);
+                
+                const filteredCashiers = fetchedUsers.filter(user => user.role.includes('Cashier'));
+
                 setAccounts(fetchedAccounts);
+                setCashiers(filteredCashiers);
+
             } catch (error) {
-                console.error("Failed to fetch accounts:", error);
+                console.error("Failed to fetch data:", error);
             } finally {
                 setLoading(false);
             }
         };
-        fetchAccounts();
+        fetchData();
     }, []);
 
     if (loading) {
@@ -64,7 +75,7 @@ export default function SalesPage() {
     return (
         <div className="flex flex-col gap-8 justify-center items-center pt-8">
             <Card className="w-full max-w-2xl">
-                <SalesForm accounts={accounts} />
+                <SalesForm accounts={accounts} cashiers={cashiers} />
             </Card>
             <div className="w-full max-w-4xl">
                 <SalesRecords />
