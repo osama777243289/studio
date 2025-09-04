@@ -2,6 +2,7 @@
 'use client';
 
 import { SalesForm } from '@/components/sales/sales-form';
+import { SalesRecords } from '@/components/sales/sales-records';
 import { Account } from '@/components/chart-of-accounts/account-tree';
 import { useEffect, useState } from 'react';
 import { getAccounts } from '@/lib/firebase/firestore/accounts';
