@@ -42,24 +42,22 @@ export async function loginUser(
   try {
     const usersRef = collection(db, 'users');
     
-    // Normalize mobile number to find the user
     let normalizedMobile = mobile.startsWith('+') ? mobile.substring(1) : mobile;
     normalizedMobile = normalizedMobile.startsWith('00') ? normalizedMobile.substring(2) : normalizedMobile;
 
     const possibleMobiles = new Set<string>();
-    possibleMobiles.add(mobile); // The raw input
-    possibleMobiles.add(normalizedMobile); // a normalized version
+    possibleMobiles.add(mobile);
+    possibleMobiles.add(normalizedMobile);
     
-    // Logic for Saudi numbers
     if (normalizedMobile.startsWith('966')) {
-      const withoutCountryCode = normalizedMobile.substring(3); // e.g., 5...
+      const withoutCountryCode = normalizedMobile.substring(3);
       possibleMobiles.add(withoutCountryCode);
-      possibleMobiles.add(`0${withoutCountryCode}`); // e.g., 05...
-    } else if (normalizedMobile.startsWith('05')) { // e.g., 05...
-      possibleMobiles.add(`966${normalizedMobile.substring(1)}`); // e.g., 9665...
-    } else if (normalizedMobile.startsWith('5')) { // e.g., 5...
-        possibleMobiles.add(`966${normalizedMobile}`); // e.g., 9665...
-        possibleMobiles.add(`0${normalizedMobile}`); // e.g., 05...
+      possibleMobiles.add(`0${withoutCountryCode}`);
+    } else if (normalizedMobile.startsWith('05')) {
+      possibleMobiles.add(`966${normalizedMobile.substring(1)}`);
+    } else if (normalizedMobile.startsWith('5')) {
+        possibleMobiles.add(`966${normalizedMobile}`);
+        possibleMobiles.add(`0${normalizedMobile}`);
     }
     
     const whereClauses = Array.from(possibleMobiles).map(m => where('mobile', '==', m));
@@ -75,14 +73,10 @@ export async function loginUser(
       return { message: 'رقم الجوال أو كلمة المرور غير صحيحة.' };
     }
 
-    // Since we are not storing passwords securely, we assume if the user exists, the login is successful.
-    // This is for demonstration purposes and is NOT secure for a production environment.
     const userDoc = querySnapshot.docs[0];
     const user = { id: userDoc.id, ...userDoc.data() };
 
-    // Create a mock session cookie
     cookies().set('session', JSON.stringify(user), {
-      httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: 60 * 60 * 24 * 7, // One week
       path: '/',

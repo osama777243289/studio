@@ -2,17 +2,20 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  const session = request.cookies.get('session');
+  const sessionCookie = request.cookies.get('session');
+  const isLoggedIn = !!sessionCookie;
 
-  // Return to /login if don't have a session
-  if (!session) {
-    if (request.nextUrl.pathname !== '/login') {
-      return NextResponse.redirect(new URL('/login', request.url));
+  const isAuthPage = request.nextUrl.pathname === '/login';
+
+  if (isAuthPage) {
+    // If the user is logged in and tries to access login page, redirect to dashboard
+    if (isLoggedIn) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
     }
   } else {
-    // If user has a session and tries to access /login, redirect to dashboard
-    if (request.nextUrl.pathname === '/login') {
-        return NextResponse.redirect(new URL('/dashboard', request.url));
+    // If the user is not logged in and tries to access a protected page, redirect to login
+    if (!isLoggedIn) {
+      return NextResponse.redirect(new URL('/login', request.url));
     }
   }
   
