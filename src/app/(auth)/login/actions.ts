@@ -1,3 +1,4 @@
+
 'use server';
 
 import { z } from 'zod';
@@ -40,16 +41,15 @@ export async function loginUser(
 
   try {
     // Normalize mobile number to handle different formats (+, 00, or none)
-    const normalizedMobile = mobile.replace(/^\+|^00/, '');
-    const possibleMobileFormats = [
-        normalizedMobile,
-        `+${normalizedMobile}`,
-        `00${normalizedMobile}`
-    ];
+    const normalizedMobile = mobile.replace(/^(\+|00)/, '');
     
     // Step 1: Find user by mobile number to get their email
     const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('mobile', 'in', possibleMobileFormats));
+    const q = query(usersRef, or(
+        where('mobile', '==', normalizedMobile),
+        where('mobile', '==', `+${normalizedMobile}`),
+        where('mobile', '==', `00${normalizedMobile}`)
+    ));
     const querySnapshot = await getDocs(q);
 
     if (querySnapshot.empty) {
