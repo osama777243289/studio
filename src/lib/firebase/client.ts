@@ -1,7 +1,7 @@
 
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApp, getApps } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, onIdTokenChanged } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getAnalytics, isSupported } from "firebase/analytics";
@@ -25,6 +25,17 @@ const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 const storage = getStorage(app);
+
+// Sync auth token with a cookie for server-side access
+onIdTokenChanged(auth, async (user) => {
+    if (user) {
+        const token = await user.getIdToken();
+        document.cookie = `firebase-auth-token=${token}; path=/; max-age=${60 * 60 * 24 * 7}`; // 7 days
+    } else {
+        document.cookie = 'firebase-auth-token=; path=/; max-age=-1;';
+    }
+});
+
 
 // Initialize Analytics and export it
 const analytics = isSupported().then(yes => yes ? getAnalytics(app) : null);

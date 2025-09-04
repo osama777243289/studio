@@ -6,10 +6,22 @@ import Link from 'next/link';
 import {
   Menu,
   Landmark,
+  LogOut,
 } from 'lucide-react';
 import { Nav, type NavLink } from '@/components/nav';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { logoutUser } from '../(auth)/login/actions';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
 
 const navLinks: NavLink[] = [
   { title: 'لوحة التحكم', href: '/dashboard', icon: 'LayoutDashboard' },
@@ -26,6 +38,41 @@ const navLinks: NavLink[] = [
   { title: 'إدارة الأدوار', href: '/roles', icon: 'ShieldCheck' },
   { title: 'إعدادات البيانات', href: '/data-settings', icon: 'Database' },
 ];
+
+function UserNav() {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+          <Avatar className="h-10 w-10">
+            <AvatarImage src="https://picsum.photos/seed/user/40/40" alt="User Avatar" />
+            <AvatarFallback>U</AvatarFallback>
+          </Avatar>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56" align="end" forceMount>
+        <DropdownMenuLabel className="font-normal">
+          <div className="flex flex-col space-y-1">
+            <p className="text-sm font-medium leading-none">المستخدم الحالي</p>
+            <p className="text-xs leading-none text-muted-foreground">
+              user@example.com
+            </p>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <form action={logoutUser}>
+            <DropdownMenuItem asChild>
+                 <Button type="submit" variant="ghost" className="w-full justify-start cursor-pointer">
+                    <LogOut className="ml-2 h-4 w-4" />
+                    تسجيل الخروج
+                </Button>
+            </DropdownMenuItem>
+        </form>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
 
@@ -69,6 +116,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             </SheetContent>
           </Sheet>
           <div className="w-full flex-1" />
+           <UserNav />
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 sm:p-6 md:p-8 overflow-y-auto">
           {children}
