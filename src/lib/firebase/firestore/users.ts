@@ -80,6 +80,8 @@ export const getUsers = async (): Promise<User[]> => {
 // Add a new user
 export const addUser = async (userData: UserFormData): Promise<string> => {
     const usersCol = collection(db, 'users');
+    // Note: We are not storing the password. This is insecure.
+    // For a real app, hash the password before storing.
     const { confirmPassword, password, ...dataToSave } = userData;
 
     if (dataToSave.type !== 'employee') {
@@ -101,6 +103,7 @@ export const addUser = async (userData: UserFormData): Promise<string> => {
 export const updateUser = async (userId: string, userData: Partial<UserFormData>): Promise<void> => {
   const userRef = doc(db, 'users', userId);
   
+  // Note: We are not storing the password. This is insecure.
   const { confirmPassword, password, ...dataToSave } = userData;
   
   if (dataToSave.type !== 'employee') {
