@@ -46,6 +46,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { z } from 'zod';
+import { cn } from '@/lib/utils';
 
 const getStatusVariant = (status: CashAdvanceRequest['status']) => {
   switch (status) {
