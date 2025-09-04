@@ -54,6 +54,7 @@ import type { User as UserType } from '@/app/(main)/users/page';
 
 interface SalesFormProps {
     accounts: Account[];
+    allUsers: UserType[];
     currentUser: Omit<UserType, 'password'>;
 }
 
@@ -77,7 +78,7 @@ const getAccountsByClassification = (accounts: Account[], classifications: strin
     return flattened;
 };
 
-export function SalesForm({ accounts, currentUser }: SalesFormProps) {
+export function SalesForm({ accounts, allUsers, currentUser }: SalesFormProps) {
   const { toast } = useToast();
 
   const form = useForm<any>({
@@ -152,7 +153,7 @@ export function SalesForm({ accounts, currentUser }: SalesFormProps) {
   };
 
   return (
-     <form onSubmit={form.handleSubmit(onSubmit)}>
+     <form onSubmit={form.handleSubmit(onSubmit)} key={currentUser.id}>
       <CardHeader>
         <div className="flex items-center gap-2">
             <Pencil className="h-6 w-6" />
@@ -223,11 +224,23 @@ export function SalesForm({ accounts, currentUser }: SalesFormProps) {
                   <User className="h-5 w-5" />
                   <Label htmlFor="salesperson">مندوب المبيعات</Label>
                 </div>
-                <Input 
-                  id="salesperson" 
-                  {...form.register('salesperson')}
-                  readOnly 
-                  className="bg-muted" 
+                <Controller
+                    name="salesperson"
+                    control={form.control}
+                    render={({ field }) => (
+                        <Select onValueChange={field.onChange} value={field.value}>
+                            <SelectTrigger id="salesperson">
+                                <SelectValue placeholder="اختر مندوب المبيعات" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {allUsers.map(user => (
+                                    <SelectItem key={user.id} value={user.name}>
+                                        {user.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    )}
                 />
                 {form.formState.errors.salesperson && <p className="text-sm font-medium text-destructive">{form.formState.errors.salesperson.message as string}</p>}
               </div>

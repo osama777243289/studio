@@ -7,15 +7,15 @@ import { useEffect, useState } from 'react';
 import { getAccounts } from '@/lib/firebase/firestore/accounts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
-import { SalesRecords } from '@/components/sales/sales-records';
 import { useAuth } from '@/contexts/auth-context';
 import type { User } from '@/app/(main)/users/page';
+import { getUsers } from '@/lib/firebase/firestore/users';
 
-function SalesPageContent({ accounts, user }: { accounts: Account[], user: Omit<User, 'password'> }) {
+function SalesPageContent({ accounts, allUsers, currentUser }: { accounts: Account[], allUsers: User[], currentUser: Omit<User, 'password'> }) {
     return (
         <div className="flex flex-col gap-8 justify-center items-center pt-8">
             <Card className="w-full max-w-2xl">
-                <SalesForm accounts={accounts} currentUser={user} />
+                <SalesForm accounts={accounts} allUsers={allUsers} currentUser={currentUser} />
             </Card>
             <div className="w-full max-w-4xl">
                 <SalesRecords />
@@ -27,25 +27,30 @@ function SalesPageContent({ accounts, user }: { accounts: Account[], user: Omit<
 
 export default function SalesPage() {
     const [accounts, setAccounts] = useState<Account[]>([]);
-    const [loadingAccounts, setLoadingAccounts] = useState(true);
+    const [allUsers, setAllUsers] = useState<User[]>([]);
+    const [loadingData, setLoadingData] = useState(true);
     const { user, loading: loadingUser } = useAuth();
 
     useEffect(() => {
-        const fetchAllAccounts = async () => {
-            setLoadingAccounts(true);
+        const fetchAllData = async () => {
+            setLoadingData(true);
             try {
-                const allAccounts = await getAccounts();
-                setAccounts(allAccounts);
+                const [fetchedAccounts, fetchedUsers] = await Promise.all([
+                   getAccounts(),
+                   getUsers()
+                ]);
+                setAccounts(fetchedAccounts);
+                setAllUsers(fetchedUsers);
             } catch (error) {
-                console.error("Failed to fetch accounts for sales page:", error);
+                console.error("Failed to fetch data for sales page:", error);
             } finally {
-                setLoadingAccounts(false);
+                setLoadingData(false);
             }
         };
-        fetchAllAccounts();
+        fetchAllData();
     }, []);
 
-    const isLoading = loadingAccounts || loadingUser;
+    const isLoading = loadingData || loadingUser;
 
     if (isLoading) {
         return (
@@ -81,10 +86,8 @@ export default function SalesPage() {
     }
     
     if (!user) {
-        // This can happen if the user is not logged in but somehow reached this page.
-        // You can redirect or show an error message.
         return <p>الرجاء تسجيل الدخول لعرض هذه الصفحة.</p>
     }
 
-    return <SalesPageContent accounts={accounts} user={user} />;
+    return <SalesPageContent accounts={accounts} allUsers={allUsers} currentUser={user} />;
 }

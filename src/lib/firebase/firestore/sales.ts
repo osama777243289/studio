@@ -54,7 +54,7 @@ const creditAccountDetailSchema = z.object({
 export const salesRecordSchema = z.object({
   date: z.date(),
   period: z.enum(['Morning', 'Evening']),
-  salesperson: z.string().min(2, 'Salesperson name is required.'),
+  salesperson: z.string().min(1, 'مندوب المبيعات مطلوب.'),
   postingNumber: z.string().optional(),
   cash: z.object({
     accountId: z.string().min(1, 'يجب تحديد حساب نقدي.'),
