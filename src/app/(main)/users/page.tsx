@@ -20,14 +20,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { PlusCircle, MoreHorizontal, Loader2, RefreshCw, Pencil, Trash2, AlertCircle } from "lucide-react"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { PlusCircle, MoreHorizontal, Loader2, RefreshCw, Pencil, Trash2, AlertCircle, Eye } from "lucide-react"
 import { UserDialog, type UserFormData } from '@/components/users/user-dialog';
 import { DeleteUserDialog } from '@/components/users/delete-user-dialog';
 import { Account } from '@/components/chart-of-accounts/account-tree';
@@ -37,6 +30,7 @@ import { getAccounts } from '@/lib/firebase/firestore/accounts';
 import { getRoles } from '@/lib/firebase/firestore/roles';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { UserViewDialog } from '@/components/users/user-view-dialog';
 
 export interface PagePermissions {
     view?: boolean;
@@ -85,6 +79,7 @@ export default function UsersPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
@@ -131,6 +126,11 @@ export default function UsersPage() {
      setSelectedUser(user);
      setIsDeleteDialogOpen(true);
   };
+
+  const handleViewUser = (user: User) => {
+    setSelectedUser(user);
+    setIsViewDialogOpen(true);
+  }
 
   const confirmSave = async (userData: UserFormData) => {
     setLoading(true);
@@ -254,6 +254,9 @@ export default function UsersPage() {
                         </TableCell>
                         <TableCell className="text-left">
                             <div className='flex items-center justify-end'>
+                                <Button variant="ghost" size="icon" onClick={() => handleViewUser(user)}>
+                                    <Eye className="h-4 w-4 text-muted-foreground" />
+                                </Button>
                                 <Button variant="ghost" size="icon" onClick={() => handleEditUser(user)}>
                                     <Pencil className="h-4 w-4 text-blue-500" />
                                 </Button>
@@ -287,6 +290,13 @@ export default function UsersPage() {
         onClose={() => setIsDeleteDialogOpen(false)}
         onConfirm={confirmDelete}
         userName={selectedUser?.name}
+      />
+
+      <UserViewDialog
+        isOpen={isViewDialogOpen}
+        onClose={() => setIsViewDialogOpen(false)}
+        user={selectedUser}
+        accounts={accounts}
       />
     </>
   )
