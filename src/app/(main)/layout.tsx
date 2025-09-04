@@ -18,6 +18,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { logoutUser } from '../(auth)/login/actions';
 import { AuthProvider, useAuth } from '@/contexts/auth-context';
+import { SessionBar } from '@/components/session-bar';
 
 const navLinks: NavLink[] = [
   { title: 'لوحة التحكم', href: '/dashboard', icon: 'LayoutDashboard' },
@@ -117,9 +118,10 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
           <div className="w-full flex-1" />
            <UserNav />
         </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 sm:p-6 md:p-8 overflow-y-auto">
+        <main className="flex flex-1 flex-col gap-4 p-4 sm:p-6 md:p-8 overflow-y-auto mb-10">
           {children}
         </main>
+        <SessionBar />
       </div>
     </div>
   );
