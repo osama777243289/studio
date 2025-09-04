@@ -49,11 +49,12 @@ import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { addSaleRecord, salesRecordSchema } from '@/lib/firebase/firestore/sales';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/auth-context';
+import type { User as UserType } from '@/app/(main)/users/page';
 
 
 interface SalesFormProps {
     accounts: Account[];
+    currentUser: Omit<UserType, 'password'> | null;
 }
 
 // Helper to flatten the account tree and filter by classification
@@ -76,29 +77,21 @@ const getAccountsByClassification = (accounts: Account[], classifications: strin
     return flattened;
 };
 
-export function SalesForm({ accounts }: SalesFormProps) {
+export function SalesForm({ accounts, currentUser }: SalesFormProps) {
   const { toast } = useToast();
-  const { user } = useAuth();
 
   const form = useForm<any>({
     resolver: zodResolver(salesRecordSchema),
     defaultValues: {
         date: new Date(),
         period: 'Morning',
-        salesperson: '',
+        salesperson: currentUser?.name || '',
         postingNumber: '',
         cash: { accountId: '', amount: 0 },
         cards: [],
         credits: [],
     }
   });
-
-  useEffect(() => {
-    // This effect ensures the form's internal state is updated when the user logs in.
-    if (user?.name) {
-      form.setValue('salesperson', user.name, { shouldValidate: true });
-    }
-  }, [user, form.setValue]);
 
   const { fields: cardFields, append: appendCard, remove: removeCard } = useFieldArray({
     control: form.control,
@@ -124,7 +117,7 @@ export function SalesForm({ accounts }: SalesFormProps) {
       form.reset({
         date: new Date(),
         period: 'Morning',
-        salesperson: user?.name || '',
+        salesperson: currentUser?.name || '',
         postingNumber: '',
         cash: { accountId: '', amount: 0 },
         cards: [],
@@ -232,7 +225,7 @@ export function SalesForm({ accounts }: SalesFormProps) {
                 </div>
                 <Input 
                   id="salesperson" 
-                  value={user?.name || ''} 
+                  {...form.register('salesperson')}
                   placeholder="جاري تحميل اسم المستخدم..." 
                   readOnly 
                   className="bg-muted" 

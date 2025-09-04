@@ -6,17 +6,18 @@ import { Account } from '@/components/chart-of-accounts/account-tree';
 import { useEffect, useState } from 'react';
 import { getAccounts } from '@/lib/firebase/firestore/accounts';
 import { Skeleton } from '@/components/ui/skeleton';
-import { SalesRecord } from '@/lib/firebase/firestore/sales';
 import { Card } from '@/components/ui/card';
 import { SalesRecords } from '@/components/sales/sales-records';
+import { useAuth } from '@/contexts/auth-context';
 
 export default function SalesPage() {
     const [accounts, setAccounts] = useState<Account[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loadingAccounts, setLoadingAccounts] = useState(true);
+    const { user, loading: loadingUser } = useAuth();
 
     useEffect(() => {
         const fetchAllAccounts = async () => {
-            setLoading(true);
+            setLoadingAccounts(true);
             try {
                 const allAccounts = await getAccounts();
                 setAccounts(allAccounts);
@@ -24,17 +25,18 @@ export default function SalesPage() {
                 console.error("Failed to fetch accounts for sales page:", error);
                 // Handle error appropriately, maybe show a toast
             } finally {
-                setLoading(false);
+                setLoadingAccounts(false);
             }
         };
         fetchAllAccounts();
     }, []);
 
+    const isLoading = loadingAccounts || loadingUser;
 
   return (
     <div className="flex flex-col gap-8 justify-center items-center pt-8">
       <Card className="w-full max-w-2xl">
-        {loading ? (
+        {isLoading ? (
              <div className="space-y-8 p-6">
                 <Skeleton className="h-8 w-1/2" />
                 <div className="space-y-4">
@@ -52,7 +54,7 @@ export default function SalesPage() {
                 <Skeleton className="h-10 w-full" />
             </div>
         ) : (
-             <SalesForm accounts={accounts}/>
+             <SalesForm accounts={accounts} currentUser={user}/>
         )}
       </Card>
       <div className="w-full max-w-4xl">
