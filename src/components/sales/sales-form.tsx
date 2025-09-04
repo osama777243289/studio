@@ -94,8 +94,8 @@ export function SalesForm({ accounts }: SalesFormProps) {
   });
 
   useEffect(() => {
-    if (user?.name && !form.getValues('salesperson')) {
-      form.setValue('salesperson', user.name, { shouldValidate: true, shouldDirty: true });
+    if (user?.name) {
+      form.setValue('salesperson', user.name, { shouldValidate: true });
     }
   }, [user, form]);
 
@@ -229,7 +229,7 @@ export function SalesForm({ accounts }: SalesFormProps) {
                   <User className="h-5 w-5" />
                   <Label htmlFor="salesperson">مندوب المبيعات</Label>
                 </div>
-                <Input id="salesperson" placeholder="اسم المستخدم الحالي..." {...form.register('salesperson')} readOnly className="bg-muted" />
+                <Input id="salesperson" placeholder="جاري تحميل اسم المستخدم..." {...form.register('salesperson')} readOnly className="bg-muted" />
                 {form.formState.errors.salesperson && <p className="text-sm font-medium text-destructive">{form.formState.errors.salesperson.message as string}</p>}
               </div>
                <div className="space-y-2">
