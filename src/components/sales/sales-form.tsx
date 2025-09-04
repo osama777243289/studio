@@ -54,7 +54,7 @@ import type { User as UserType } from '@/app/(main)/users/page';
 
 interface SalesFormProps {
     accounts: Account[];
-    currentUser: Omit<UserType, 'password'> | null;
+    currentUser: Omit<UserType, 'password'>;
 }
 
 // Helper to flatten the account tree and filter by classification
@@ -85,22 +85,13 @@ export function SalesForm({ accounts, currentUser }: SalesFormProps) {
     defaultValues: {
         date: new Date(),
         period: 'Morning',
-        salesperson: currentUser?.name || '',
+        salesperson: currentUser.name,
         postingNumber: '',
         cash: { accountId: '', amount: 0 },
         cards: [],
         credits: [],
     }
   });
-
-  useEffect(() => {
-    if (currentUser?.name) {
-      form.reset({
-        ...form.getValues(),
-        salesperson: currentUser.name
-      });
-    }
-  }, [currentUser, form]);
 
   const { fields: cardFields, append: appendCard, remove: removeCard } = useFieldArray({
     control: form.control,
@@ -126,7 +117,7 @@ export function SalesForm({ accounts, currentUser }: SalesFormProps) {
       form.reset({
         date: new Date(),
         period: 'Morning',
-        salesperson: currentUser?.name || '',
+        salesperson: currentUser.name,
         postingNumber: '',
         cash: { accountId: '', amount: 0 },
         cards: [],
@@ -161,7 +152,7 @@ export function SalesForm({ accounts, currentUser }: SalesFormProps) {
   };
 
   return (
-     <form onSubmit={form.handleSubmit(onSubmit)} key={currentUser?.id || 'loading'}>
+     <form onSubmit={form.handleSubmit(onSubmit)}>
       <CardHeader>
         <div className="flex items-center gap-2">
             <Pencil className="h-6 w-6" />
@@ -235,7 +226,6 @@ export function SalesForm({ accounts, currentUser }: SalesFormProps) {
                 <Input 
                   id="salesperson" 
                   {...form.register('salesperson')}
-                  placeholder="جاري تحميل اسم المستخدم..." 
                   readOnly 
                   className="bg-muted" 
                 />
