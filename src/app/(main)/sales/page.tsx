@@ -10,48 +10,28 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
 import { useAuth } from '@/contexts/auth-context';
 import type { User } from '@/app/(main)/users/page';
-import { getUsers } from '@/lib/firebase/firestore/users';
-
-function SalesPageContent({ accounts, allUsers, currentUser }: { accounts: Account[], allUsers: User[], currentUser: Omit<User, 'password'> }) {
-    return (
-        <div className="flex flex-col gap-8 justify-center items-center pt-8">
-            <Card className="w-full max-w-2xl">
-                <SalesForm accounts={accounts} allUsers={allUsers} currentUser={currentUser} />
-            </Card>
-            <div className="w-full max-w-4xl">
-                <SalesRecords />
-            </div>
-        </div>
-    );
-}
-
 
 export default function SalesPage() {
     const [accounts, setAccounts] = useState<Account[]>([]);
-    const [allUsers, setAllUsers] = useState<User[]>([]);
-    const [loadingData, setLoadingData] = useState(true);
+    const [loadingAccounts, setLoadingAccounts] = useState(true);
     const { user, loading: loadingUser } = useAuth();
 
     useEffect(() => {
-        const fetchAllData = async () => {
-            setLoadingData(true);
+        const fetchAccounts = async () => {
+            setLoadingAccounts(true);
             try {
-                const [fetchedAccounts, fetchedUsers] = await Promise.all([
-                   getAccounts(),
-                   getUsers()
-                ]);
+                const fetchedAccounts = await getAccounts();
                 setAccounts(fetchedAccounts);
-                setAllUsers(fetchedUsers);
             } catch (error) {
-                console.error("Failed to fetch data for sales page:", error);
+                console.error("Failed to fetch accounts:", error);
             } finally {
-                setLoadingData(false);
+                setLoadingAccounts(false);
             }
         };
-        fetchAllData();
+        fetchAccounts();
     }, []);
 
-    const isLoading = loadingData || loadingUser;
+    const isLoading = loadingAccounts || loadingUser;
 
     if (isLoading) {
         return (
@@ -87,8 +67,17 @@ export default function SalesPage() {
     }
     
     if (!user) {
-        return <p>الرجاء تسجيل الدخول لعرض هذه الصفحة.</p>
+        return <p>الرجاء تسجيل الدخول لعرض هذه الصفحة.</p>;
     }
 
-    return <SalesPageContent accounts={accounts} allUsers={allUsers} currentUser={user} />;
+    return (
+        <div className="flex flex-col gap-8 justify-center items-center pt-8">
+            <Card className="w-full max-w-2xl">
+                <SalesForm accounts={accounts} currentUser={user} />
+            </Card>
+            <div className="w-full max-w-4xl">
+                <SalesRecords />
+            </div>
+        </div>
+    );
 }

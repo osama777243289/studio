@@ -54,7 +54,6 @@ import type { User as UserType } from '@/app/(main)/users/page';
 
 interface SalesFormProps {
     accounts: Account[];
-    allUsers: UserType[];
     currentUser: Omit<UserType, 'password'>;
 }
 
@@ -78,7 +77,7 @@ const getAccountsByClassification = (accounts: Account[], classifications: strin
     return flattened;
 };
 
-export function SalesForm({ accounts, allUsers, currentUser }: SalesFormProps) {
+export function SalesForm({ accounts, currentUser }: SalesFormProps) {
   const { toast } = useToast();
 
   const form = useForm<any>({
@@ -86,7 +85,7 @@ export function SalesForm({ accounts, allUsers, currentUser }: SalesFormProps) {
     defaultValues: {
         date: new Date(),
         period: 'Morning',
-        salesperson: currentUser.name,
+        salesperson: currentUser?.name || '',
         postingNumber: '',
         cash: { accountId: '', amount: 0 },
         cards: [],
@@ -107,6 +106,19 @@ export function SalesForm({ accounts, allUsers, currentUser }: SalesFormProps) {
   const cashAccounts = useMemo(() => getAccountsByClassification(accounts, ['كاشير']), [accounts]);
   const networkAccounts = useMemo(() => getAccountsByClassification(accounts, ['شبكات']), [accounts]);
   const customerAccounts = useMemo(() => getAccountsByClassification(accounts, ['عملاء']), [accounts]);
+  
+  // Re-initialize the form when the current user changes. This is the key to fixing the issue.
+  useEffect(() => {
+    form.reset({
+        date: new Date(),
+        period: 'Morning',
+        salesperson: currentUser?.name || '',
+        postingNumber: '',
+        cash: { accountId: '', amount: 0 },
+        cards: [],
+        credits: [],
+    });
+  }, [currentUser, form]);
 
   const onSubmit = async (data: any) => {
     try {
@@ -116,9 +128,8 @@ export function SalesForm({ accounts, allUsers, currentUser }: SalesFormProps) {
         description: `تم تسجيل المبيعات بنجاح لـ ${format(data.date, 'PPP')} (${data.period}).`
       });
       form.reset({
+        ...form.getValues(),
         date: new Date(),
-        period: 'Morning',
-        salesperson: currentUser.name,
         postingNumber: '',
         cash: { accountId: '', amount: 0 },
         cards: [],
@@ -224,25 +235,8 @@ export function SalesForm({ accounts, allUsers, currentUser }: SalesFormProps) {
                   <User className="h-5 w-5" />
                   <Label htmlFor="salesperson">مندوب المبيعات</Label>
                 </div>
-                <Controller
-                    name="salesperson"
-                    control={form.control}
-                    render={({ field }) => (
-                        <Select onValueChange={field.onChange} value={field.value}>
-                            <SelectTrigger id="salesperson">
-                                <SelectValue placeholder="اختر مندوب المبيعات" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {allUsers.map(user => (
-                                    <SelectItem key={user.id} value={user.name}>
-                                        {user.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    )}
-                />
-                {form.formState.errors.salesperson && <p className="text-sm font-medium text-destructive">{form.formState.errors.salesperson.message as string}</p>}
+                 <Input id="salesperson" value={currentUser?.name || ''} readOnly className="bg-muted/50" />
+                 <input type="hidden" {...form.register('salesperson')} />
               </div>
                <div className="space-y-2">
                 <div className='flex items-center gap-2'>
