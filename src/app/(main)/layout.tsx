@@ -3,7 +3,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Menu, Landmark, LogOut, HandCoins } from 'lucide-react';
+import { Menu, Landmark, LogOut, HandCoins, CheckCircle } from 'lucide-react';
 import { Nav, type NavLink } from '@/components/nav';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -27,6 +27,7 @@ const navLinks: NavLink[] = [
   { title: 'مطابقة المبيعات', href: '/sales-matching', icon: 'CheckSquare' },
   { title: 'ترحيل القيود', href: '/post-entries', icon: 'Send' },
   { title: 'طلبات السلفة', href: '/cash-advance', icon: 'HandCoins' },
+  { title: 'اعتماد الصرف', href: '/disbursement-approval', icon: 'CheckCircle' },
   { title: 'دليل الحسابات', href: '/chart-of-accounts', icon: 'Network' },
   { title: 'اليومية العامة', href: '/general-journal', icon: 'Book' },
   { title: 'التدفق النقدي', href: '/cash-flow', icon: 'TrendingUp' },
