@@ -6,7 +6,14 @@ export async function middleware(request: NextRequest) {
 
   // Return to /login if don't have a session
   if (!session) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    if (request.nextUrl.pathname !== '/login') {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+  } else {
+    // If user has a session and tries to access /login, redirect to dashboard
+    if (request.nextUrl.pathname === '/login') {
+        return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
   }
   
   return NextResponse.next();
@@ -14,5 +21,5 @@ export async function middleware(request: NextRequest) {
 
 //Add your protected routes
 export const config = {
-  matcher: ['/dashboard/:path*', '/income/:path*', '/expenses/:path*', '/sales/:path*', '/sales-matching/:path*', '/post-entries/:path*', '/chart-of-accounts/:path*', '/general-journal/:path*', '/cash-flow/:path*', '/reports/:path*', '/users/:path*', '/roles/:path*', '/data-settings/:path*'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };

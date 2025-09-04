@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -49,6 +49,7 @@ import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { addSaleRecord, salesRecordSchema } from '@/lib/firebase/firestore/sales';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/auth-context';
 
 
 interface SalesFormProps {
@@ -77,6 +78,7 @@ const getAccountsByClassification = (accounts: Account[], classifications: strin
 
 export function SalesForm({ accounts }: SalesFormProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const form = useForm<any>({
     resolver: zodResolver(salesRecordSchema),
@@ -90,6 +92,12 @@ export function SalesForm({ accounts }: SalesFormProps) {
         credits: [],
     }
   });
+
+  useEffect(() => {
+    if (user?.name) {
+      form.setValue('salesperson', user.name);
+    }
+  }, [user, form]);
 
   const { fields: cardFields, append: appendCard, remove: removeCard } = useFieldArray({
     control: form.control,
@@ -115,7 +123,7 @@ export function SalesForm({ accounts }: SalesFormProps) {
       form.reset({
         date: new Date(),
         period: 'Morning',
-        salesperson: '',
+        salesperson: user?.name || '',
         postingNumber: '',
         cash: { accountId: '', amount: 0 },
         cards: [],

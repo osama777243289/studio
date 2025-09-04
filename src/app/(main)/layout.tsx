@@ -3,11 +3,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import {
-  Menu,
-  Landmark,
-  LogOut,
-} from 'lucide-react';
+import { Menu, Landmark, LogOut } from 'lucide-react';
 import { Nav, type NavLink } from '@/components/nav';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -21,7 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { logoutUser } from '../(auth)/login/actions';
-
+import { AuthProvider, useAuth } from '@/contexts/auth-context';
 
 const navLinks: NavLink[] = [
   { title: 'لوحة التحكم', href: '/dashboard', icon: 'LayoutDashboard' },
@@ -40,22 +36,28 @@ const navLinks: NavLink[] = [
 ];
 
 function UserNav() {
+  const { user } = useAuth();
+  
+  if (!user) {
+    return null; // Or a loading skeleton
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
           <Avatar className="h-10 w-10">
-            <AvatarImage src="https://picsum.photos/seed/user/40/40" alt="User Avatar" />
-            <AvatarFallback>U</AvatarFallback>
+            <AvatarImage src={user.avatarUrl || `https://picsum.photos/seed/${user.id}/40/40`} alt="User Avatar" />
+            <AvatarFallback>{user.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">المستخدم الحالي</p>
+            <p className="text-sm font-medium leading-none">{user.name}</p>
             <p className="text-xs leading-none text-muted-foreground">
-              user@example.com
+              {user.email || 'لا يوجد بريد إلكتروني'}
             </p>
           </div>
         </DropdownMenuLabel>
@@ -69,9 +71,7 @@ function UserNav() {
   );
 }
 
-
-export default function MainLayout({ children }: { children: React.ReactNode }) {
-
+function MainLayoutContent({ children }: { children: React.ReactNode }) {
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <div className="hidden border-l bg-card md:block">
@@ -119,5 +119,13 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         </main>
       </div>
     </div>
-  )
+  );
+}
+
+export default function MainLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <AuthProvider>
+      <MainLayoutContent>{children}</MainLayoutContent>
+    </AuthProvider>
+  );
 }
