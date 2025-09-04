@@ -43,29 +43,34 @@ export async function loginUser(
 
   try {
     const usersRef = collection(db, 'users');
+    
+    // Normalize mobile number to find the user
     let normalizedMobile = mobile.startsWith('+') ? mobile.substring(1) : mobile;
     normalizedMobile = normalizedMobile.startsWith('00') ? normalizedMobile.substring(2) : normalizedMobile;
 
     const possibleMobiles = new Set<string>();
-    possibleMobiles.add(normalizedMobile);
-    possibleMobiles.add(`+${normalizedMobile}`);
-    possibleMobiles.add(`00${normalizedMobile}`);
-
+    possibleMobiles.add(mobile); // The raw input
+    possibleMobiles.add(normalizedMobile); // a normalized version
+    
+    // Logic for Saudi numbers
     if (normalizedMobile.startsWith('966')) {
-        const withoutCountry = normalizedMobile.substring(3);
-        possibleMobiles.add(withoutCountry);
-        possibleMobiles.add(`0${withoutCountry}`);
-    } else if (normalizedMobile.startsWith('05')) {
-        possibleMobiles.add(`966${normalizedMobile.substring(1)}`);
-    } else if (normalizedMobile.startsWith('5')) {
-        possibleMobiles.add(`966${normalizedMobile}`);
-        possibleMobiles.add(`0${normalizedMobile}`);
+      const withoutCountryCode = normalizedMobile.substring(3); // e.g., 5...
+      possibleMobiles.add(withoutCountryCode);
+      possibleMobiles.add(`0${withoutCountryCode}`); // e.g., 05...
+    } else if (normalizedMobile.startsWith('05')) { // e.g., 05...
+      possibleMobiles.add(`966${normalizedMobile.substring(1)}`); // e.g., 9665...
+    } else if (normalizedMobile.startsWith('5')) { // e.g., 5...
+        possibleMobiles.add(`966${normalizedMobile}`); // e.g., 9665...
+        possibleMobiles.add(`0${normalizedMobile}`); // e.g., 05...
     }
-
+    
     const whereClauses = Array.from(possibleMobiles).map(m => where('mobile', '==', m));
 
+    if (whereClauses.length === 0) {
+        return { message: 'رقم جوال غير صالح.' };
+    }
+
     const q = query(usersRef, or(...whereClauses));
-    
     const querySnapshot = await getDocs(q);
 
     if (querySnapshot.empty) {
@@ -79,7 +84,7 @@ export async function loginUser(
         return { message: 'حساب المستخدم هذا غير مهيأ بشكل صحيح.' };
     }
 
-    const auth = getAuth(app);
+    const auth = getAuth(app); // Explicitly pass the app instance
     const userCredential = await signInWithEmailAndPassword(auth, userData.email, password);
     const user = userCredential.user;
     const idToken = await user.getIdToken();
@@ -95,7 +100,7 @@ export async function loginUser(
     if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
         return { message: 'رقم الجوال أو كلمة المرور غير صحيحة.' };
     }
-    console.error(error);
+    console.error('Login Error:', error);
     return { message: 'حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.' };
   }
   
