@@ -77,13 +77,10 @@ export async function loginUser(
     const userDoc = querySnapshot.docs[0];
     const user = { id: userDoc.id, ...userDoc.data() } as User;
 
-    // Check if the password matches.
-    // This is highly insecure. In a real app, you would hash the password and compare the hash.
     if (user.password !== password) {
        return { message: 'رقم الجوال أو كلمة المرور غير صحيحة.' };
     }
 
-    // We don't want to store the password in the cookie.
     const { password: userPassword, ...sessionData } = user;
 
     await cookies().set('session', JSON.stringify(sessionData), {
@@ -101,6 +98,6 @@ export async function loginUser(
 }
 
 export async function logoutUser() {
-    await cookies().set('session', '', { expires: new Date(0) });
+    cookies().set('session', '', { expires: new Date(0) });
     redirect('/login');
 }
