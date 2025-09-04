@@ -6,7 +6,6 @@ import Link from 'next/link';
 import {
   Menu,
   Landmark,
-  LogOut,
 } from 'lucide-react';
 import { Nav, type NavLink } from '@/components/nav';
 import { Button } from '@/components/ui/button';
