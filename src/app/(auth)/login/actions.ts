@@ -83,7 +83,8 @@ export async function loginUser(
 
     const { password: userPassword, ...sessionData } = user;
 
-    await cookies().set('session', JSON.stringify(sessionData), {
+    const cookieStore = cookies();
+    cookieStore.set('session', JSON.stringify(sessionData), {
       secure: process.env.NODE_ENV === 'production',
       maxAge: 60 * 60 * 24 * 7, // One week
       path: '/',
@@ -98,6 +99,7 @@ export async function loginUser(
 }
 
 export async function logoutUser() {
-    cookies().set('session', '', { expires: new Date(0) });
+    const cookieStore = cookies();
+    cookieStore.set('session', '', { expires: new Date(0) });
     redirect('/login');
 }
