@@ -101,8 +101,8 @@ export function CashierReport() {
     const getActualAmount = (type: 'cash' | 'card' | 'credit', index: number = 0) => {
         if (isPreliminary) return 0;
         if (type === 'cash') return reportData.actuals?.['cash'] ?? reportData.cash.amount;
-        if (type === 'card') return reportData.actuals?.[`card-${index}`] ?? reportData.cards[index]?.amount || 0;
-        if (type === 'credit') return reportData.actuals?.[`credit-${index}`] ?? reportData.credits[index]?.amount || 0;
+        if (type === 'card') return (reportData.actuals?.[`card-${index}`] ?? reportData.cards[index]?.amount) || 0;
+        if (type === 'credit') return (reportData.actuals?.[`credit-${index}`] ?? reportData.credits[index]?.amount) || 0;
         return 0;
     };
     
