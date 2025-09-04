@@ -3,11 +3,11 @@
 import { z } from 'zod';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/client'; 
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, or } from 'firebase/firestore';
 import { redirect } from 'next/navigation';
 
 const formSchema = z.object({
-  mobile: z.string().min(10, { message: 'رقم الجوال يجب أن يكون 10 أرقام على الأقل.' }),
+  mobile: z.string().min(9, { message: 'رقم الجوال يجب أن يكون 9 أرقام على الأقل.' }),
   password: z.string().min(8, { message: 'كلمة المرور يجب أن تكون 8 أحرف على الأقل.' }),
 });
 
@@ -39,9 +39,17 @@ export async function loginUser(
   const { mobile, password } = validatedFields.data;
 
   try {
+    // Normalize mobile number to handle different formats (+, 00, or none)
+    const normalizedMobile = mobile.replace(/^\+|^00/, '');
+    const possibleMobileFormats = [
+        normalizedMobile,
+        `+${normalizedMobile}`,
+        `00${normalizedMobile}`
+    ];
+    
     // Step 1: Find user by mobile number to get their email
     const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('mobile', '==', mobile));
+    const q = query(usersRef, where('mobile', 'in', possibleMobileFormats));
     const querySnapshot = await getDocs(q);
 
     if (querySnapshot.empty) {
@@ -60,6 +68,7 @@ export async function loginUser(
 
   } catch (error: any) {
     console.error('Firebase Auth Error:', error.code, error.message);
+    // Generic error message for security reasons
     return { message: 'فشل تسجيل الدخول.', errors: { server: 'رقم الجوال أو كلمة المرور غير صحيحة.' } };
   }
 
