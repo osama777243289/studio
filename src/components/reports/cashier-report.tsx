@@ -51,6 +51,16 @@ const getDifferenceText = (diff: number) => {
     return formatCurrency(diff);
 }
 
+const translateStatus = (status: SalesRecord['status']) => {
+    switch (status) {
+        case 'Pending Upload': return 'قيد الرفع';
+        case 'Pending Matching': return 'قيد المطابقة';
+        case 'Ready for Posting': return 'جاهز للترحيل';
+        case 'Posted': return 'مُرَحَّل';
+        default: return status;
+    }
+}
+
 export function CashierReport() {
     const searchParams = useSearchParams();
     const recordId = searchParams.get('id');
@@ -86,7 +96,7 @@ export function CashierReport() {
 
     const reportData = record || mockReportData;
     const isPreliminary = reportData.status === 'Pending Upload' || reportData.status === 'Pending Matching';
-    const reportStatus = reportData.status === 'Matched' ? "تمت المطابقة" : (reportData.status === 'Pending Matching' ? "قيد المطابقة" : "قيد الرفع");
+    const reportStatus = translateStatus(reportData.status);
     
     const getActualAmount = (type: 'cash' | 'card' | 'credit', index: number = 0) => {
         if (isPreliminary) return 0;
@@ -136,8 +146,13 @@ export function CashierReport() {
                     <RefreshCw className="h-5 w-5" />
                     <CardTitle className="text-lg">مبيعات {reportData.period === 'Morning' ? 'الصباحية' : 'المسائية'} ليوم: {reportData.date.toDate().toLocaleDateString('ar-SA')}</CardTitle>
                 </div>
-                 <Badge variant={reportStatus === 'تمت المطابقة' ? 'default' : 'destructive'} className={reportStatus === 'تمت المطابقة' ? "bg-green-100 text-green-800 border-green-300" : (reportStatus === 'قيد المطابقة' ? "bg-yellow-100 text-yellow-800 border-yellow-300" : "bg-blue-100 text-blue-800 border-blue-300")}>
-                    {reportStatus === 'تمت المطابقة' ? <CheckCircle2 className="ml-1 h-4 w-4" /> : <AlertCircle className="ml-1 h-4 w-4" />}
+                 <Badge variant={reportStatus === 'جاهز للترحيل' ? 'default' : 'destructive'} className={
+                    reportStatus === 'جاهز للترحيل' ? "bg-green-100 text-green-800 border-green-300" :
+                    reportStatus === 'قيد المطابقة' ? "bg-yellow-100 text-yellow-800 border-yellow-300" :
+                    reportStatus === 'مُرَحَّل' ? "bg-blue-100 text-blue-800 border-blue-300" :
+                     "bg-gray-100 text-gray-800 border-gray-300"
+                 }>
+                    {reportStatus === 'جاهز للترحيل' ? <CheckCircle2 className="ml-1 h-4 w-4" /> : <AlertCircle className="ml-1 h-4 w-4" />}
                     {reportStatus}
                 </Badge>
             </CardHeader>
@@ -252,16 +267,14 @@ export function CashierReport() {
             </CardContent>
         </Card>
         
-        <Alert variant={reportStatus !== 'تمت المطابقة' ? "destructive" : "default"}>
-            {reportStatus !== 'تمت المطابقة' ? <AlertCircle className="h-4 w-4" /> : <Lightbulb className="h-4 w-4" />}
-            <AlertTitle>{isPreliminary ? "تقرير مبدئي" : "حالة المطابقة"}</AlertTitle>
+        <Alert variant={reportStatus === 'جاهز للترحيل' ? "default" : "destructive"}>
+            {reportStatus === 'جاهز للترحيل' ? <Lightbulb className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+            <AlertTitle>{isPreliminary ? "تقرير مبدئي" : "تقرير معتمد"}</AlertTitle>
             <AlertDescription>
-                {isPreliminary ? "هذا التقرير للإدخال الأولي فقط والمبالغ الفعلية لم تسجل بعد." : "تمت مطابقة هذا التقرير."}
+                {isPreliminary ? "هذا التقرير للإدخال الأولي فقط والمبالغ الفعلية لم تسجل بعد." : `تمت مطابقة هذا التقرير وهو الآن ${reportStatus}.`}
             </AlertDescription>
         </Alert>
 
     </div>
   )
 }
-
-    
