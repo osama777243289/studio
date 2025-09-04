@@ -36,7 +36,7 @@ export interface CashAdvanceRequest {
   amount: number;
   date: Timestamp;
   reason: string;
-  status: 'Pending' | 'Approved' | 'Rejected';
+  status: 'Pending' | 'Approved' | 'Rejected' | 'Completed';
   createdAt: Timestamp;
   journalId?: string;
 }
@@ -79,7 +79,7 @@ export const getCashAdvanceRequests = async (
 
 // Get cash advance requests by status
 export const getCashAdvanceRequestsByStatus = async (
-  status: 'Pending' | 'Approved' | 'Rejected'
+  status: 'Pending' | 'Approved' | 'Rejected' | 'Completed'
 ): Promise<CashAdvanceRequest[]> => {
     const requestsCol = collection(db, 'cashAdvanceRequests');
     const q = query(requestsCol, where('status', '==', status), orderBy('createdAt', 'desc'));
@@ -110,4 +110,62 @@ export const updateCashAdvanceRequestStatus = async (
     // Simply update the status of the request.
     // The journal entry creation is deferred to another process/UI.
     await updateDoc(requestRef, { status });
+};
+
+// Confirm disbursement and create journal entry
+interface ConfirmDisbursementParams {
+  request: CashAdvanceRequest;
+  actualAmount: number;
+  notes: string;
+  disbursingAccountId: string; // ID of the cash/bank account
+}
+export const confirmCashAdvanceDisbursement = async ({
+  request,
+  actualAmount,
+  notes,
+  disbursingAccountId
+}: ConfirmDisbursementParams): Promise<void> => {
+    if (!request.employeeAccountId) {
+        throw new Error('Employee liability account is not defined for this request.');
+    }
+
+    const batch = writeBatch(db);
+    const transactionsCol = collection(db, 'transactions');
+    
+    const journalId = doc(collection(db, 'temp')).id;
+    const description = `صرف سلفة للموظف: ${request.employeeName} - ${notes || request.reason}`;
+
+    // Debit Employee's liability account
+    const debitTransactionRef = doc(transactionsCol);
+    batch.set(debitTransactionRef, {
+        accountId: request.employeeAccountId,
+        amount: actualAmount, // Positive amount for debit
+        date: request.date,
+        type: 'Journal',
+        description,
+        journalId,
+        createdAt: Timestamp.now(),
+    });
+
+    // Credit Cash/Bank account
+    const creditTransactionRef = doc(transactionsCol);
+    batch.set(creditTransactionRef, {
+        accountId: disbursingAccountId,
+        amount: -actualAmount, // Negative amount for credit
+        date: request.date,
+        type: 'Journal',
+        description,
+        journalId,
+        createdAt: Timestamp.now(),
+    });
+
+    // Update the request status to 'Completed'
+    const requestRef = doc(db, 'cashAdvanceRequests', request.id);
+    batch.update(requestRef, {
+        status: 'Completed',
+        journalId: journalId,
+        // You could also store actualAmount and notes here if needed
+    });
+
+    await batch.commit();
 };
