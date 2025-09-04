@@ -1,4 +1,5 @@
 
+
 import { db } from '@/lib/firebase/client';
 import { UserFormData } from '@/components/users/user-dialog';
 import { User } from '@/app/(main)/users/page';
@@ -74,6 +75,10 @@ export const addUser = async (userData: UserFormData): Promise<string> => {
   
   // Remove password confirmation before saving
   const { confirmPassword, ...dataToSave } = userData;
+  
+  if (dataToSave.type !== 'employee') {
+    delete dataToSave.employeeAccountId;
+  }
 
   const newUser: Omit<User, 'id'> = {
     ...dataToSave,
@@ -94,6 +99,9 @@ export const updateUser = async (userId: string, userData: Partial<UserFormData>
   // Do not save password if it's not changed
   if (dataToSave.password === '') {
       delete dataToSave.password;
+  }
+   if (dataToSave.type !== 'employee') {
+    delete dataToSave.employeeAccountId;
   }
   await updateDoc(userRef, dataToSave);
 };
