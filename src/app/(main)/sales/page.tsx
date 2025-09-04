@@ -8,32 +8,27 @@ import { useEffect, useState } from 'react';
 import { getAccounts } from '@/lib/firebase/firestore/accounts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
-import { useAuth } from '@/contexts/auth-context';
-import type { User } from '@/app/(main)/users/page';
 
 export default function SalesPage() {
     const [accounts, setAccounts] = useState<Account[]>([]);
-    const [loadingAccounts, setLoadingAccounts] = useState(true);
-    const { user, loading: loadingUser } = useAuth();
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchAccounts = async () => {
-            setLoadingAccounts(true);
+            setLoading(true);
             try {
                 const fetchedAccounts = await getAccounts();
                 setAccounts(fetchedAccounts);
             } catch (error) {
                 console.error("Failed to fetch accounts:", error);
             } finally {
-                setLoadingAccounts(false);
+                setLoading(false);
             }
         };
         fetchAccounts();
     }, []);
 
-    const isLoading = loadingAccounts || loadingUser;
-
-    if (isLoading) {
+    if (loading) {
         return (
             <div className="flex flex-col gap-8 justify-center items-center pt-8">
                 <Card className="w-full max-w-2xl">
@@ -66,14 +61,10 @@ export default function SalesPage() {
         );
     }
     
-    if (!user) {
-        return <p>الرجاء تسجيل الدخول لعرض هذه الصفحة.</p>;
-    }
-
     return (
         <div className="flex flex-col gap-8 justify-center items-center pt-8">
             <Card className="w-full max-w-2xl">
-                <SalesForm accounts={accounts} currentUser={user} />
+                <SalesForm accounts={accounts} />
             </Card>
             <div className="w-full max-w-4xl">
                 <SalesRecords />

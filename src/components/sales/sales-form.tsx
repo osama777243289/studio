@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -49,12 +49,9 @@ import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { addSaleRecord, salesRecordSchema } from '@/lib/firebase/firestore/sales';
 import { useToast } from '@/hooks/use-toast';
-import type { User as UserType } from '@/app/(main)/users/page';
-
 
 interface SalesFormProps {
     accounts: Account[];
-    currentUser: Omit<UserType, 'password'>;
 }
 
 // Helper to flatten the account tree and filter by classification
@@ -77,7 +74,7 @@ const getAccountsByClassification = (accounts: Account[], classifications: strin
     return flattened;
 };
 
-export function SalesForm({ accounts, currentUser }: SalesFormProps) {
+export function SalesForm({ accounts }: SalesFormProps) {
   const { toast } = useToast();
 
   const form = useForm<any>({
@@ -85,7 +82,7 @@ export function SalesForm({ accounts, currentUser }: SalesFormProps) {
     defaultValues: {
         date: new Date(),
         period: 'Morning',
-        salesperson: currentUser?.name || '',
+        salesperson: '',
         postingNumber: '',
         cash: { accountId: '', amount: 0 },
         cards: [],
@@ -106,19 +103,6 @@ export function SalesForm({ accounts, currentUser }: SalesFormProps) {
   const cashAccounts = useMemo(() => getAccountsByClassification(accounts, ['كاشير']), [accounts]);
   const networkAccounts = useMemo(() => getAccountsByClassification(accounts, ['شبكات']), [accounts]);
   const customerAccounts = useMemo(() => getAccountsByClassification(accounts, ['عملاء']), [accounts]);
-  
-  // Re-initialize the form when the current user changes. This is the key to fixing the issue.
-  useEffect(() => {
-    form.reset({
-        date: new Date(),
-        period: 'Morning',
-        salesperson: currentUser?.name || '',
-        postingNumber: '',
-        cash: { accountId: '', amount: 0 },
-        cards: [],
-        credits: [],
-    });
-  }, [currentUser, form]);
 
   const onSubmit = async (data: any) => {
     try {
@@ -131,6 +115,7 @@ export function SalesForm({ accounts, currentUser }: SalesFormProps) {
         ...form.getValues(),
         date: new Date(),
         postingNumber: '',
+        salesperson: '',
         cash: { accountId: '', amount: 0 },
         cards: [],
         credits: [],
@@ -164,7 +149,7 @@ export function SalesForm({ accounts, currentUser }: SalesFormProps) {
   };
 
   return (
-     <form onSubmit={form.handleSubmit(onSubmit)} key={currentUser.id}>
+     <form onSubmit={form.handleSubmit(onSubmit)}>
       <CardHeader>
         <div className="flex items-center gap-2">
             <Pencil className="h-6 w-6" />
@@ -235,8 +220,7 @@ export function SalesForm({ accounts, currentUser }: SalesFormProps) {
                   <User className="h-5 w-5" />
                   <Label htmlFor="salesperson">مندوب المبيعات</Label>
                 </div>
-                 <Input id="salesperson" value={currentUser?.name || ''} readOnly className="bg-muted/50" />
-                 <input type="hidden" {...form.register('salesperson')} />
+                 <Input id="salesperson" {...form.register('salesperson')} placeholder="أدخل اسم مندوب المبيعات" />
               </div>
                <div className="space-y-2">
                 <div className='flex items-center gap-2'>
