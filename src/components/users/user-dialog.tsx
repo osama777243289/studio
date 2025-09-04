@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import { useEffect, useMemo, useState } from 'react';
@@ -31,18 +32,20 @@ import { ScrollArea } from '../ui/scroll-area';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import type { Role } from '@/lib/firebase/firestore/roles';
 
+const pagePermissionSchema = z.object({ view: z.boolean().optional(), create: z.boolean().optional(), edit: z.boolean().optional(), delete: z.boolean().optional(), export: z.boolean().optional(), managePermissions: z.boolean().optional() });
+
 const permissionsSchema = z.object({
     pages: z.object({
-        dashboard: z.object({ view: z.boolean().optional() }).optional(),
-        income: z.object({ view: z.boolean().optional(), create: z.boolean().optional(), edit: z.boolean().optional(), delete: z.boolean().optional() }).optional(),
-        expenses: z.object({ view: z.boolean().optional(), create: z.boolean().optional(), edit: z.boolean().optional(), delete: z.boolean().optional() }).optional(),
-        sales: z.object({ view: z.boolean().optional(), create: z.boolean().optional(), edit: z.boolean().optional(), delete: z.boolean().optional() }).optional(),
-        chartOfAccounts: z.object({ view: z.boolean().optional(), create: z.boolean().optional(), edit: z.boolean().optional(), delete: z.boolean().optional() }).optional(),
-        cashFlow: z.object({ view: z.boolean().optional(), create: z.boolean().optional() }).optional(),
-        reports: z.object({ view: z.boolean().optional(), export: z.boolean().optional() }).optional(),
-        users: z.object({ view: z.boolean().optional(), create: z.boolean().optional(), edit: z.boolean().optional(), delete: z.boolean().optional(), managePermissions: z.boolean().optional() }).optional(),
-        roles: z.object({ view: z.boolean().optional(), create: z.boolean().optional(), edit: z.boolean().optional(), delete: z.boolean().optional() }).optional(),
-        dataSettings: z.object({ view: z.boolean().optional() }).optional(),
+        dashboard: pagePermissionSchema.optional(),
+        income: pagePermissionSchema.optional(),
+        expenses: pagePermissionSchema.optional(),
+        sales: pagePermissionSchema.optional(),
+        chartOfAccounts: pagePermissionSchema.optional(),
+        cashFlow: pagePermissionSchema.optional(),
+        reports: pagePermissionSchema.optional(),
+        users: pagePermissionSchema.optional(),
+        roles: pagePermissionSchema.optional(),
+        dataSettings: pagePermissionSchema.optional(),
     }).optional(),
     accounts: z.array(z.string()).optional(),
 }).optional();
@@ -364,9 +367,10 @@ export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts, role
                                                     <Controller
                                                         name={`permissions.pages.${pageKey}.${actionKey}` as any}
                                                         control={control}
+                                                        defaultValue={false}
                                                         render={({ field }) => (
                                                              <Checkbox
-                                                                checked={!!field.value}
+                                                                checked={field.value}
                                                                 onCheckedChange={field.onChange}
                                                             />
                                                         )}
@@ -417,5 +421,3 @@ export function UserDialog({ isOpen, onClose, onSave, user, mode, accounts, role
     </Dialog>
   )
 }
-
-    

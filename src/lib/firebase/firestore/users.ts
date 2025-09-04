@@ -78,6 +78,32 @@ export const getUsers = async (): Promise<User[]> => {
   return userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
 };
 
+// Recursively removes undefined values from an object
+const removeUndefinedValues = (obj: any): any => {
+    if (obj === null || obj === undefined) {
+        return obj;
+    }
+
+    if (Array.isArray(obj)) {
+        return obj.map(removeUndefinedValues);
+    }
+
+    if (typeof obj === 'object') {
+        const newObj: { [key: string]: any } = {};
+        for (const key in obj) {
+            if (Object.prototype.hasOwnProperty.call(obj, key)) {
+                const value = obj[key];
+                if (value !== undefined) {
+                    newObj[key] = removeUndefinedValues(value);
+                }
+            }
+        }
+        return newObj;
+    }
+
+    return obj;
+};
+
 // Add a new user
 export const addUser = async (userData: UserFormData): Promise<string> => {
     const usersCol = collection(db, 'users');
@@ -87,9 +113,11 @@ export const addUser = async (userData: UserFormData): Promise<string> => {
       delete dataToSave.employeeAccountId;
     }
 
+    const cleanedPermissions = removeUndefinedValues(dataToSave.permissions);
+
     const newUser: Omit<User, 'id'> = {
         ...dataToSave,
-        permissions: dataToSave.permissions || {},
+        permissions: cleanedPermissions || {},
         role: dataToSave.role || [],
         avatarUrl: `https://picsum.photos/id/${Math.floor(Math.random() * 100)}/40/40`,
         password: dataToSave.password || '',
@@ -110,7 +138,7 @@ export const updateUser = async (userId: string, userData: Partial<UserFormData>
   }
   
   // Create a clean object for updating. If password is empty, don't update it.
-  const updateData: { [key: string]: any } = { ...dataToSave };
+  const updateData: { [key: string]: any } = removeUndefinedValues({ ...dataToSave });
   if (!updateData.password) {
       delete updateData.password;
   }
