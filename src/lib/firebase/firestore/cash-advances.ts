@@ -99,64 +99,15 @@ const findAccountByClassification = (accounts: Account[], classification: string
     return null;
 }
 
-// Update request status and create journal entries if approved
+// Update request status. Journal entries will be created in a separate step.
 export const updateCashAdvanceRequestStatus = async (
   requestId: string,
   status: 'Approved' | 'Rejected',
-  requestData?: CashAdvanceRequest
+  requestData?: CashAdvanceRequest // requestData is kept for potential future use, but not for journal creation here
 ): Promise<void> => {
     const requestRef = doc(db, 'cashAdvanceRequests', requestId);
-
-    if (status === 'Rejected') {
-        await updateDoc(requestRef, { status });
-        return;
-    }
-
-    if (status === 'Approved') {
-        if (!requestData) throw new Error('Request data is required for approval.');
-        if (!requestData.employeeAccountId) throw new Error('Employee account is not linked.');
-
-        const allAccounts = await getAccounts();
-        const cashAccount = findAccountByClassification(allAccounts, 'صندوق');
-        if (!cashAccount) {
-            throw new Error('Cash account not found. Please set up an account with "صندوق" classification.');
-        }
-
-        const batch = writeBatch(db);
-        const journalId = doc(collection(db, 'temp')).id;
-        const transactionsCol = collection(db, 'transactions');
-        const description = `صرف سلفة للموظف: ${requestData.employeeName}`;
-        
-        // Debit: Employee's liability account (عهدة موظف)
-        const debitEntry = {
-            accountId: requestData.employeeAccountId,
-            date: requestData.date,
-            amount: requestData.amount, // Positive for debit
-            type: 'Journal',
-            description,
-            journalId,
-            createdAt: Timestamp.now(),
-        };
-        batch.set(doc(transactionsCol), debitEntry);
-        
-        // Credit: Cash/Bank account
-        const creditEntry = {
-            accountId: cashAccount.id,
-            date: requestData.date,
-            amount: -requestData.amount, // Negative for credit
-            type: 'Journal',
-            description,
-            journalId,
-            createdAt: Timestamp.now(),
-        };
-        batch.set(doc(transactionsCol), creditEntry);
-
-        // Update the request status and store the journalId
-        batch.update(requestRef, { 
-            status: 'Approved',
-            journalId: journalId,
-         });
-
-        await batch.commit();
-    }
+    
+    // Simply update the status of the request.
+    // The journal entry creation is deferred to another process/UI.
+    await updateDoc(requestRef, { status });
 };
