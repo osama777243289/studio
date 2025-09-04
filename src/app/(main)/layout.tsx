@@ -11,7 +11,6 @@ import {
 import { Nav, type NavLink } from '@/components/nav';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { logoutUser } from '../(auth)/login/actions';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -59,15 +58,6 @@ function UserNav() {
             </p>
           </div>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <form action={logoutUser}>
-            <DropdownMenuItem asChild>
-                 <Button type="submit" variant="ghost" className="w-full justify-start cursor-pointer">
-                    <LogOut className="ml-2 h-4 w-4" />
-                    تسجيل الخروج
-                </Button>
-            </DropdownMenuItem>
-        </form>
       </DropdownMenuContent>
     </DropdownMenu>
   );
