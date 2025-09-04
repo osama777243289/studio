@@ -43,30 +43,29 @@ export async function loginUser(
 
   try {
     const usersRef = collection(db, 'users');
-    let normalizedMobile = mobile;
-    if (mobile.startsWith('+')) {
-      normalizedMobile = mobile.substring(1);
-    } else if (mobile.startsWith('00')) {
-      normalizedMobile = mobile.substring(2);
-    }
-    
-    const possibleMobiles = [
-        normalizedMobile,
-        `+${normalizedMobile}`,
-        `00${normalizedMobile}`
-    ];
+    let normalizedMobile = mobile.startsWith('+') ? mobile.substring(1) : mobile;
+    normalizedMobile = normalizedMobile.startsWith('00') ? normalizedMobile.substring(2) : normalizedMobile;
+
+    const possibleMobiles = new Set<string>();
+    possibleMobiles.add(normalizedMobile);
+    possibleMobiles.add(`+${normalizedMobile}`);
+    possibleMobiles.add(`00${normalizedMobile}`);
+
     if (normalizedMobile.startsWith('966')) {
         const withoutCountry = normalizedMobile.substring(3);
-        possibleMobiles.push(withoutCountry, `0${withoutCountry}`);
+        possibleMobiles.add(withoutCountry);
+        possibleMobiles.add(`0${withoutCountry}`);
+    } else if (normalizedMobile.startsWith('05')) {
+        possibleMobiles.add(`966${normalizedMobile.substring(1)}`);
+    } else if (normalizedMobile.startsWith('5')) {
+        possibleMobiles.add(`966${normalizedMobile}`);
+        possibleMobiles.add(`0${normalizedMobile}`);
     }
 
-    const q = query(usersRef, or(
-        where('mobile', '==', possibleMobiles[0]),
-        where('mobile', '==', possibleMobiles[1]),
-        where('mobile', '==', possibleMobiles[2]),
-        where('mobile', '==', possibleMobiles[3]),
-        where('mobile', '==', possibleMobiles[4]),
-    ));
+    const whereClauses = Array.from(possibleMobiles).map(m => where('mobile', '==', m));
+
+    const q = query(usersRef, or(...whereClauses));
+    
     const querySnapshot = await getDocs(q);
 
     if (querySnapshot.empty) {
