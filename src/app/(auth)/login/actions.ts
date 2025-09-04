@@ -6,6 +6,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { collection, query, where, getDocs, or } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
+import type { User } from '@/app/(main)/users/page';
 
 const FormSchema = z.object({
   mobile: z.string().min(9, { message: 'رقم الجوال مطلوب.' }),
@@ -74,12 +75,18 @@ export async function loginUser(
     }
 
     const userDoc = querySnapshot.docs[0];
-    const user = { id: userDoc.id, ...userDoc.data() };
+    const user = { id: userDoc.id, ...userDoc.data() } as User;
 
-    // Since we don't store passwords securely, we are not checking it.
-    // In a real app, you would hash the password and compare it here.
+    // Check if the password matches.
+    // This is highly insecure. In a real app, you would hash the password and compare the hash.
+    if (user.password !== password) {
+       return { message: 'رقم الجوال أو كلمة المرور غير صحيحة.' };
+    }
 
-    await cookies().set('session', JSON.stringify(user), {
+    // We don't want to store the password in the cookie.
+    const { password: userPassword, ...sessionData } = user;
+
+    await cookies().set('session', JSON.stringify(sessionData), {
       secure: process.env.NODE_ENV === 'production',
       maxAge: 60 * 60 * 24 * 7, // One week
       path: '/',

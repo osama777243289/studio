@@ -6,14 +6,14 @@ import Cookies from 'js-cookie';
 import type { User } from '@/app/(main)/users/page';
 
 interface AuthContextType {
-  user: User | null;
+  user: Omit<User, 'password'> | null;
   loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<Omit<User, 'password'> | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

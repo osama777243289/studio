@@ -64,6 +64,7 @@ export interface User {
     name: string;
     email?: string;
     mobile: string;
+    password?: string;
     avatarUrl?: string;
     type: "regular" | "employee";
     role: UserRole[];

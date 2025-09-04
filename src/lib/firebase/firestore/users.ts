@@ -42,6 +42,7 @@ const defaultUsers: Omit<User, 'id'>[] = [
             accounts: ['*']
         },
         avatarUrl: `https://picsum.photos/seed/admin/40/40`,
+        password: 'password123',
     }
 ];
 
@@ -80,9 +81,7 @@ export const getUsers = async (): Promise<User[]> => {
 // Add a new user
 export const addUser = async (userData: UserFormData): Promise<string> => {
     const usersCol = collection(db, 'users');
-    // Note: We are not storing the password. This is insecure.
-    // For a real app, hash the password before storing.
-    const { confirmPassword, password, ...dataToSave } = userData;
+    const { confirmPassword, ...dataToSave } = userData;
 
     if (dataToSave.type !== 'employee') {
       delete dataToSave.employeeAccountId;
@@ -93,6 +92,7 @@ export const addUser = async (userData: UserFormData): Promise<string> => {
         permissions: dataToSave.permissions || {},
         role: dataToSave.role || [],
         avatarUrl: `https://picsum.photos/id/${Math.floor(Math.random() * 100)}/40/40`,
+        password: dataToSave.password || '',
     } as Omit<User, 'id'>;
 
     const newDocRef = await addDoc(usersCol, newUser);
@@ -103,14 +103,20 @@ export const addUser = async (userData: UserFormData): Promise<string> => {
 export const updateUser = async (userId: string, userData: Partial<UserFormData>): Promise<void> => {
   const userRef = doc(db, 'users', userId);
   
-  // Note: We are not storing the password. This is insecure.
-  const { confirmPassword, password, ...dataToSave } = userData;
+  const { confirmPassword, ...dataToSave } = userData;
   
   if (dataToSave.type !== 'employee') {
     delete dataToSave.employeeAccountId;
   }
+  
+  // Create a clean object for updating. If password is empty, don't update it.
+  const updateData: { [key: string]: any } = { ...dataToSave };
+  if (!updateData.password) {
+      delete updateData.password;
+  }
 
-  await updateDoc(userRef, dataToSave as any);
+
+  await updateDoc(userRef, updateData);
 };
 
 
