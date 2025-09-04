@@ -6,6 +6,7 @@ import Link from 'next/link';
 import {
   Menu,
   Landmark,
+  LogOut,
 } from 'lucide-react';
 import { Nav, type NavLink } from '@/components/nav';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { logoutUser } from '../(auth)/login/actions';
 
 
 const navLinks: NavLink[] = [
@@ -57,6 +59,11 @@ function UserNav() {
             </p>
           </div>
         </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={() => logoutUser()}>
+          <LogOut className="ml-2 h-4 w-4" />
+          <span>تسجيل الخروج</span>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
