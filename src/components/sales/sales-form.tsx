@@ -93,6 +93,15 @@ export function SalesForm({ accounts, currentUser }: SalesFormProps) {
     }
   });
 
+  useEffect(() => {
+    if (currentUser?.name) {
+      form.reset({
+        ...form.getValues(),
+        salesperson: currentUser.name
+      });
+    }
+  }, [currentUser, form]);
+
   const { fields: cardFields, append: appendCard, remove: removeCard } = useFieldArray({
     control: form.control,
     name: "cards"
@@ -152,7 +161,7 @@ export function SalesForm({ accounts, currentUser }: SalesFormProps) {
   };
 
   return (
-     <form onSubmit={form.handleSubmit(onSubmit)}>
+     <form onSubmit={form.handleSubmit(onSubmit)} key={currentUser?.id || 'loading'}>
       <CardHeader>
         <div className="flex items-center gap-2">
             <Pencil className="h-6 w-6" />
