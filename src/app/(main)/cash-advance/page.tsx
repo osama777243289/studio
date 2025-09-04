@@ -33,7 +33,7 @@ import { CalendarIcon, Loader2, HandCoins, Send, Check, X, RefreshCw } from 'luc
 import { format } from 'date-fns';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { getUsers, type User } from '@/lib/firebase/firestore/users';
+import { Account, getAccounts } from '@/lib/firebase/firestore/accounts';
 import { addCashAdvanceRequest, cashAdvanceRequestSchema, getCashAdvanceRequests, type CashAdvanceRequest, updateCashAdvanceRequestStatus } from '@/lib/firebase/firestore/cash-advances';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -71,7 +71,7 @@ const translateStatus = (status: CashAdvanceRequest['status']) => {
 }
 
 export default function CashAdvancePage() {
-  const [employees, setEmployees] = useState<User[]>([]);
+  const [employeeAccounts, setEmployeeAccounts] = useState<Account[]>([]);
   const [requests, setRequests] = useState<CashAdvanceRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -80,7 +80,7 @@ export default function CashAdvancePage() {
   const form = useForm<z.infer<typeof cashAdvanceRequestSchema>>({
     resolver: zodResolver(cashAdvanceRequestSchema),
     defaultValues: {
-      employeeId: '',
+      employeeAccountId: '',
       amount: undefined,
       date: new Date(),
       reason: '',
@@ -90,13 +90,27 @@ export default function CashAdvancePage() {
   const fetchAllData = useCallback(async () => {
     setLoading(true);
     try {
-        const [fetchedUsers, fetchedRequests] = await Promise.all([
-            getUsers(),
+        const [fetchedAccounts, fetchedRequests] = await Promise.all([
+            getAccounts(),
             getCashAdvanceRequests(),
         ]);
 
-        const employeeUsers = fetchedUsers.filter(u => u.type === 'employee' && u.employeeAccountId);
-        setEmployees(employeeUsers);
+        const findEmployeeAccounts = (accs: Account[]): Account[] => {
+          let results: Account[] = [];
+          for (const acc of accs) {
+              // A transactional account that is classified as 'موظف'
+              if ((!acc.children || acc.children.length === 0) && acc.classifications?.includes('موظف')) {
+                  results.push(acc);
+              }
+              if (acc.children) {
+                  results = [...results, ...findEmployeeAccounts(acc.children)];
+              }
+          }
+          return results;
+        };
+
+        const employees = findEmployeeAccounts(fetchedAccounts);
+        setEmployeeAccounts(employees);
         setRequests(fetchedRequests);
 
     } catch (error) {
@@ -113,16 +127,21 @@ export default function CashAdvancePage() {
   }, [fetchAllData]);
 
   async function onSubmit(values: z.infer<typeof cashAdvanceRequestSchema>) {
-    const selectedEmployee = employees.find(e => e.id === values.employeeId);
-    if (!selectedEmployee) {
-        toast({ title: 'خطأ', description: 'لم يتم العثور على الموظف المحدد.', variant: 'destructive'});
+    const selectedEmployeeAccount = employeeAccounts.find(e => e.id === values.employeeAccountId);
+    if (!selectedEmployeeAccount) {
+        toast({ title: 'خطأ', description: 'لم يتم العثور على حساب الموظف المحدد.', variant: 'destructive'});
         return;
     }
 
     try {
-      await addCashAdvanceRequest(values, selectedEmployee);
+      await addCashAdvanceRequest(values, selectedEmployeeAccount.name);
       toast({ title: 'نجاح', description: 'تم إرسال طلب السلفة بنجاح.' });
-      form.reset();
+      form.reset({
+        employeeAccountId: '',
+        amount: undefined,
+        date: new Date(),
+        reason: '',
+      });
       fetchAllData(); // Refresh list
     } catch (error: any) {
       console.error('Failed to submit cash advance request:', error);
@@ -161,18 +180,18 @@ export default function CashAdvancePage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
-                name="employeeId"
+                name="employeeAccountId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>الموظف</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value} disabled={loading}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="اختر موظفًا..." />
+                          <SelectValue placeholder="اختر حساب موظف..." />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {employees.map((emp) => (
+                        {employeeAccounts.map((emp) => (
                           <SelectItem key={emp.id} value={emp.id}>
                             {emp.name}
                           </SelectItem>

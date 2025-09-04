@@ -20,7 +20,7 @@ import type { User } from '@/app/(main)/users/page';
 import { getAccounts, Account } from './accounts';
 
 export const cashAdvanceRequestSchema = z.object({
-  employeeId: z.string().min(1, 'يجب تحديد الموظف.'),
+  employeeAccountId: z.string().min(1, 'يجب تحديد حساب الموظف.'),
   amount: z.coerce.number().positive('يجب أن يكون مبلغ السلفة أكبر من صفر.'),
   date: z.date(),
   reason: z.string().min(5, 'يجب كتابة سبب طلب السلفة (5 أحرف على الأقل).'),
@@ -30,9 +30,8 @@ export type CashAdvanceRequestData = z.infer<typeof cashAdvanceRequestSchema>;
 
 export interface CashAdvanceRequest {
   id: string;
-  employeeId: string;
   employeeName: string;
-  employeeAccountId?: string;
+  employeeAccountId: string;
   amount: number;
   date: Timestamp;
   reason: string;
@@ -44,17 +43,14 @@ export interface CashAdvanceRequest {
 // Add a new cash advance request
 export const addCashAdvanceRequest = async (
   data: CashAdvanceRequestData,
-  employee: User
+  employeeName: string
 ): Promise<string> => {
-  if (!employee.employeeAccountId) {
-    throw new Error('This employee does not have a linked liability account.');
-  }
+
   const requestsCol = collection(db, 'cashAdvanceRequests');
 
   const dataToSave = {
     ...data,
-    employeeName: employee.name,
-    employeeAccountId: employee.employeeAccountId,
+    employeeName: employeeName,
     date: Timestamp.fromDate(data.date),
     status: 'Pending',
     createdAt: Timestamp.now(),
